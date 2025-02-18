@@ -1,5 +1,6 @@
-package com.morris.storage;
+package com.crushdb.storage;
 
+import com.crushdb.model.Document;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
@@ -123,30 +124,40 @@ public class Page {
         buffer.get(this.page);
     }
 
-    public void insertDocument(byte[] data, long documentId) {
-        // duplicate id? Prevent overwriting
-        if (!hasSpaceFor(data.length)) {
+    public void insertDocument(Document document) {
+        byte[] data = document.toBytes();
+        int totalSize = Integer.BYTES + data.length; // Store document length + content
+
+        if (!hasSpaceFor(totalSize)) {
             throw new IllegalStateException("Not Enough space in this page");
-            // split
         }
         int insertionPosition;
         if (!this.deletedDocuments.isEmpty()) {
-            // removes from deleted docs list and retrieves that element for reuse
-            insertionPosition = deletedDocuments.remove(0);
+            insertionPosition = this.deletedDocuments.remove(0);
         } else {
-            insertionPosition = 4096 - availableSpace;
+            insertionPosition = 4096 - this.availableSpace;
         }
-        System.arraycopy(data, 0, this.page, insertionPosition, data.length);
-        this.offsets.put(documentId, insertionPosition);
-        this.availableSpace -= (short) data.length;
+        ByteBuffer buffer = ByteBuffer.wrap(this.page);
+        buffer.position(insertionPosition);
+
+        buffer.putInt(data.length);
+
+        buffer.put(data);
+        this.offsets.put(document.getDocumentId(), insertionPosition);
+        this.availableSpace -= (short) totalSize;
 
         if (this.availableSpace <= 0) {
-            this.isFull = true;
+            this.isFull = true; // will need to make this check before inserting for split
         }
-        markDirty();
+        this.markDirty();
     }
 
-    public byte[] retrieveDocument(long documentId) {
+    public Document retrieveDocument(long documentId) {
+        byte[] data = retrieveDocumentBytes(documentId);
+        return (data != null) ? Document.fromBytes(data) : null;
+    }
+
+    private byte[] retrieveDocumentBytes(long documentId) {
         if (this.isCompressed) {
             decompressPage();
         }
@@ -159,16 +170,22 @@ public class Page {
         ByteBuffer buffer = ByteBuffer.wrap(this.page);
         buffer.position(start);
 
-        if (start + 4 > this.page.length) { // prevent out-of-bounds read for prefix
+        if (start + 4 > this.page.length) {
+            System.err.println("ERROR: Document length prefix exceeds page bounds.");
             return null;
         }
+
         int length = buffer.getInt();
 
-        if (start + 4 > this.page.length) { // see if doc size does not exceed page bounds
+        if (start + 4 + length > this.page.length) {
+            System.err.println("ERROR: Document length exceeds page bounds.");
             return null;
         }
         byte[] document = new byte[length];
         buffer.get(document);
+
+        System.out.println("Retrieved bytes: " + java.util.Arrays.toString(document));
+
         return document;
     }
 
@@ -302,5 +319,21 @@ public class Page {
 
     public void markDirty() {
         this.isDirty = true;
+    }
+
+    public short getAvailableSpace() {
+        return this.availableSpace;
+    }
+
+    public int getSize() {
+        return this.page.length;
+    }
+
+    public boolean isCompressed() {
+        return this.isCompressed;
+    }
+
+    public int getCompressedPageSize() {
+        return this.compressedPageSize;
     }
 }
