@@ -23,7 +23,7 @@ public class PageTest {
         Document doc2 = new Document(2);
         doc2.put("name", "Adele Laurie Blue Adkins");
         doc2.put("age", "36");
-        doc2.put("profession", "Singer");
+        doc2.put("profession", "Music Artist");
 
         page.insertDocument(doc1);
         page.insertDocument(doc2);
@@ -31,21 +31,26 @@ public class PageTest {
         Document retrievedDoc1 = page.retrieveDocument(doc1.getDocumentId());
         Document retrievedDoc2 = page.retrieveDocument(doc2.getDocumentId());
 
+        page.compressPage();
+        int totalDocSize = doc1.toBytes().length + doc2.toBytes().length;
+
+        assertTrue(page.isCompressed());
+
         assertNotNull(retrievedDoc1);
         assertNotNull(retrievedDoc2);
 
         assertAll(
                 () -> assertEquals("Michael Jordan", retrievedDoc1.get("name")),
                 () ->  assertEquals("62", retrievedDoc1.get("age")),
-                () -> assertEquals("Basketball", retrievedDoc1.get("profession"))
+                () -> assertEquals("Basketball", retrievedDoc1.get("profession")),
+                () -> assertEquals("Adele Laurie Blue Adkins", retrievedDoc2.get("name")),
+                () -> assertEquals("36", retrievedDoc2.get("age")),
+                () -> assertEquals("Music Artist", retrievedDoc2.get("profession"))
         );
 
-        page.compressPage();
-        assertTrue(page.isCompressed());
-        assertTrue(page.getCompressedPageSize() < 4096);
-
-        // TODO: fix decompression issue - however every passes up to this point
-//        page.decompressPage();
-//        assertFalse(page.isCompressed());
+        // check if compressed page is less than or equal to 50% of the original size
+        assertTrue("Compression is not efficient! Expected < " + (totalDocSize * 0.5) +
+                                " but got " + page.getCompressedPageSize(),
+                page.getCompressedPageSize() <= totalDocSize * .5);
     }
 }
