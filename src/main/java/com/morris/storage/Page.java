@@ -1,10 +1,11 @@
 package com.morris.storage;
 
+import net.jpountz.lz4.LZ4Compressor;
+import net.jpountz.lz4.LZ4Factory;
+import net.jpountz.lz4.LZ4FastDecompressor;
+
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Represents a single Page in the CrushDB database storage system.
@@ -49,9 +50,11 @@ import java.util.Map;
  * @version 1.0
  */
 public class Page {
-    private long pageId; // unique identifier for each page
-    private final byte[] pageSize = new byte[4096]; // fixed size of page
+    private final long pageId; // unique identifier for each page
+    private byte[] page = new byte[4096]; // fixed size of page
     private short availableSpace; // free space in page
+    private byte[] compressedPage;
+    private int compressedPageSize;
     private long next; // reference to next page
     private long previous; // reference to previous page
 
@@ -62,9 +65,13 @@ public class Page {
     private boolean isDirty; // needs to be written to disk? has it been modified
     private boolean isCompressed; // is page compressed?
 
+    private final LZ4Factory lz4factory;
+
     public Page(long pageId) { // external PageManager will generate ids
         this.pageId = pageId;
         this.availableSpace = 4096 - 128; // accounting for header size
+        this.compressedPageSize = -1;
+        this.compressedPage = null;
         this.next = -1;
         this.previous = -1;
         this.deletedDocuments = new ArrayList<>();
@@ -72,8 +79,10 @@ public class Page {
         this.isFull = false;
         this.isDirty = false;
         this.isCompressed = false;
+        this.lz4factory = LZ4Factory.fastestInstance();
     }
 
+    // TODO: remove
     public Page(byte[] rawPageData) {
         ByteBuffer buffer = ByteBuffer.wrap(rawPageData);
 
@@ -84,6 +93,7 @@ public class Page {
         this.isFull = buffer.get() == 1;
         this.isDirty = buffer.get() == 1;
         this.isCompressed = buffer.get() == 1;
+        this.lz4factory = LZ4Factory.fastestInstance();
 
         // offset table begins at byte 30 after header metadata
         int offsetTableStart = 30;
@@ -110,7 +120,7 @@ public class Page {
         // restore document bytes to page, i.e: end of deleted
         // document to remaining page end
         buffer.position(deletedDocumentsEnd);
-        buffer.get(this.pageSize);
+        buffer.get(this.page);
     }
 
     public void insertDocument(byte[] data, long documentId) {
@@ -126,39 +136,107 @@ public class Page {
         } else {
             insertionPosition = 4096 - availableSpace;
         }
-        System.arraycopy(data, 0, this.pageSize, insertionPosition, data.length);
+        System.arraycopy(data, 0, this.page, insertionPosition, data.length);
         this.offsets.put(documentId, insertionPosition);
         this.availableSpace -= (short) data.length;
+
+        if (this.availableSpace <= 0) {
+            this.isFull = true;
+        }
         markDirty();
     }
 
     public byte[] retrieveDocument(long documentId) {
+        if (this.isCompressed) {
+            decompressPage();
+        }
         if (!this.offsets.containsKey(documentId)) {
             return null;
         }
         // use offset to locate the document, get the position in page and return the document bytes.
         // Would it help storing docs with its length prefix?
         int start = this.offsets.get(documentId);
-        ByteBuffer buffer = ByteBuffer.wrap(this.pageSize);
+        ByteBuffer buffer = ByteBuffer.wrap(this.page);
         buffer.position(start);
 
+        if (start + 4 > this.page.length) { // prevent out-of-bounds read for prefix
+            return null;
+        }
         int length = buffer.getInt();
+
+        if (start + 4 > this.page.length) { // see if doc size does not exceed page bounds
+            return null;
+        }
         byte[] document = new byte[length];
         buffer.get(document);
-
         return document;
     }
 
+    /**
+     * Adds document for deletion. Checks if document is in offset.
+     * If so, the document is removed from offset and marked for
+     * deletion.
+     *
+     * @param documentId long documentId
+     */
     public void deleteDocument(long documentId) {
-
+        if (this.offsets.containsKey(documentId)) {
+            int offset = this.offsets.remove(documentId);
+            this.deletedDocuments.add(offset);
+            this.availableSpace += 128; // TODO: update, get document size
+            this.isFull = false;
+            markDirty();
+        }
     }
 
+    /**
+     * Determines if there's space enough in page to add
+     * a new document within the available space.
+     *
+     * @param documentSize int document size
+     *
+     * @return boolean
+     */
     public boolean hasSpaceFor(int documentSize) {
         return this.availableSpace >= documentSize;
     }
 
-    public void serializePage(byte[] rawPageData) {
+    public void serializePage() {
+        /*
+           1. header:              33
+           2. offsets:            500
+           3. deleted documents:  500
+           4. compress page size:   4
+         */
+        ByteBuffer buffer = ByteBuffer.allocate(33 + 500 + 500 + 4 + this.compressedPageSize);
 
+        buffer.putLong(this.pageId); // 8 bytes
+        buffer.putShort(this.availableSpace); // 2 bytes
+        buffer.putLong(this.next); // 8 bytes
+        buffer.putLong(this.previous); // 8 bytes
+        buffer.put((byte) (this.isFull ? 1 : 0)); // 1 byte
+        buffer.put((byte) (this.isCompressed ? 1 : 0)); // 1 byte
+
+        buffer.putInt(this.compressedPageSize); // 4 bytes
+
+        int offsetStart = 33;
+        buffer.position(offsetStart);
+        for (Map.Entry<Long, Integer> entry : this.offsets.entrySet()) {
+            buffer.putLong(entry.getKey());
+            buffer.putInt(entry.getValue());
+        }
+
+        int deletedDocumentsEnd = offsetStart + 500;
+        buffer.position(deletedDocumentsEnd);
+        for (Integer deletedOffset : this.deletedDocuments) {
+            buffer.putInt(deletedOffset);
+        }
+
+        if (this.compressedPage != null) {
+            buffer.position(deletedDocumentsEnd + 500);
+            buffer.put(this.compressedPage, 0, this.compressedPageSize);
+        }
+        this.page = buffer.array();
     }
 
     public void splitPage(byte[] rawPageData) {
@@ -169,8 +247,57 @@ public class Page {
 
     }
 
+    /**
+     * Compress page with LZ4 algorithm.
+     *
+     * <h2>LZ4-Java Resource:</h2>
+     * <p>For more details on how LZ4 compression works, check:</p>
+     * <ul>
+     *   <li><a href="https://github.com/lz4/lz4-java">Github lz4-java</a></li>
+     * </ul>
+     */
     public void compressPage() {
+        if (!this.isCompressed) {
+            LZ4Compressor compressor = this.lz4factory.fastCompressor();
 
+            int dataStart = 33 + 500 + 500 + 4;
+            int dataLength = 4096 - dataStart;
+
+            byte[] compressedBuffer = new byte[compressor.maxCompressedLength(dataLength)];
+            int compressedSize = compressor.compress(this.page, dataStart, dataLength, compressedBuffer, 0, compressedBuffer.length);
+
+            this.compressedPage = Arrays.copyOf(compressedBuffer, compressedSize);
+            this.compressedPageSize = compressedSize;
+            this.isCompressed = true;
+            this.page = null; // free space after compression
+        }
+    }
+
+    /**
+     * Decompress page with LZ4 algorithm.
+     *
+     * <h2>LZ4-Java Resource:</h2>
+     * <p>For more details on how LZ4 compression works, check:</p>
+     * <ul>
+     *   <li><a href="https://github.com/lz4/lz4-java">Github lz4-java</a></li>
+     * </ul>
+     */
+    public void decompressPage() {
+        if (this.isCompressed) {
+            LZ4FastDecompressor decompressor = this.lz4factory.fastDecompressor();
+            byte[] restored = new byte[this.page.length];
+            int deCompressedLength = decompressor.decompress(this.compressedPage, 0, restored, 0, this.page.length);
+
+            // validate decompression
+            if (deCompressedLength != this.page.length) {
+                // do something else and clean this up, ex: retry
+                throw new RuntimeException("Decompression failure with LZ4 algorithm!");
+            }
+            this.page = restored;
+            this.isCompressed = false;
+            this.compressedPage = null;
+            this.compressedPageSize = -1;
+        }
     }
 
     public void markDirty() {
