@@ -76,7 +76,12 @@ public class Page {
      * Fixed-size byte array representing the raw data of this page.
      * The default page size is 4KB (4096 bytes)
      */
-    private byte[] page = new byte[4096];
+    private byte[] page;
+
+    /**
+     * The size (bytes) of the uncompressed page.
+     */
+    private int pageSize;
 
     /**
      * Tracks available space in the page (bytes).
@@ -140,6 +145,8 @@ public class Page {
 
     public Page(long pageId) { // external PageManager will generate ids
         this.pageId = pageId;
+        this.page = new byte[4096];
+        this.pageSize = 0;
         this.availableSpace = 4096 - 128; // accounting for header size
         this.compressedPageSize = -1;
         this.compressedPage = null;
@@ -216,7 +223,11 @@ public class Page {
      * @throws IllegalStateException if the page does not have enough space.
      */
     public void insertDocument(Document document) {
+        if (this.isCompressed()) {
+            this.decompressPage();
+        }
         byte[] data = document.toBytes();
+        int totalSize = Long.BYTES + Integer.BYTES + data.length;
 
         if (!hasSpaceFor(data.length)) {
             throw new IllegalStateException("Not Enough space in this page");
@@ -225,22 +236,31 @@ public class Page {
         if (!this.deletedDocuments.isEmpty()) {
             insertionPosition = this.deletedDocuments.remove(0);
         } else {
-            insertionPosition = 4096 - this.availableSpace;
+            insertionPosition = this.page.length - this.availableSpace;
         }
         ByteBuffer buffer = ByteBuffer.wrap(this.page);
         buffer.position(insertionPosition);
 
         buffer.put(data);
         this.offsets.put(document.getDocumentId(), insertionPosition);
-        this.availableSpace -= (short) data.length;
+        this.availableSpace -= (short) totalSize;
 
         if (this.availableSpace <= 0) {
             // will need to make this check before inserting for split
             this.isFull = true;
         }
+        this.pageSize = this.page.length - availableSpace;
+        this.compressPage();
         this.markDirty();
     }
 
+    /**
+     * Retrieves a {@link Document}.
+     *
+     * @param documentId long - the documentId to be retrieved.
+     *
+     * @return {@link Document}
+     */
     public Document retrieveDocument(long documentId) {
         byte[] data = retrieveDocumentBytes(documentId);
         return (data != null) ? Document.fromBytes(data) : null;
@@ -282,7 +302,7 @@ public class Page {
      * @return byte[] - the raw byte data of the document, including metadata.
      */
     private byte[] retrieveDocumentBytes(long documentId) {
-        if (this.isCompressed) {
+        if (this.isCompressed()) {
             decompressPage();
         }
         if (!this.offsets.containsKey(documentId)) {
@@ -326,8 +346,13 @@ public class Page {
         if (this.offsets.containsKey(documentId)) {
             int offset = this.offsets.remove(documentId);
             this.deletedDocuments.add(offset);
-            this.availableSpace += 128; // TODO: update, get document size
-            this.isFull = false;
+            this.availableSpace += (short) offset;
+
+            if (this.availableSpace > 0) {
+                this.isFull = false;
+            }
+            this.pageSize = this.page.length - this.availableSpace;
+            this.compressPage();
             markDirty();
         }
     }
@@ -400,7 +425,7 @@ public class Page {
      * </ul>
      */
     public void compressPage() {
-        if (!this.isCompressed) {
+        if (!this.isCompressed()) {
             LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
             LZ4Compressor compressor = lz4Factory.fastCompressor();
 
@@ -427,7 +452,7 @@ public class Page {
      * </ul>
      */
     public void decompressPage() {
-        if (this.isCompressed) {
+        if (this.isCompressed()) {
             LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
             LZ4FastDecompressor decompressor = lz4Factory.fastDecompressor();
             byte[] restored = new byte[this.page.length];
