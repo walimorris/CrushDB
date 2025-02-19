@@ -19,8 +19,22 @@ import java.util.*;
  * A Page consists of:
  * <ul>
  *   <li><b>Header:</b> Metadata such as Page ID, available space, and pointers to other pages.</li>
- *   <li><b>Document Storage:</b> Serialized document data (BSON).</li>
+ *   <li><b>Document Storage:</b> Serialized document data (BSON or raw byte format - TBD).</li>
  *   <li><b>Offsets Table:</b> Keeps track of document positions within the page for fast access.</li>
+ * </ul>
+ *
+ * <h2>Document Format:</h2>
+ * Each document stored in a Page follows this structure:
+ * <pre>
+ * +------------+--------------+------------------+
+ * | 8 bytes    | 4 bytes      | Variable         |
+ * | documentId | documentSize | documentContent  |
+ * +------------+--------------+------------------+
+ * </pre>
+ * <ul>
+ *   <li><b>Document ID (8 bytes):</b> Unique identifier for the document.</li>
+ *   <li><b>Document Size (4 bytes):</b> Length of the document content.</li>
+ *   <li><b>Document Content (n bytes):</b> The actual serialized document data.</li>
  * </ul>
  *
  * <h2>Why Use Pages?</h2>
@@ -51,22 +65,78 @@ import java.util.*;
  * @version 1.0
  */
 public class Page {
-    private final long pageId; // unique identifier for each page
-    private byte[] page = new byte[4096]; // fixed size of page
-    private short availableSpace; // free space in page
+
+    /**
+     * Unique identifier for this page.
+     * Used for referencing the page within storage.
+     */
+    private final long pageId;
+
+    /**
+     * Fixed-size byte array representing the raw data of this page.
+     * The default page size is 4KB (4096 bytes)
+     */
+    private byte[] page = new byte[4096];
+
+    /**
+     * Tracks available space in the page (bytes).
+     * This value decreases as new documents are added.
+     */
+    private short availableSpace;
+
+    /**
+     * Stores the compressed version of this page (if compression is enabled).
+     * Used to save storage space.
+     */
     private byte[] compressedPage;
+
+    /**
+     * The size (bytes) of the compressed page.
+     * This is different from `page.length` since compression reduces size.
+     */
     private int compressedPageSize;
-    private long next; // reference to next page
-    private long previous; // reference to previous page
 
-    private List<Integer> deletedDocuments; // track deleted documents for reuse
-    private Map<Long, Integer> offsets; // document positions in page, quick lookup
+    /**
+     * Reference to the next page in a sequence (if applicable).
+     * Used for linked-page traversal.
+     */
+    private long next;
 
-    private boolean isFull; // is page full
-    private boolean isDirty; // needs to be written to disk? has it been modified
-    private boolean isCompressed; // is page compressed?
+    /**
+     * Reference to the previous page in a sequence (if applicable).
+     * Enables bidirectional traversal.
+     */
+    private long previous;
 
-    private final LZ4Factory lz4factory;
+    /**
+     * List of offsets marking where deleted documents were stored.
+     * These positions can be reused for new inserts at Earliest Deleted Document (EDD).
+     */
+    private List<Integer> deletedDocuments;
+
+    /**
+     * Maps document IDs to their position within the page.
+     * Enables quick lookup of document locations.
+     */
+    private Map<Long, Integer> offsets;
+
+    /**
+     * indicates whether the page is full (no more space for new documents).
+     * If `True`, a new page may need to be created.
+     */
+    private boolean isFull;
+
+    /**
+     * Indicates whether the page has been modified since the last write to storage.
+     * Used to determine if the page needs to be persisted.
+     */
+    private boolean isDirty;
+
+    /**
+     * Indicates whether the page is currently stored in a compressed format.
+     * If `True`, `compressedPage` contains the compressed data.
+     */
+    private boolean isCompressed;
 
     public Page(long pageId) { // external PageManager will generate ids
         this.pageId = pageId;
@@ -80,7 +150,6 @@ public class Page {
         this.isFull = false;
         this.isDirty = false;
         this.isCompressed = false;
-        this.lz4factory = LZ4Factory.fastestInstance();
     }
 
     // TODO: remove
@@ -94,7 +163,6 @@ public class Page {
         this.isFull = buffer.get() == 1;
         this.isDirty = buffer.get() == 1;
         this.isCompressed = buffer.get() == 1;
-        this.lz4factory = LZ4Factory.fastestInstance();
 
         // offset table begins at byte 30 after header metadata
         int offsetTableStart = 30;
@@ -124,11 +192,33 @@ public class Page {
         buffer.get(this.page);
     }
 
+    /**
+     * Inserts a {@link Document} into the page.
+     *
+     * <p><b>Steps for Insertion:</b></p>
+     * <ol>
+     *   <li>Convert the document into a byte array representation.</li>
+     *   <li>Check if there is enough available space in the page.</li>
+     *   <li>Determine the insertion position:
+     *       <ul>
+     *           <li>If space is available, use the next free position.</li>
+     *           <li>If an <i>earliest deleted document</i> (EDD) exists, reuse its position.</li>
+     *       </ul>
+     *   </li>
+     *   <li>Wrap the page in a {@link ByteBuffer} and move to the insertion position.</li>
+     *   <li>Copy the document bytes into the buffer at the insertion position.</li>
+     *   <li>Update the <i>offset map</i> to store the document ID and its position.</li>
+     *   <li>If the page is now full, mark it as <b>full</b>.</li>
+     *   <li>Mark the page as <b>dirty</b> (modified) for persistence tracking.</li>
+     * </ol>
+     *
+     * @param document The {@link Document} to be inserted.
+     * @throws IllegalStateException if the page does not have enough space.
+     */
     public void insertDocument(Document document) {
         byte[] data = document.toBytes();
-        int totalSize = Integer.BYTES + data.length; // Store document length + content
 
-        if (!hasSpaceFor(totalSize)) {
+        if (!hasSpaceFor(data.length)) {
             throw new IllegalStateException("Not Enough space in this page");
         }
         int insertionPosition;
@@ -140,14 +230,13 @@ public class Page {
         ByteBuffer buffer = ByteBuffer.wrap(this.page);
         buffer.position(insertionPosition);
 
-        buffer.putInt(data.length);
-
         buffer.put(data);
         this.offsets.put(document.getDocumentId(), insertionPosition);
-        this.availableSpace -= (short) totalSize;
+        this.availableSpace -= (short) data.length;
 
         if (this.availableSpace <= 0) {
-            this.isFull = true; // will need to make this check before inserting for split
+            // will need to make this check before inserting for split
+            this.isFull = true;
         }
         this.markDirty();
     }
@@ -157,6 +246,41 @@ public class Page {
         return (data != null) ? Document.fromBytes(data) : null;
     }
 
+    /**
+     * Retrieves a {@link Document} bytes[].
+     *
+     * <p><b>Steps for Retrieval:</b></p>
+     * <ol>
+     *   <li>If document is compressed, decompress the document before reading.</li>
+     *   <li>Check if offsets map contains the documentId.</li>
+     *   <li>Determine the document position in offset map.</li>
+     *   <li>Wrap the page in a {@link ByteBuffer} and move to document's position.</li>
+     *   <li>Read the first 8 bytes (documentId) and validate it matches the expected documentId.</li>
+     *   <li>Read the next 4 bytes (document size) and calculate total size.</li>
+     *   <li>Check and validate that the document length does not exceed the page bounds.</li>
+     *   <li>Allocate a byte array with enough space for the full document:</li>
+     *   <ul>
+     *      <li><b>Metadata (12 bytes):</b> documentId (8 bytes) + document size (4 bytes).</li>
+     *      <li><b>Content (n bytes - variable length):</b> Actual serialized document.</li>
+     *   </ul>
+     *   <li>Move Buffer pointer tto the document's starting position (based on offset)</li>
+     *   <li>Read the entire document (documentId, document size, content) into document byte[] array</li>
+     * </ol>
+     *
+     * <h2>Byte Storage Format:</h2>
+     * <pre>
+     * +------------+--------------+------------------+
+     * | 8 bytes    | 4 bytes      | Variable         |
+     * | documentId | documentSize | documentContent  |
+     * +------------+--------------+------------------+
+     * </pre>
+     *
+     * <p><b>Note:</b> This method assumes that the {@link ByteBuffer} reads data in Big-Endian format,
+     * which is Java's default behavior.</p>
+     *
+     * @param documentId the documentId to be retrieved.
+     * @return byte[] - the raw byte data of the document, including metadata.
+     */
     private byte[] retrieveDocumentBytes(long documentId) {
         if (this.isCompressed) {
             decompressPage();
@@ -164,28 +288,30 @@ public class Page {
         if (!this.offsets.containsKey(documentId)) {
             return null;
         }
-        // use offset to locate the document, get the position in page and return the document bytes.
-        // Would it help storing docs with its length prefix?
+
         int start = this.offsets.get(documentId);
         ByteBuffer buffer = ByteBuffer.wrap(this.page);
-        buffer.position(start);
 
-        if (start + 4 > this.page.length) {
-            System.err.println("ERROR: Document length prefix exceeds page bounds.");
+        buffer.position(start);
+        long storedDocId = buffer.getLong();
+
+        if (storedDocId != documentId) {
+            System.err.println("ERROR: Document ID mismatch! Expected: " + documentId + ", Found: " + storedDocId);
             return null;
         }
 
-        int length = buffer.getInt();
+        // 4 bytes of documentSize
+        int documentSize = buffer.getInt();
 
-        if (start + 4 + length > this.page.length) {
+        // includes documentId(8b), documentSize(4b), documentContent(variable nB)
+        int totalLength = Long.BYTES + Integer.BYTES + documentSize;
+        if (start + totalLength > this.page.length) {
             System.err.println("ERROR: Document length exceeds page bounds.");
             return null;
         }
-        byte[] document = new byte[length];
+        byte[] document = new byte[totalLength];
+        buffer.position(start);
         buffer.get(document);
-
-        System.out.println("Retrieved bytes: " + java.util.Arrays.toString(document));
-
         return document;
     }
 
@@ -275,7 +401,8 @@ public class Page {
      */
     public void compressPage() {
         if (!this.isCompressed) {
-            LZ4Compressor compressor = this.lz4factory.fastCompressor();
+            LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
+            LZ4Compressor compressor = lz4Factory.fastCompressor();
 
             int dataStart = 33 + 500 + 500 + 4;
             int dataLength = 4096 - dataStart;
@@ -301,7 +428,8 @@ public class Page {
      */
     public void decompressPage() {
         if (this.isCompressed) {
-            LZ4FastDecompressor decompressor = this.lz4factory.fastDecompressor();
+            LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
+            LZ4FastDecompressor decompressor = lz4Factory.fastDecompressor();
             byte[] restored = new byte[this.page.length];
             int deCompressedLength = decompressor.decompress(this.compressedPage, 0, restored, 0, this.page.length);
 

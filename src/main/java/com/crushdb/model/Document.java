@@ -30,6 +30,14 @@ public class Document {
         return this.fields.get(key);
     }
 
+    /**
+     * Takes a Document, serializes the content into a {@link StringBuilder}
+     * converting it into UTF-8 bytes. A {@link ByteBuffer} is used to store
+     * documentId (8bytes), documentSize (4bytes), and the remaining bytes
+     * for the documentContent (variable byte length).
+     *
+     * @return byte[] - the raw byte data of the document, including metadata.
+     */
     public byte[] toBytes() {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, String> entry : fields.entrySet()) {
@@ -38,7 +46,6 @@ public class Document {
 
         byte[] contentBytes = sb.toString().getBytes(StandardCharsets.UTF_8);
 
-        // store document size before the data
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES + Integer.BYTES + contentBytes.length);
         buffer.putLong(documentId);
         buffer.putInt(contentBytes.length);
@@ -48,6 +55,9 @@ public class Document {
     }
 
     public static Document fromBytes(byte[] data) {
+        if (null == data || data.length == 0) {
+            throw new IllegalArgumentException("Invalid byte array: data is null or empty");
+        }
         ByteBuffer buffer = ByteBuffer.wrap(data);
 
         if (buffer.remaining() < Long.BYTES + Integer.BYTES) { // prevent underflow
