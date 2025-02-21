@@ -438,6 +438,7 @@ public class Page {
             this.compressedPage = Arrays.copyOf(compressedBuffer, compressedSize);
             this.compressedPageSize = compressedSize;
             this.isCompressed = true;
+            this.pageSize = this.page.length;
             this.page = null; // free space after compression
         }
     }
@@ -455,11 +456,11 @@ public class Page {
         if (this.isCompressed()) {
             LZ4Factory lz4Factory = LZ4Factory.fastestInstance();
             LZ4FastDecompressor decompressor = lz4Factory.fastDecompressor();
-            byte[] restored = new byte[this.page.length];
-            int deCompressedLength = decompressor.decompress(this.compressedPage, 0, restored, 0, this.page.length);
+            byte[] restored = new byte[this.pageSize];
+            int deCompressedLength = decompressor.decompress(this.compressedPage, 0, restored, 0, this.pageSize);
 
             // validate decompression
-            if (deCompressedLength != this.page.length) {
+            if (deCompressedLength != this.pageSize) {
                 // do something else and clean this up, ex: retry
                 throw new RuntimeException("Decompression failure with LZ4 algorithm!");
             }
