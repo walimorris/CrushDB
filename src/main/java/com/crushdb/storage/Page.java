@@ -493,27 +493,28 @@ public class Page {
      * @param documentId long documentId
      */
     public void deleteDocument(long documentId) {
-        // TODO: need to decompress document if it's compressed
-
         if (this.offsets.containsKey(documentId)) {
             int offset = this.offsets.remove(documentId);
-            this.deletedDocuments.add(offset);
-            if (!createTombstone(offset)) {
-                //  retry
+            int tombstoneDcs = createTombstone(offset);
+
+            if (tombstoneDcs == -1) {
                 System.out.println("Failed to create tombstone for Document with ID: " + documentId);
+                this.offsets.put(documentId, offset); // need to put this back for retry
+                return;
             } else {
                 System.out.println("Tombstone created for document with ID: " + documentId);
             }
-            this.availableSpace += (short) offset;
+
+            this.deletedDocuments.add(offset);
+            this.availableSpace += (short) (DOCUMENT_METADATA_SIZE + tombstoneDcs);
             if (this.availableSpace > 0) {
                 this.isFull = false;
             }
-            this.pageSize = this.page.length - this.availableSpace;
             markDirty();
         }
     }
 
-    private boolean createTombstone(int offset) {
+    private int createTombstone(int offset) {
         ByteBuffer buffer = ByteBuffer.wrap(this.page);
 
         buffer.position(offset);
@@ -533,10 +534,15 @@ public class Page {
             tombstoneBuffer.put(INACTIVE);
             tombstoneBuffer.put(document);
 
-            byte[] tombstone = tombstoneBuffer.array();
-            return tombstone.length == DOCUMENT_METADATA_SIZE + document.length;
+            byte tombstoneState = tombstoneBuffer.get(16);
+            if (tombstoneState == INACTIVE) {
+                return dcs;
+            } else {
+                System.err.println("Tombstone with state: " + tombstoneState + " for Document with ID " + id);
+                throw new IllegalStateException("ERROR: Tombstone not flagged for delete for Document with ID: " + id);
+            }
         }
-        return false;
+        return -1;
     }
 
     /**
