@@ -5,6 +5,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.crushdb.storage.Page.INACTIVE;
+
 /**
  * Represents a single Document within the CrushDB database.
  *
@@ -19,18 +21,22 @@ import java.util.Map;
  *   <li><b>Key-Value Fields:</b> Stores data in a simple key-value format.</li>
  * </ul>
  *
- * <h2>Document Byte Storage Format:</h2>
+ * <h2>Document Storage Format:</h2>
+ * Each document stored in a Page follows this structure:
  * <pre>
- * +------------+--------------+--------------+------------------+
- * | 8 bytes    | 4 bytes      | 4 bytes      | Variable         |
- * | documentId | dcs (size)   | cs (size)    | documentContent  |
- * +------------+--------------+--------------+------------------+
+ * +------------+--------------+--------------+--------------+------------------+
+ * | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte       | Variable         |
+ * | documentId | decompressed | compressed   | deletedFlag  | documentContent  |
+ * |            | size         | size         | (1=active,   | (compressed or   |
+ * |            |              |              | 0=deleted)   | uncompressed)    |
+ * +------------+--------------+--------------+--------------+------------------+
  * </pre>
  * <ul>
- *   <li><b>Document ID (8 bytes):</b> Unique identifier.</li>
- *   <li><b>Decompressed Size (4 bytes):</b> Expected size of document content.</li>
- *   <li><b>Compressed Size (4 bytes):</b> Actual size if compressed (0 if uncompressed).</li>
- *   <li><b>Document Content (n bytes):</b> UTF-8 encoded key-value pairs.</li>
+ *   <li><b>Document ID (8 bytes):</b> Unique identifier for the document.</li>
+ *   <li><b>Decompressed Size (4 bytes):</b> Original document size before compression.</li>
+ *   <li><b>Compressed Size (4 bytes):</b> Size after compression (0 if not compressed).</li>
+ *   <li><b>Deleted Flag (1 byte):</b> Indicates whether the document is deleted (0 = active, 1 = deleted).</li>
+ *   <li><b>Document Content (variable):</b> Serialized document data (compressed if applicable).</li>
  * </ul>
  *
  * <h2>Key-Value Format:</h2>
@@ -146,18 +152,22 @@ public class Document {
      *   <li>Combines metadata and document content into the final byte array.</li>
      * </ol>
      *
-     * <h2>Document Byte Storage Format:</h2>
+     * <h2>Document Storage Format:</h2>
+     * Each document stored in a Page follows this structure:
      * <pre>
-     * +------------+--------------+--------------+------------------+
-     * | 8 bytes    | 4 bytes      | 4 bytes      | Variable         |
-     * | documentId | dcs (size)   | cs (size)    | documentContent  |
-     * +------------+--------------+--------------+------------------+
+     * +------------+--------------+--------------+--------------+------------------+
+     * | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte       | Variable         |
+     * | documentId | decompressed | compressed   | deletedFlag  | documentContent  |
+     * |            | size         | size         | (1=active,   | (compressed or   |
+     * |            |              |              | 0=deleted)   | uncompressed)    |
+     * +------------+--------------+--------------+--------------+------------------+
      * </pre>
      * <ul>
-     *   <li><b>Document ID (8 bytes):</b> Unique identifier.</li>
-     *   <li><b>Decompressed Size (4 bytes):</b> Expected size of document content.</li>
-     *   <li><b>Compressed Size (4 bytes):</b> Actual size if compressed (0 if uncompressed).</li>
-     *   <li><b>Document Content (n bytes):</b> UTF-8 encoded key-value pairs.</li>
+     *   <li><b>Document ID (8 bytes):</b> Unique identifier for the document.</li>
+     *   <li><b>Decompressed Size (4 bytes):</b> Original document size before compression.</li>
+     *   <li><b>Compressed Size (4 bytes):</b> Size after compression (0 if not compressed).</li>
+     *   <li><b>Deleted Flag (1 byte):</b> Indicates whether the document is deleted (0 = active, 1 = deleted).</li>
+     *   <li><b>Document Content (variable):</b> Serialized document data (compressed if applicable).</li>
      * </ul>
      *
      * <p><b>Example of Stored Content:</b></p>
@@ -202,18 +212,22 @@ public class Document {
      *   <li>Constructs and returns a {@link Document} object with the parsed key-value pairs.</li>
      * </ol>
      *
-     * <h2>Document Byte Storage Format:</h2>
+     * <h2>Document Storage Format:</h2>
+     * Each document stored in a Page follows this structure:
      * <pre>
-     * +------------+--------------+--------------+------------------+
-     * | 8 bytes    | 4 bytes      | 4 bytes      | Variable         |
-     * | documentId | dcs (size)   | cs (size)    | documentContent  |
-     * +------------+--------------+--------------+------------------+
+     * +------------+--------------+--------------+--------------+------------------+
+     * | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte       | Variable         |
+     * | documentId | decompressed | compressed   | deletedFlag  | documentContent  |
+     * |            | size         | size         | (1=active,   | (compressed or   |
+     * |            |              |              | 0=deleted)   | uncompressed)    |
+     * +------------+--------------+--------------+--------------+------------------+
      * </pre>
      * <ul>
-     *   <li><b>Document ID (8 bytes):</b> Unique identifier.</li>
-     *   <li><b>Decompressed Size (4 bytes):</b> Expected size of document content.</li>
-     *   <li><b>Compressed Size (4 bytes):</b> Actual size if compressed (0 if uncompressed).</li>
-     *   <li><b>Document Content (n bytes):</b> UTF-8 encoded key-value pairs.</li>
+     *   <li><b>Document ID (8 bytes):</b> Unique identifier for the document.</li>
+     *   <li><b>Decompressed Size (4 bytes):</b> Original document size before compression.</li>
+     *   <li><b>Compressed Size (4 bytes):</b> Size after compression (0 if not compressed).</li>
+     *   <li><b>Deleted Flag (1 byte):</b> Indicates whether the document is deleted (0 = active, 1 = deleted).</li>
+     *   <li><b>Document Content (variable):</b> Serialized document data (compressed if applicable).</li>
      * </ul>
      *
      * <p><b>Example of Stored Content:</b></p>
@@ -241,7 +255,13 @@ public class Document {
 
         long documentId = buffer.getLong();
         int dcs = buffer.getInt();
-        int cs= buffer.getInt();
+        int cs = buffer.getInt();
+        byte df = buffer.get();
+
+        if (df == INACTIVE) {
+            System.err.println("ERROR: Document ID " + documentId + " is marked as deleted.");
+            return null;
+        }
 
         // Ensure there's enough data in the buffer
         if (buffer.remaining() < dcs) {

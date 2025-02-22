@@ -2,6 +2,7 @@ package com.crushdb.storage;
 
 import com.crushdb.model.Document;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -69,5 +70,43 @@ public class PageTest {
         Document retrievedDoc2 = page.retrieveDocument(document2.getDocumentId());
         assertNotNull(retrievedDoc1);
         assertNotNull(retrievedDoc2);
+    }
+
+
+    @Test
+    public void deleteUncompressedDocumentTest() {
+        Page page = new Page(4L, false);
+
+        Document document = new Document(12L);
+        document.put("Cassandra", "Tombstone");
+        page.insertDocument(document);
+
+        Document retrieveDocument = page.retrieveDocument(document.getDocumentId());
+        assertNotNull(retrieveDocument);
+        assertEquals("Tombstone", document.get("Cassandra"));
+
+        page.deleteDocument(document.getDocumentId());
+        Document retrieveDeletedDocument = page.retrieveDocument(document.getDocumentId());
+        assertNull(retrieveDeletedDocument);
+
+        // let's see follow on inserts and retrievals - of course crushdb will implement defragmentation,
+        // compaction, and page splits at some point but this will be good to check now that our offsets
+        // are still being positioned and pulled correctly. At some point the page will be defragmented.
+        Document document2 = new Document(15L);
+        Document document3 = new Document(789L);
+        document2.put("studentId", "01234567");
+        document3.put("employeeId", "76543210");
+        page.insertDocument(document2);
+        page.insertDocument(document3);
+
+        Document retrieveDocument2 = page.retrieveDocument(document2.getDocumentId());
+        Document retrieveDocument3 = page.retrieveDocument(document3.getDocumentId());
+
+        assertAll(
+                () -> assertNotNull(retrieveDocument2),
+                () -> assertNotNull(retrieveDocument3),
+                () -> assertEquals("01234567", retrieveDocument2.get("studentId")),
+                () -> assertEquals("76543210", retrieveDocument3.get("employeeId"))
+        );
     }
 }

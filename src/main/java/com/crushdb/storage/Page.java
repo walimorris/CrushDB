@@ -47,15 +47,15 @@ import java.util.*;
  * +------------+--------------+--------------+--------------+------------------+
  * | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte       | Variable         |
  * | documentId | decompressed | compressed   | deletedFlag  | documentContent  |
- * |            | size         | size         | (0=active,   | (compressed or   |
- * |            |              |              | 1=deleted)   | uncompressed)    |
+ * |            | size         | size         | (1=active,   | (compressed or   |
+ * |            |              |              | 0=deleted)   | uncompressed)    |
  * +------------+--------------+--------------+--------------+------------------+
  * </pre>
  * <ul>
  *   <li><b>Document ID (8 bytes):</b> Unique identifier for the document.</li>
  *   <li><b>Decompressed Size (4 bytes):</b> Original document size before compression.</li>
  *   <li><b>Compressed Size (4 bytes):</b> Size after compression (0 if not compressed).</li>
- *   <li><b>(Not yet added) Deleted Flag (1 byte):</b> Indicates whether the document is deleted (0 = active, 1 = deleted).</li>
+ *   <li><b>Deleted Flag (1 byte):</b> Indicates whether the document is deleted (0 = active, 1 = deleted).</li>
  *   <li><b>Document Content (variable):</b> Serialized document data (compressed if applicable).</li>
  * </ul>
  *
@@ -212,23 +212,62 @@ public class Page {
      * - Document ID (8 bytes)
      * - Decompressed Document Size (4 bytes)
      * - Compressed Document Size (4 bytes)
+     * - Deleted Flag size (1 byte)
      */
-    public final static int DOCUMENT_METADATA_SIZE = Long.BYTES + Integer.BYTES + Integer.BYTES;
+    public final static int DOCUMENT_METADATA_SIZE = 17;
 
     /**
-     * The maximum allowed page size in bytes. Default is 4KB (4096 bytes).
+     * The maximum allowed page size in bytes.
+     * Default is 4KB (4096 bytes).
+     * <p>
+     * This value defines the total memory allocated for storing a page,
+     * including its header and document data.
      */
-    public final static int MAX_PAGE_SIZE = 4096;
+    public final static int MAX_PAGE_SIZE = 0x1000;
+
+    /**
+     * The maximum allowed header size in bytes.
+     * Default is 128 bytes (0x80).
+     * <p>
+     * The header stores metadata about the page, including its ID, available space,
+     * and pointers to adjacent pages.
+     */
+    public final static int MAX_HEADER_SIZE = 0x80;
+
+    /**
+     * A flag representing an active document.
+     * <p>
+     * This value (0x01) indicates that a document is currently valid and should be
+     * retrievable from the page.
+     */
+    public final static byte ACTIVE = 0x01;
+
+    /**
+     * A flag representing a deleted document.
+     * <p>
+     * This value (0x00) indicates that a document has been marked as deleted
+     * and should no longer be retrievable.
+     */
+    public final static byte INACTIVE = 0x00;
+
+    /**
+     * Update in the future: CrushDB is meant as an embedded devices database, therefore more
+     * frequent tombstone purges are acceptable. In this case we can have a very short GC.
+     * This should also be configurable. Will need to find the right balance with benchmarks.
+     * Too many tombstones can have a negative impact on performance, however deleting tombstones
+     * is also a performance hindrance on CPU resources.
+     */
+    private static final long TOMBSTONE_GRACE_PERIOD_MS = 60 * 1000;
 
     public Page(long pageId, boolean autoCompressOnInsert) {
         // TODO: external PageManager will generate ids
 
         this.pageId = pageId;
-        this.page = new byte[4096];
-        this.header = new byte[128];
+        this.page = new byte[MAX_PAGE_SIZE];
+        this.header = new byte[MAX_HEADER_SIZE];
         this.headerSize = 32;
         this.pageSize = this.headerSize;
-        this.availableSpace = (short) (4096 - this.headerSize);
+        this.availableSpace = (short) (MAX_PAGE_SIZE - this.headerSize);
         this.compressedPageSize = -1;
         this.compressedPage = null;
         this.next = -1;
@@ -262,7 +301,7 @@ public class Page {
      *   </li>
      *   <li>Apply compression if <code>autoCompressOnInsert</code> is enabled.</li>
      *   <li>Wrap the page in a {@link ByteBuffer} and move to the insertion position.</li>
-     *   <li>Store document metadata (ID, decompressed size, compressed size).</li>
+     *   <li>Store document metadata (ID, decompressed size, compressed size, delete-flag).</li>
      *   <li>Copy the document bytes into the buffer at the insertion position.</li>
      *   <li>Update the <i>offset map</i> to store the document ID and its position.</li>
      *   <li>Adjust the available space and page size.</li>
@@ -271,18 +310,21 @@ public class Page {
      * </ol>
      *
      * <h2>Document Storage Format:</h2>
-     * Each document stored in the page follows this structure:
+     * Each document stored in a Page follows this structure:
      * <pre>
-     * +------------+--------------+------------+------------------+
-     * | 8 bytes    | 4 bytes      | 4 bytes    | Variable         |
-     * | documentId | dcs (size)   | cs (size)  | documentContent  |
-     * +------------+--------------+------------+------------------+
+     * +------------+--------------+--------------+--------------+------------------+
+     * | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte       | Variable         |
+     * | documentId | decompressed | compressed   | deletedFlag  | documentContent  |
+     * |            | size         | size         | (1=active,   | (compressed or   |
+     * |            |              |              | 0=deleted)   | uncompressed)    |
+     * +------------+--------------+--------------+--------------+------------------+
      * </pre>
      * <ul>
      *   <li><b>Document ID (8 bytes):</b> Unique identifier for the document.</li>
-     *   <li><b>Decompressed Size (4 bytes):</b> Original uncompressed document size.</li>
-     *   <li><b>Compressed Size (4 bytes):</b> Size after compression (0 if uncompressed).</li>
-     *   <li><b>Document Content (n bytes):</b> Serialized document data, either compressed or uncompressed.</li>
+     *   <li><b>Decompressed Size (4 bytes):</b> Original document size before compression.</li>
+     *   <li><b>Compressed Size (4 bytes):</b> Size after compression (0 if not compressed).</li>
+     *   <li><b>Deleted Flag (1 byte):</b> Indicates whether the document is deleted (0 = active, 1 = deleted).</li>
+     *   <li><b>Document Content (variable):</b> Serialized document data (compressed if applicable).</li>
      * </ul>
      *
      * @param document The {@link Document} to be inserted.
@@ -292,6 +334,7 @@ public class Page {
         byte[] data = document.toBytes();
         int dcs = data.length;
         int cs = 0;
+        byte df = ACTIVE;
 
         if (this.autoCompressOnInsert) {
             data = compressDocument(data);
@@ -313,6 +356,7 @@ public class Page {
         buffer.putLong(document.getDocumentId());
         buffer.putInt(dcs);
         buffer.putInt(cs);
+        buffer.put(df);
         buffer.put(data);
 
         this.offsets.put(document.getDocumentId(), insertionPosition);
@@ -357,13 +401,23 @@ public class Page {
      *   <li>Return the reconstructed document as a byte array.</li>
      * </ol>
      *
-     * <h2>Document Byte Storage Format:</h2>
+     * <h2>Document Storage Format:</h2>
+     * Each document stored in a Page follows this structure:
      * <pre>
-     * +------------+--------------+--------------+------------------+
-     * | 8 bytes    | 4 bytes      | 4 bytes      | Variable         |
-     * | documentId | dcs (size)   | cs (size)    | documentContent  |
-     * +------------+--------------+--------------+------------------+
+     * +------------+--------------+--------------+--------------+------------------+
+     * | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte       | Variable         |
+     * | documentId | decompressed | compressed   | deletedFlag  | documentContent  |
+     * |            | size         | size         | (1=active,   | (compressed or   |
+     * |            |              |              | 0=deleted)   | uncompressed)    |
+     * +------------+--------------+--------------+--------------+------------------+
      * </pre>
+     * <ul>
+     *   <li><b>Document ID (8 bytes):</b> Unique identifier for the document.</li>
+     *   <li><b>Decompressed Size (4 bytes):</b> Original document size before compression.</li>
+     *   <li><b>Compressed Size (4 bytes):</b> Size after compression (0 if not compressed).</li>
+     *   <li><b>Deleted Flag (1 byte):</b> Indicates whether the document is deleted (0 = active, 1 = deleted).</li>
+     *   <li><b>Document Content (variable):</b> Serialized document data (compressed if applicable).</li>
+     * </ul>
      *
      * <h2>Validation:</h2>
      * <ul>
@@ -392,10 +446,19 @@ public class Page {
         long storedDocId = buffer.getLong();
         int dcs = buffer.getInt();
         int cs = buffer.getInt();
+        byte df = buffer.get();
+
+        if (df == INACTIVE) {
+            System.out.println("WARNING: Document with ID " + documentId + ", is marked for deletion.");
+            // TODO: update document delete flag value
+            return null;
+        }
+
         if (storedDocId != documentId) {
             System.err.println("ERROR: Document ID mismatch! Expected: " + documentId + ", Found: " + storedDocId);
             return null;
         }
+
         if (cs < 0 || cs > dcs) {
             cs = 0;
         }
@@ -416,6 +479,7 @@ public class Page {
         updatedBuffer.putLong(storedDocId);
         updatedBuffer.putInt(dcs);
         updatedBuffer.putInt(cs);
+        updatedBuffer.put(df);
         updatedBuffer.put(document);
 
         return updatedBuffer.array();
@@ -432,14 +496,45 @@ public class Page {
         if (this.offsets.containsKey(documentId)) {
             int offset = this.offsets.remove(documentId);
             this.deletedDocuments.add(offset);
+            if (!createTombstone(offset)) {
+                //  retry
+                System.out.println("Failed to create tombstone for Document with ID: " + documentId);
+            } else {
+                System.out.println("Tombstone created for document with ID: " + documentId);
+            }
             this.availableSpace += (short) offset;
-
             if (this.availableSpace > 0) {
                 this.isFull = false;
             }
             this.pageSize = this.page.length - this.availableSpace;
             markDirty();
         }
+    }
+
+    private boolean createTombstone(int offset) {
+        ByteBuffer buffer = ByteBuffer.wrap(this.page);
+
+        buffer.position(offset);
+        long id = buffer.getLong();
+        int dcs = buffer.getInt();
+        int cs = buffer.getInt();
+        byte df = buffer.get();
+
+        if (df == ACTIVE) {
+            byte[] document = new byte[dcs];
+            buffer.get(document);
+
+            ByteBuffer tombstoneBuffer = ByteBuffer.allocate(DOCUMENT_METADATA_SIZE + document.length);
+            tombstoneBuffer.putLong(id);
+            tombstoneBuffer.putInt(dcs);
+            tombstoneBuffer.putInt(cs);
+            tombstoneBuffer.put(INACTIVE);
+            tombstoneBuffer.put(document);
+
+            byte[] tombstone = tombstoneBuffer.array();
+            return tombstone.length == DOCUMENT_METADATA_SIZE + document.length;
+        }
+        return false;
     }
 
     /**
