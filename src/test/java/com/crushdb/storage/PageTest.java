@@ -11,46 +11,63 @@ public class PageTest {
 
 
     @Test
-    public void testPageCompressionAndDecompression() {
+    public void pageDocumentDecompressedInsertAndReadTest() {
         long pageId = 1L;
-        Page page = new Page(pageId);
+        Page page = new Page(pageId, false);
 
         Document doc1 = new Document(1);
-        doc1.put("name", "Michael Jordan");
+        Document doc2 = new Document(2);
+        Document doc3 = new Document(3);
+
+        doc1.put("name", "Michael");
         doc1.put("age", "62");
         doc1.put("profession", "Basketball");
 
-        Document doc2 = new Document(2);
-        doc2.put("name", "Adele Laurie Blue Adkins");
-        doc2.put("age", "36");
-        doc2.put("profession", "Music Artist");
+        doc2.put("programming_language", "Java");
+
+        doc3.put("favorite_food", "Spaghetti");
 
         page.insertDocument(doc1);
         page.insertDocument(doc2);
+        page.insertDocument(doc3);
 
         Document retrievedDoc1 = page.retrieveDocument(doc1.getDocumentId());
         Document retrievedDoc2 = page.retrieveDocument(doc2.getDocumentId());
-
-        page.compressPage();
-        int totalDocSize = doc1.toBytes().length + doc2.toBytes().length;
-
-        assertTrue(page.isCompressed());
+        Document retrievedDoc3 = page.retrieveDocument(doc3.getDocumentId());
 
         assertNotNull(retrievedDoc1);
         assertNotNull(retrievedDoc2);
+        assertNotNull(retrievedDoc3);
 
         assertAll(
-                () -> assertEquals("Michael Jordan", retrievedDoc1.get("name")),
+                () -> assertEquals("Michael", retrievedDoc1.get("name")),
                 () ->  assertEquals("62", retrievedDoc1.get("age")),
                 () -> assertEquals("Basketball", retrievedDoc1.get("profession")),
-                () -> assertEquals("Adele Laurie Blue Adkins", retrievedDoc2.get("name")),
-                () -> assertEquals("36", retrievedDoc2.get("age")),
-                () -> assertEquals("Music Artist", retrievedDoc2.get("profession"))
+                () -> assertEquals("Java", retrievedDoc2.get("programming_language")),
+                () -> assertEquals("Spaghetti", retrievedDoc3.get("favorite_food"))
         );
+    }
 
-        // check if compressed page is less than or equal to 50% of the original size
-        assertTrue("Compression is not efficient! Expected < " + (totalDocSize * 0.5) +
-                                " but got " + page.getCompressedPageSize(),
-                page.getCompressedPageSize() <= totalDocSize * .5);
+    @Test
+    public void pageDocumentCompressedInsertAndReadTest() {
+        long pageId = 2L;
+        Page page = new Page(pageId, true);
+
+        Document document1 = new Document(1);
+        document1.put("Database", "MongoDB");
+        document1.put("DatabaseType", "Document");
+        document1.put("DataType", "Bson");
+
+        Document document2 = new Document(2);
+        document2.put("company_name", "Apple");
+        document2.put("company_industry", "Information Technology");
+
+        page.insertDocument(document1);
+        page.insertDocument(document2);
+
+        Document retrievedDoc1 = page.retrieveDocument(document1.getDocumentId());
+        Document retrievedDoc2 = page.retrieveDocument(document2.getDocumentId());
+        assertNotNull(retrievedDoc1);
+        assertNotNull(retrievedDoc2);
     }
 }
