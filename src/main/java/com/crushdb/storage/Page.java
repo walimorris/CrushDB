@@ -493,6 +493,8 @@ public class Page {
      * @param documentId long documentId
      */
     public void deleteDocument(long documentId) {
+        // TODO: need to decompress document if it's compressed
+
         if (this.offsets.containsKey(documentId)) {
             int offset = this.offsets.remove(documentId);
             this.deletedDocuments.add(offset);
