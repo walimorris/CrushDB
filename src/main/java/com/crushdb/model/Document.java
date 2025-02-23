@@ -1,18 +1,20 @@
 package com.crushdb.model;
 
+import com.crushdb.storageengine.page.Page;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.crushdb.storage.Page.INACTIVE;
+import static com.crushdb.storageengine.page.Page.INACTIVE;
 
 /**
  * Represents a single Document within the CrushDB database.
  *
  * <p>Each document is uniquely identified by a {@code documentId} and contains
  * key-value pairs representing structured data. Documents are stored in
- * {@link com.crushdb.storage.Page}s and serialized into a binary format for efficient storage and retrieval.</p>
+ * {@link Page}s and serialized into a binary format for efficient storage and retrieval.</p>
  *
  * <h2>Document Structure:</h2>
  * A Document consists of:

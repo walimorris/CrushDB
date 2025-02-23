@@ -1,4 +1,4 @@
-package com.crushdb.storage;
+package com.crushdb.storageengine.page;
 
 import com.crushdb.model.Document;
 import net.jpountz.lz4.LZ4Compressor;
@@ -212,7 +212,7 @@ public class Page {
      * - Compressed Document Size (4 bytes)
      * - Deleted Flag size (1 byte)
      */
-    public final static int DOCUMENT_METADATA_SIZE = 17;
+    public static final int DOCUMENT_METADATA_SIZE = 17;
 
     /**
      * The maximum allowed page size in bytes.
@@ -221,7 +221,7 @@ public class Page {
      * This value defines the total memory allocated for storing a page,
      * including its header and document data.
      */
-    public final static int MAX_PAGE_SIZE = 0x1000;
+    public static final int MAX_PAGE_SIZE = 0x1000;
 
     /**
      * The maximum allowed header size in bytes.
@@ -230,7 +230,7 @@ public class Page {
      * The header stores metadata about the page, including its ID, available space,
      * and pointers to adjacent pages.
      */
-    public final static int MAX_HEADER_SIZE = 0x80;
+    public static final int MAX_HEADER_SIZE = 0x80;
 
     /**
      * A flag representing an active document.
@@ -238,7 +238,7 @@ public class Page {
      * This value (0x01) indicates that a document is currently valid and should be
      * retrievable from the page.
      */
-    public final static byte ACTIVE = 0x01;
+    public static final byte ACTIVE = 0x01;
 
     /**
      * A flag representing a deleted document.
@@ -246,16 +246,7 @@ public class Page {
      * This value (0x00) indicates that a document has been marked as deleted
      * and should no longer be retrievable.
      */
-    public final static byte INACTIVE = 0x00;
-
-    /**
-     * Update in the future: CrushDB is meant as an embedded devices database, therefore more
-     * frequent tombstone purges are acceptable. In this case we can have a very short GC.
-     * This should also be configurable. Will need to find the right balance with benchmarks.
-     * Too many tombstones can have a negative impact on performance, however deleting tombstones
-     * is also a performance hindrance on CPU resources.
-     */
-    private static final long TOMBSTONE_GRACE_PERIOD_MS = 60 * 1000;
+    public static final byte INACTIVE = 0x00;
 
     public Page(long pageId, boolean autoCompressOnInsert) {
         // TODO: external PageManager will generate ids

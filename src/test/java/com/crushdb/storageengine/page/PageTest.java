@@ -1,4 +1,4 @@
-package com.crushdb.storage;
+package com.crushdb.storageengine.page;
 
 import com.crushdb.model.Document;
 import org.junit.Test;
