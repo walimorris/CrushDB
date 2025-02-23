@@ -106,9 +106,9 @@ public class StorageConfiguration {
     /**
      * Flag to enable or disable TLS (Transport Layer Security) for secure communication.
      * When set to {@code true}, CrushDB will enforce encrypted connections using TLS.
-     * Default: {@code true}
+     * Default: {@code false}
      */
-    private static final boolean TLS_ENABLED = true;
+    private static final boolean TLS_ENABLED = false;
 
     /**
      * Configuration file field indicating whether TLS (Transport Layer Security) is enabled.
