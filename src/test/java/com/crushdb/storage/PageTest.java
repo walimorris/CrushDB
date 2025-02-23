@@ -19,7 +19,7 @@ public class PageTest {
         Document doc2 = new Document(2);
         Document doc3 = new Document(3);
 
-        doc1.put("name", "Michael");
+        doc1.put("name", "Jim");
         doc1.put("age", "62");
         doc1.put("profession", "Basketball");
 
@@ -40,7 +40,7 @@ public class PageTest {
         assertNotNull(retrievedDoc3);
 
         assertAll(
-                () -> assertEquals("Michael", retrievedDoc1.get("name")),
+                () -> assertEquals("Jim", retrievedDoc1.get("name")),
                 () ->  assertEquals("62", retrievedDoc1.get("age")),
                 () -> assertEquals("Basketball", retrievedDoc1.get("profession")),
                 () -> assertEquals("Java", retrievedDoc2.get("programming_language")),
@@ -106,6 +106,90 @@ public class PageTest {
                 () -> assertNotNull(retrieveDocument3),
                 () -> assertEquals("01234567", retrieveDocument2.get("studentId")),
                 () -> assertEquals("76543210", retrieveDocument3.get("employeeId"))
+        );
+    }
+
+    @Test
+    public void compactCompressedPageTest() {
+        Page page = new Page(23, false);
+
+        Document document1 = new Document(1);
+        Document document2 = new Document(2);
+        Document document3 = new Document(3);
+        Document document4 = new Document(4L);
+        Document document5 = new Document(5L);
+
+        document1.put("name", "jim");
+        document1.put("age", "45");
+        document2.put("name", "amber");
+        document2.put("age", "32");
+        document3.put("name", "kimberly");
+        document3.put("age", "23");
+        document4.put("name", "mike");
+        document4.put("age", "26");
+        document5.put("name", "sam");
+        document5.put("age", "62");
+
+        page.insertDocument(document1);
+        page.insertDocument(document2);
+        page.insertDocument(document3);
+        page.insertDocument(document4);
+        page.insertDocument(document5);
+
+        Document retrievedDocument1 = page.retrieveDocument(document1.getDocumentId());
+        Document retrievedDocument2 = page.retrieveDocument(document2.getDocumentId());
+        Document retrievedDocument3 = page.retrieveDocument(document3.getDocumentId());
+        Document retrievedDocument4 = page.retrieveDocument(document4.getDocumentId());
+        Document retrievedDocument5 = page.retrieveDocument(document5.getDocumentId());
+
+        assertAll(
+                () -> assertNotNull(retrievedDocument1),
+                () -> assertNotNull(retrievedDocument2),
+                () -> assertNotNull(retrievedDocument3),
+                () -> assertNotNull(retrievedDocument4),
+                () -> assertNotNull(retrievedDocument5),
+                () -> assertEquals("jim", retrievedDocument1.get("name")),
+                () -> assertEquals("amber", retrievedDocument2.get("name")),
+                () -> assertEquals("kimberly", retrievedDocument3.get("name")),
+                () -> assertEquals("mike", retrievedDocument4.get("name")),
+                () -> assertEquals("sam", retrievedDocument5.get("name"))
+        );
+
+        // now for deletes
+        page.deleteDocument(document1.getDocumentId());
+        page.deleteDocument(document2.getDocumentId());
+
+        Document deletedDocument1 = page.retrieveDocument(document1.getDocumentId());
+        Document deletedDocument2 = page.retrieveDocument(document2.getDocumentId());
+
+        // expect null documents
+        assertNull(deletedDocument1);
+        assertNull(deletedDocument2);
+
+        // expect not null document
+        assertNotNull(page.retrieveDocument(document3.getDocumentId()));
+        assertNotNull(page.retrieveDocument(document4.getDocumentId()));
+        assertNotNull(page.retrieveDocument(document5.getDocumentId()));
+
+        // Documents have been added with data and validated.
+        // Documents have been deleted and valid.
+        // Documents that weren't deleted remain and are validated.
+        // This only tells us that the offsets are being read correctly in the page.
+        // Now we will compact the page and attempt the same validations.
+        boolean success = page.compactPage();
+        assertTrue(success);
+
+        Document compactedDocument3 = page.retrieveDocument(document3.getDocumentId());
+        Document compactedDocument4 = page.retrieveDocument(document4.getDocumentId());
+        Document compactedDocument5 = page.retrieveDocument(document5.getDocumentId());
+
+        assertAll(
+                () -> assertNotNull(compactedDocument3),
+                () -> assertNotNull(compactedDocument4),
+                () -> assertNotNull(compactedDocument5),
+                () -> assertEquals("kimberly", compactedDocument3.get("name")),
+                () -> assertEquals("mike", compactedDocument4.get("name")),
+                () -> assertEquals("sam", compactedDocument5.get("name"))
         );
     }
 }

@@ -159,7 +159,7 @@ public class Page {
      * These positions can be reused for new inserts at the earliest deleted document (EDD).
      * Helps in space reclamation and reducing fragmentation.
      */
-    private List<Integer> deletedDocuments;
+    private Set<Integer> deletedDocuments;
 
     /**
      * Maps document IDs to their position within the page.
@@ -264,15 +264,15 @@ public class Page {
 
         this.pageId = pageId;
         this.page = new byte[MAX_PAGE_SIZE];
-        this.header = new byte[MAX_HEADER_SIZE];
         this.headerSize = 32;
+        this.header = new byte[this.headerSize];
         this.pageSize = this.headerSize;
         this.availableSpace = (short) (MAX_PAGE_SIZE - this.headerSize);
         this.compressedPageSize = -1;
         this.compressedPage = null;
         this.next = -1;
         this.previous = -1;
-        this.deletedDocuments = new ArrayList<>();
+        this.deletedDocuments = new HashSet<>();
         this.offsets = new HashMap<>();
         this.isFull = false;
         this.isDirty = false;
@@ -506,10 +506,6 @@ public class Page {
             }
 
             this.deletedDocuments.add(offset);
-            this.availableSpace += (short) (DOCUMENT_METADATA_SIZE + tombstoneDcs);
-            if (this.availableSpace > 0) {
-                this.isFull = false;
-            }
             markDirty();
         }
     }
@@ -631,8 +627,118 @@ public class Page {
 
     }
 
-    private void compactPage() {
+    /**
+     * Performs in-place page compaction by removing deleted (tombstoned) documents
+     * and defragmentation the remaining active documents to reclaim space.
+     *
+     * <p>During compaction:</p>
+     * <ul>
+     *   <li>The page header is copied into a new buffer.</li>
+     *   <li>Only active documents are copied into the new buffer.</li>
+     *   <li>Offsets are updated to reflect new positions of documents.</li>
+     *   <li>Available space is recalculated.</li>
+     * </ul>
+     *
+     * <h2>Compaction Process:</h2>
+     * <ol>
+     *   <li>Create a new page buffer of the same size.</li>
+     *   <li>Copy the first {@code headerSize} bytes (header) from the old page.</li>
+     *   <li>Iterate over all document offsets:</li>
+     *   <ul>
+     *       <li>Read document metadata (ID, decompressed size, compressed size, delete flag).</li>
+     *       <li>If marked as deleted, skip it and reclaim space.</li>
+     *       <li>If active, copy it to the new buffer and update its offset.</li>
+     *   </ul>
+     *   <li>Replace the old page with the compacted version.</li>
+     *   <li>Update metadata: offsets, page size, and available space.</li>
+     * </ol>
+     *
+     * <h2>Error Handling:</h2>
+     * <ul>
+     *   <li>If an inconsistency is detected (e.g., offset mismatch), an exception is thrown.</li>
+     *   <li>If an error occurs during compaction, an error message is logged.</li>
+     * </ul>
+     *
+     * <h2>Performance Considerations:</h2>
+     * <ul>
+     *   <li>Compaction is a CPU-intensive operation and should be triggered strategically.</li>
+     *   <li>Running compaction too frequently may cause unnecessary performance overhead.</li>
+     *   <li>CrushDB wants to crush data to keep a small footprint, so compaction is an
+     *       important process. However, we will run benchmarks against various use-cases to
+     *       validate the best compaction rates and GraceTimes.
+     *    </li>
+     * </ul>
+     *
+     * <p><b>Note:</b>This method does not modify document content, only reorganizes it in memory.</p>
+     *
+     * @see Page#TOMBSTONE_GRACE_PERIOD_MS
+     */
+    public boolean compactPage() {
+        int originalAvailableSpace = this.availableSpace;
+        ByteBuffer buffer = ByteBuffer.wrap(this.page);
+        ByteBuffer newPageBuffer = ByteBuffer.allocate(MAX_PAGE_SIZE);
 
+        // copy first 32 bytes into new buffer
+        byte[] header = new byte[this.headerSize];
+        buffer.get(header, 0, this.headerSize);
+        newPageBuffer.put(header);
+
+        // like buffer, create new offset map for later swap
+        Map<Long, Integer> newOffsetMap = new HashMap<>();
+
+        for (Map.Entry<Long, Integer> offset: this.offsets.entrySet()) {
+            long documentId = offset.getKey();
+            int offsetValue = offset.getValue();
+
+            // go straight to the offset
+            buffer.position(offsetValue);
+
+            // read document header an obtain id, dcs, cs, df
+            // there's no need to read the document, it only
+            // matters if it is marked for deletion or not.
+            long id = buffer.getLong();
+            int dcs = buffer.getInt();
+            int cs = buffer.getInt();
+            byte df = buffer.get();
+
+            if (id != documentId) {
+                throw new IllegalStateException("Error: offset does not match current document scanned " +
+                        "in defragmentation process. Reverting to original page.");
+            }
+
+            try {
+                // check if document is active - ignoring flagged docs
+                // new space is reclaimed at end
+                if (df == ACTIVE) {
+                    // it's active write to the new buffer, get new offset and add to new offset map
+                    int offsetPosition = newPageBuffer.position();
+                    newOffsetMap.put(id, offsetPosition);
+
+                    newPageBuffer.putLong(id);
+                    newPageBuffer.putInt(dcs);
+                    newPageBuffer.putInt(cs);
+                    newPageBuffer.put(df);
+
+                    // get document and put in new buffer
+                    byte[] document = cs == 0 ? new byte[dcs] : new byte[cs];
+                    buffer.get(document);
+                    newPageBuffer.put(document);
+                }
+            } catch (Exception e) {
+                System.err.println("ERROR: interruption during defragmentation process: " + e.getLocalizedMessage());
+                return false;
+            }
+        }
+        this.page = newPageBuffer.array();
+        this.pageSize = newPageBuffer.position();
+        this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
+        this.offsets = newOffsetMap;
+
+        System.out.println("Successful Defragmentation on Page with ID " + "'" + this.pageId + "'" + ".");
+        System.out.println("Original Available Space: " + originalAvailableSpace + " bytes");
+        System.out.println("New Available space: " + this.availableSpace + " bytes");
+        System.out.println("Space reclaimed: " + (this.availableSpace - originalAvailableSpace) + " bytes");
+        return true;
     }
 
     /**

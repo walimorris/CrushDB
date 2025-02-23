@@ -277,6 +277,7 @@ public class Document {
         }
 
         // Parse document fields
+        // TODO: document isn't being read correctly with single pair ("name":"same")
         Document doc = new Document(documentId);
         String[] pairs = content.split(";");
         for (String pair : pairs) {
