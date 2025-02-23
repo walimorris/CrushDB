@@ -155,11 +155,9 @@ public class Page {
     private long previous;
 
     /**
-     * List of offsets marking positions of deleted documents within the page.
-     * These positions can be reused for new inserts at the earliest deleted document (EDD).
-     * Helps in space reclamation and reducing fragmentation.
+     * List of document IDS marking  deleted documents within the page.
      */
-    private Set<Integer> deletedDocuments;
+    private Set<Long> deletedDocuments;
 
     /**
      * Maps document IDs to their position within the page.
@@ -361,6 +359,7 @@ public class Page {
 
         this.offsets.put(document.getDocumentId(), insertionPosition);
         this.availableSpace -= (short) totalSize;
+        System.out.println("Available Space After Insert: " + this.availableSpace + " bytes");
         this.pageSize = insertionPosition + totalSize;
 
         updateHeader();
@@ -435,6 +434,10 @@ public class Page {
      * @throws IllegalStateException If decompression fails or size mismatches are detected.
      */
     private byte[] retrieveDocumentBytes(long documentId) {
+        if (this.deletedDocuments.contains(documentId)) {
+            System.err.println("Document with ID " + "'" + documentId + "'" + "marked for deletion.");
+            return null;
+        }
         if (!this.offsets.containsKey(documentId)) {
             System.err.println("ERROR: Document ID " + documentId + " not found in offsets.");
             return null;
@@ -494,10 +497,9 @@ public class Page {
      */
     public void deleteDocument(long documentId) {
         if (this.offsets.containsKey(documentId)) {
-
-            // TODO: update: don't remove, just mark
-            // compaction will remove
-            int offset = this.offsets.remove(documentId);
+            // get offset to create tombstone
+            // add documentId to deletionMap
+            int offset = this.offsets.get(documentId);
             int tombstoneDcs = createTombstone(offset);
 
             if (tombstoneDcs == -1) {
@@ -507,8 +509,7 @@ public class Page {
             } else {
                 System.out.println("Tombstone created for document with ID: " + documentId);
             }
-
-            this.deletedDocuments.add(offset);
+            this.deletedDocuments.add(documentId);
             markDirty();
         }
     }
@@ -523,17 +524,12 @@ public class Page {
         byte df = buffer.get();
 
         if (df == ACTIVE) {
-            byte[] document = new byte[dcs];
-            buffer.get(document);
+            // move buffer position back to the flag's location and overwrite it
+            buffer.position(offset + 16);
+            buffer.put(INACTIVE);
 
-            ByteBuffer tombstoneBuffer = ByteBuffer.allocate(DOCUMENT_METADATA_SIZE + document.length);
-            tombstoneBuffer.putLong(id);
-            tombstoneBuffer.putInt(dcs);
-            tombstoneBuffer.putInt(cs);
-            tombstoneBuffer.put(INACTIVE);
-            tombstoneBuffer.put(document);
-
-            byte tombstoneState = tombstoneBuffer.get(16);
+            // check flag was correctly updated
+            byte tombstoneState = buffer.get(offset + 16);
             if (tombstoneState == INACTIVE) {
                 return dcs;
             } else {
@@ -654,6 +650,7 @@ public class Page {
      *   </ul>
      *   <li>Replace the old page with the compacted version.</li>
      *   <li>Update metadata: offsets, page size, and available space.</li>
+     *   <li>Delete Set storing deleted Document IDs</li>
      * </ol>
      *
      * <h2>Error Handling:</h2>
@@ -704,6 +701,12 @@ public class Page {
             int cs = buffer.getInt();
             byte df = buffer.get();
 
+            System.out.println("doc id = " + id);
+            System.out.println("dcs = " + dcs);
+            System.out.println("cs = " + cs);
+            System.out.println("df = " + df);
+            System.out.println("-------------------------");
+
             if (id != documentId) {
                 throw new IllegalStateException("Error: offset does not match current document scanned " +
                         "in defragmentation process. Reverting to original page.");
@@ -732,10 +735,14 @@ public class Page {
                 return false;
             }
         }
+        System.out.println("old offset count: " + this.offsets.size());
+        System.out.println("new ofsset count: " + newOffsetMap.size());
+
         this.page = newPageBuffer.array();
         this.pageSize = newPageBuffer.position();
         this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
         this.offsets = newOffsetMap;
+        this.deletedDocuments.clear();
 
         System.out.println("Successful Defragmentation on Page with ID " + "'" + this.pageId + "'" + ".");
         System.out.println("Original Available Space: " + originalAvailableSpace + " bytes");

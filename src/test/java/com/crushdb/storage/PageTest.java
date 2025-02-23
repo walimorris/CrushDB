@@ -110,7 +110,7 @@ public class PageTest {
     }
 
     @Test
-    public void compactCompressedPageTest() {
+    public void compactUnCompressedPageTest() {
         Page page = new Page(23, false);
 
         Document document1 = new Document(1);
