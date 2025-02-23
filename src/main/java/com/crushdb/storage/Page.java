@@ -742,6 +742,11 @@ public class Page {
         this.pageSize = newPageBuffer.position();
         this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
         this.offsets = newOffsetMap;
+
+        // It's wild to think there's no way to reclaim these deleted documents - poof gone!
+        // this.page reset has officially obliterated any trace off the face of the planet.
+        // How many times have I thought how great it'd be to reclaim something that has
+        // been accidentally removed, however I guess that defeats the purpose. Bye.. for now.
         this.deletedDocuments.clear();
 
         System.out.println("Successful Defragmentation on Page with ID " + "'" + this.pageId + "'" + ".");
