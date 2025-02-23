@@ -494,6 +494,9 @@ public class Page {
      */
     public void deleteDocument(long documentId) {
         if (this.offsets.containsKey(documentId)) {
+
+            // TODO: update: don't remove, just mark
+            // compaction will remove
             int offset = this.offsets.remove(documentId);
             int tombstoneDcs = createTombstone(offset);
 
