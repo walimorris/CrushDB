@@ -20,6 +20,7 @@ import java.nio.file.Paths;
  * ├── data/    # Stores database pages and indexes
  * ├── wal/     # Stores Write-Ahead Logs for crash recovery
  * ├── log/     # Stores error/debug logs
+ * ├── certs/   # Stores custom user supplied certificates
  * ├── crushdb.conf  # Configuration file
  * </pre>
  *
@@ -68,11 +69,25 @@ public class StorageConfiguration {
     public static final int MAX_PAGE_SIZE = 0x1000;
 
     /**
+     * Configuration file field representing the database page size.
+     * This field defines the size of a single page in the crushdb storage engine.
+     * Example: page_size=4096
+     */
+    public static final String PAGE_SIZE_FIELD = "page_size=";
+
+    /**
      * Tombstone grace period (in milliseconds) before deleted data is permanently removed.
      * This prevents immediate deletion to allow for recovery or conflict resolution.
      * Default is set to 60 seconds (60000 ms).
      */
     public static final long TOMBSTONE_GRACE_PERIOD_MS = 60 * 1000;
+
+    /**
+     * Configuration file field defining the tombstone garbage collection grace period.
+     * This determines how long deleted data (tombstones) should be retained before being permanently removed.
+     * Example: tombstone_gc=60000 (milliseconds)
+     */
+    public static final String TOMBSTONE_GRACE_PERIOD_MS_FIELD = "tombstone_gc=";
 
     /**
      * Flag indicating whether Write-Ahead Logging (WAL) is enabled.
@@ -82,20 +97,6 @@ public class StorageConfiguration {
     public static final boolean WAL_ENABLED = true;
 
     /**
-     * Configuration file field representing the storage path.
-     * This field is used in the configuration file to specify where database files should be stored.
-     * Example: storage_path=/home/user/.crushdb/data/
-     */
-    public static final String STORAGE_PATH_FIELD = "storage_path=";
-
-    /**
-     * Configuration file field representing the database page size.
-     * This field defines the size of a single page in the crushdb storage engine.
-     * Example: page_size=4096
-     */
-    public static final String PAGE_SIZE_FIELD = "page_size=";
-
-    /**
      * Configuration file field indicating whether Write-Ahead Logging (WAL) is enabled.
      * If set to true, WAL is used for durability and crash recovery.
      * Example: wal_enabled=true
@@ -103,11 +104,79 @@ public class StorageConfiguration {
     public static final String WAL_ENABLED_FIELD = "wal_enabled=";
 
     /**
-     * Configuration file field defining the tombstone garbage collection grace period.
-     * This determines how long deleted data (tombstones) should be retained before being permanently removed.
-     * Example: tombstone_gc=60000 (milliseconds)
+     * Flag to enable or disable TLS (Transport Layer Security) for secure communication.
+     * When set to {@code true}, CrushDB will enforce encrypted connections using TLS.
+     * Default: {@code true}
      */
-    public static final String TOMBSTONE_GRACE_PERIOD_MS_FIELD = "tombstone_gc=";
+    private static final boolean TLS_ENABLED = true;
+
+    /**
+     * Configuration file field indicating whether TLS (Transport Layer Security) is enabled.
+     * When set to {@code true}, CrushDB enforces encrypted communication for secure data transmission.
+     * Example configuration entry:{@code tls_enabled=true}
+     */
+    public static final String TLS_ENABLED_FIELD = "tls_enabled=";
+
+    /**
+     * Default system CA (Certificate Authority) certificate path used for TLS verification.
+     * This is the standard location on Debian/Ubuntu-based Linux systems where trusted CA
+     * certificates are stored for validating SSL/TLS connections.
+     * <p>
+     *     Example:
+     *     <ul>
+     *         <li>Debian/Ubuntu: {@code /etc/ssl/certs/ca-certificates.crt}</li>
+     *         <li>RHEL/CentOS: {@code /etc/pki/tls/certs/ca-bundle.crt}</li>
+     *         <li>Alpine Linux: {@code /etc/ssl/cert.pem}</li>
+     *     </ul>
+     * </p>
+     *
+     * If CrushDB is running on a different Linux distribution, this path should be updated
+     * accordingly in the configuration file.
+     * Default: {@code /etc/ssl/certs/ca-certificates.crt}
+     */
+    private static final String CA_CERT_PATH = "/etc/ssl/certs/ca-certificates.crt";
+
+    /**
+     * Configuration file field specifying the path to the system-wide CA (Certificate Authority) certificate file.
+     * This certificate is used to verify the identity of external servers when establishing secure connections.
+     * By default, CrushDB uses the standard CA certificate location for Debian/Ubuntu systems:
+     * {@code /etc/ssl/certs/ca-certificates.crt}
+     *
+     * Example configuration entry:
+     * {@code ca_cert_path=/etc/ssl/certs/ca-certificates.crt}
+     */
+    public static final String CA_CERT_PATH_FIELD = "ca_cert_path=";
+
+    /**
+     * Path to the directory where CrushDB stores custom user-supplied certificates.
+     * This directory allows users to override the default system CA certificate if needed.
+     * If a custom CA certificate is placed in this directory, CrushDB will use it for
+     * TLS verification instead of the default system CA.
+     * Default location: {@code ~/.crushdb/certs}
+     */
+    private static final String CU_CA_CERT_PATH = BASE_DIR + "certs/";
+
+    /**
+     * Configuration file field specifying the path to a custom user-supplied CA certificate file.
+     * If set, CrushDB will use this certificate instead of the default system CA certificate.
+     * This is useful for:
+     * <ul>
+     *   <li>Private cloud environments with custom certificate authorities.</li>
+     *   <li>Enterprise security policies requiring non-standard CA certificates.</li>
+     *   <li>Self-signed certificates for internal services.</li>
+     * </ul>
+     *
+     * Example configuration entry:
+     * {@code custom_ca_cert_path=~/.crushdb/certs/my_ca_cert.pem}
+     */
+    public static final String CU_CA_CERT_PATH_FIELD = "custom_ca_cert_path=";
+
+    /**
+     * Configuration file field representing the storage path.
+     * This field is used in the configuration file to specify where database files should be stored.
+     * Example: storage_path=/home/user/.crushdb/data/
+     */
+    public static final String STORAGE_PATH_FIELD = "storage_path=";
 
     public static boolean init() {
 
@@ -116,8 +185,9 @@ public class StorageConfiguration {
         boolean log = createDirectory(LOG_DIR);
         boolean data = createDirectory(DATA_DIR);
         boolean wal = createDirectory(WAL_DIR);
+        boolean certs = createDirectory(CU_CA_CERT_PATH);
 
-        if (base && log && data && wal) {
+        if (base && log && data && wal && certs) {
             isInit = createConfiguration();
         }
         return isInit;
@@ -147,8 +217,11 @@ public class StorageConfiguration {
         try (FileWriter writer = new FileWriter(config)) {
             writer.write(String.format("%s%d\n", PAGE_SIZE_FIELD, MAX_PAGE_SIZE));
             writer.write(String.format("%s%b\n", WAL_ENABLED_FIELD, WAL_ENABLED));
+            writer.write(String.format("%s%s\n", TLS_ENABLED_FIELD, TLS_ENABLED));
             writer.write(String.format("%s%d\n", TOMBSTONE_GRACE_PERIOD_MS_FIELD, TOMBSTONE_GRACE_PERIOD_MS));
-            writer.write(String.format("%s%s", STORAGE_PATH_FIELD, DATA_DIR));
+            writer.write(String.format("%s%s\n", STORAGE_PATH_FIELD, DATA_DIR));
+            writer.write(String.format("%s%s\n", CU_CA_CERT_PATH_FIELD, CU_CA_CERT_PATH));
+            writer.write(String.format("%s%s\n", CA_CERT_PATH_FIELD, CA_CERT_PATH));
             System.out.println("CrushDB Configuration file spawned: " + CONFIGURATION_FILE);
             return true;
         }  catch (IOException e) {

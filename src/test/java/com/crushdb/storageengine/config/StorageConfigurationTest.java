@@ -11,5 +11,4 @@ public class StorageConfigurationTest {
         boolean initCrushDBConfig = StorageConfiguration.init();
         assertTrue(initCrushDBConfig);
     }
-
 }
