@@ -6,6 +6,7 @@ import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -456,18 +457,13 @@ public class Page {
             return null;
         }
 
-        if (cs < 0 || cs > dcs) {
-            cs = 0;
-        }
+        // only retrieving documents - so cs remains, no need to update cs value
         int dataSize = (cs > 0) ? cs : dcs;
         byte[] document = new byte[dataSize];
         buffer.get(document);
 
         if (cs > 0) {
             document = decompressDocument(document, dcs);
-            cs = 0;
-
-            // Validate the decompressed size matches expected size
             if (document.length != dcs) {
                 throw new IllegalStateException("Decompression size mismatch! Expected " + dcs + " but got " + document.length);
             }

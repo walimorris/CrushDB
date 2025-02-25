@@ -261,7 +261,7 @@ public class Document {
         byte df = buffer.get();
 
         if (df == INACTIVE) {
-            System.err.println("ERROR: Document ID " + documentId + " is marked as deleted.");
+            System.err.println("ERROR: Document ID " + documentId + " is a tombstone marked for deletion.");
             return null;
         }
 
