@@ -27,24 +27,23 @@ public class PageTest {
 
         doc3.put("favorite_food", "Spaghetti");
 
-        page.insertDocument(doc1);
-        page.insertDocument(doc2);
-        page.insertDocument(doc3);
+        Document retrievedDocument1 = page.insertDocument(doc1);
+        Document retrievedDocument2 = page.insertDocument(doc2);
+        Document retrievedDocument3 = page.insertDocument(doc3);
 
-        Document retrievedDoc1 = page.retrieveDocument(doc1.getDocumentId());
-        Document retrievedDoc2 = page.retrieveDocument(doc2.getDocumentId());
-        Document retrievedDoc3 = page.retrieveDocument(doc3.getDocumentId());
-
-        assertNotNull(retrievedDoc1);
-        assertNotNull(retrievedDoc2);
-        assertNotNull(retrievedDoc3);
+        assertNotNull(retrievedDocument1);
+        assertNotNull(retrievedDocument2);
+        assertNotNull(retrievedDocument3);
 
         assertAll(
-                () -> assertEquals("Jim", retrievedDoc1.get("name")),
-                () ->  assertEquals("62", retrievedDoc1.get("age")),
-                () -> assertEquals("Basketball", retrievedDoc1.get("profession")),
-                () -> assertEquals("Java", retrievedDoc2.get("programming_language")),
-                () -> assertEquals("Spaghetti", retrievedDoc3.get("favorite_food"))
+                () -> assertEquals("Jim", retrievedDocument1.get("name")),
+                () ->  assertEquals("62", retrievedDocument1.get("age")),
+                () -> assertEquals("Basketball", retrievedDocument1.get("profession")),
+                () -> assertEquals("Java", retrievedDocument2.get("programming_language")),
+                () -> assertEquals("Spaghetti", retrievedDocument3.get("favorite_food")),
+                () -> assertEquals(1, retrievedDocument1.getPageId()),
+                () -> assertEquals(1, retrievedDocument2.getPageId()),
+                () -> assertEquals(1, retrievedDocument3.getPageId())
         );
     }
 
@@ -209,15 +208,15 @@ public class PageTest {
         document1.put("name", "jim");
         document1.put("compressed", "true");
 
-//        document2.put("autoCompressOnInsert", "true");
-//        document2.put("maxPageSize", "4096");
-//
-//        document3.put("maxHeaderSize", "32");
-//        document3.put("documentSize", "variable");
+        document2.put("autoCompressOnInsert", "true");
+        document2.put("maxPageSize", "4096");
+
+        document3.put("maxHeaderSize", "32");
+        document3.put("documentSize", "variable");
 
         page.insertDocument(document1);
-//        page.insertDocument(document2);
-//        page.insertDocument(document3);
+        page.insertDocument(document2);
+        page.insertDocument(document3);
 
         Document retrieveDocument1 = page.retrieveDocument(document1.getDocumentId());
         Document retrieveDocument2 = page.retrieveDocument(document2.getDocumentId());
@@ -225,11 +224,19 @@ public class PageTest {
 
         assertAll(
                 () -> assertEquals("jim", retrieveDocument1.get("name")),
-                () -> assertEquals("true", retrieveDocument1.get("compressed"))
-//                () -> assertEquals("true", retrieveDocument2.get("autoCompressOnInsert")),
-//                () -> assertEquals("4096", retrieveDocument2.get("maxPageSize")),
-//                () -> assertEquals("32", retrieveDocument3.get("maxHeaderSize")),
-//                () -> assertEquals("variable", retrieveDocument3.get("documentSize"))
+                () -> assertEquals("true", retrieveDocument1.get("compressed")),
+                () -> assertEquals("true", retrieveDocument2.get("autoCompressOnInsert")),
+                () -> assertEquals("4096", retrieveDocument2.get("maxPageSize")),
+                () -> assertEquals("32", retrieveDocument3.get("maxHeaderSize")),
+                () -> assertEquals("variable", retrieveDocument3.get("documentSize"))
         );
+
+        // page is compressed with autoCompressOnInsert, now for decompressing the whole page
+        // this means, rather than decompressing individual pages, we batch decompress
+        page.decompressPage();
+        Document retrievedResult = page.retrieveDocument(retrieveDocument1.getDocumentId());
+        assertEquals("jim", retrievedResult.get("name"));
+        System.out.println("decompressedSize = " + retrievedResult.getDecompressedSize());
+        System.out.println("compressedSize = " + retrievedResult.getCompressedSize());
     }
 }

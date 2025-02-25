@@ -26,12 +26,12 @@ import static com.crushdb.storageengine.page.Page.INACTIVE;
  * <h2>Document Storage Format:</h2>
  * Each document stored in a Page follows this structure:
  * <pre>
- * +------------+--------------+--------------+--------------+------------------+
- * | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte       | Variable         |
- * | documentId | decompressed | compressed   | deletedFlag  | documentContent  |
- * |            | size         | size         | (1=active,   | (compressed or   |
- * |            |              |              | 0=deleted)   | uncompressed)    |
- * +------------+--------------+--------------+--------------+------------------+
+ * +------------+------------+--------------+--------------+--------------+--------------------+
+ * | 8 bytes    | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte        | Variable          |
+ * | documentId | pageId     | decompressed | compressed   | deletedFlag   | documentContent   |
+ * |            |            | size         | size         | (1=active,    | (compressed or    |
+ * |            |            |              |              | 0=deleted)    | uncompressed)     |
+ * +------------+------------+--------------+--------------+--------------+--------------------+
  * </pre>
  * <ul>
  *   <li><b>Document ID (8 bytes):</b> Unique identifier for the document.</li>
@@ -75,6 +75,8 @@ import static com.crushdb.storageengine.page.Page.INACTIVE;
  * the Page class for Document storage format with delete-flag.
  * </p>
  *
+ * TODO: reference to page to always reflect changes
+ *
  * @author Wali Morris
  * @version 1.0
  */
@@ -84,6 +86,12 @@ public class Document {
      * Unique identifier for the document. Assigned upon creation and cannot be modified.
      */
     private final long documentId;
+
+    private long pageId;
+
+    private int decompressedSize;
+
+    private int compressedSize;
 
     /**
      * Stores the key-value pairs representing the document fields.
@@ -98,16 +106,24 @@ public class Document {
      */
     public Document(long documentId) {
         this.documentId = documentId;
+        this.pageId = -1;
+        this.decompressedSize = -1;
+        this.compressedSize = -1;
         this.fields = new HashMap<>();
     }
 
     /**
-     * Retrieves the internal map of fields for this document.
+     * Constructor for a document that already belongs to a page.
      *
-     * @return A {@link Map} containing all key-value pairs in the document.
+     * @param documentId The unique identifier for this document.
+     * @param pageId The ID of the page this document is stored in.
      */
-    public Map<String, String> getFields() {
-        return this.fields;
+    public Document(long documentId, long pageId, int decompressedSize, int compressedSize) {
+        this.documentId = documentId;
+        this.pageId = pageId;
+        this.decompressedSize = decompressedSize;
+        this.compressedSize = compressedSize;
+        this.fields = new HashMap<>();
     }
 
     /**
@@ -117,6 +133,32 @@ public class Document {
      */
     public long getDocumentId() {
         return this.documentId;
+    }
+
+    /**
+     * Returns the pageId associated with this document.
+     *
+     * @return the document Page ID.
+     */
+    public long getPageId() {
+        return this.pageId;
+    }
+
+    public int getDecompressedSize() {
+        return this.decompressedSize;
+    }
+
+    public int getCompressedSize() {
+        return this.compressedSize;
+    }
+
+    /**
+     * Retrieves the internal map of fields for this document.
+     *
+     * @return A {@link Map} containing all key-value pairs in the document.
+     */
+    public Map<String, String> getFields() {
+        return this.fields;
     }
 
     /**
@@ -157,12 +199,12 @@ public class Document {
      * <h2>Document Storage Format:</h2>
      * Each document stored in a Page follows this structure:
      * <pre>
-     * +------------+--------------+--------------+--------------+------------------+
-     * | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte       | Variable         |
-     * | documentId | decompressed | compressed   | deletedFlag  | documentContent  |
-     * |            | size         | size         | (1=active,   | (compressed or   |
-     * |            |              |              | 0=deleted)   | uncompressed)    |
-     * +------------+--------------+--------------+--------------+------------------+
+     * +------------+------------+--------------+--------------+--------------+--------------------+
+     * | 8 bytes    | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte        | Variable          |
+     * | documentId | pageId     | decompressed | compressed   | deletedFlag   | documentContent   |
+     * |            |            | size         | size         | (1=active,    | (compressed or    |
+     * |            |            |              |              | 0=deleted)    | uncompressed)     |
+     * +------------+------------+--------------+--------------+--------------+--------------------+
      * </pre>
      * <ul>
      *   <li><b>Document ID (8 bytes):</b> Unique identifier for the document.</li>
@@ -217,12 +259,12 @@ public class Document {
      * <h2>Document Storage Format:</h2>
      * Each document stored in a Page follows this structure:
      * <pre>
-     * +------------+--------------+--------------+--------------+------------------+
-     * | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte       | Variable         |
-     * | documentId | decompressed | compressed   | deletedFlag  | documentContent  |
-     * |            | size         | size         | (1=active,   | (compressed or   |
-     * |            |              |              | 0=deleted)   | uncompressed)    |
-     * +------------+--------------+--------------+--------------+------------------+
+     * +------------+------------+--------------+--------------+--------------+--------------------+
+     * | 8 bytes    | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte        | Variable          |
+     * | documentId | pageId     | decompressed | compressed   | deletedFlag   | documentContent   |
+     * |            |            | size         | size         | (1=active,    | (compressed or    |
+     * |            |            |              |              | 0=deleted)    | uncompressed)     |
+     * +------------+------------+--------------+--------------+--------------+--------------------+
      * </pre>
      * <ul>
      *   <li><b>Document ID (8 bytes):</b> Unique identifier for the document.</li>
@@ -256,6 +298,7 @@ public class Document {
         ByteBuffer buffer = ByteBuffer.wrap(data);
 
         long documentId = buffer.getLong();
+        long pageId = buffer.getLong();
         int dcs = buffer.getInt();
         int cs = buffer.getInt();
         byte df = buffer.get();
@@ -280,7 +323,7 @@ public class Document {
 
         // Parse document fields
         // TODO: document isn't being read correctly with single pair ("name":"same")
-        Document doc = new Document(documentId);
+        Document doc = new Document(documentId, pageId, dcs, cs);
         String[] pairs = content.split(";");
         for (String pair : pairs) {
             if (pair.isEmpty()) continue;

@@ -46,12 +46,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * <h2>Document Format:</h2>
  * Each document stored in a Page follows this structure:
  * <pre>
- * +------------+--------------+--------------+--------------+------------------+
- * | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte       | Variable         |
- * | documentId | decompressed | compressed   | deletedFlag  | documentContent  |
- * |            | size         | size         | (1=active,   | (compressed or   |
- * |            |              |              | 0=deleted)   | uncompressed)    |
- * +------------+--------------+--------------+--------------+------------------+
+ * +------------+------------+--------------+--------------+--------------+--------------------+
+ * | 8 bytes    | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte        | Variable          |
+ * | documentId | pageId     | decompressed | compressed   | deletedFlag   | documentContent   |
+ * |            |            | size         | size         | (1=active,    | (compressed or    |
+ * |            |            |              |              | 0=deleted)    | uncompressed)     |
+ * +------------+------------+--------------+--------------+--------------+--------------------+
  * </pre>
  * <ul>
  *   <li><b>Document ID (8 bytes):</b> Unique identifier for the document.</li>
@@ -214,7 +214,7 @@ public class Page {
      * - Compressed Document Size (4 bytes)
      * - Deleted Flag size (1 byte)
      */
-    public static final int DOCUMENT_METADATA_SIZE = 17;
+    public static final int DOCUMENT_METADATA_SIZE = 25;
 
     /**
      * The maximum allowed page size in bytes.
@@ -305,12 +305,12 @@ public class Page {
      * <h2>Document Storage Format:</h2>
      * Each document stored in a Page follows this structure:
      * <pre>
-     * +------------+--------------+--------------+--------------+------------------+
-     * | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte       | Variable         |
-     * | documentId | decompressed | compressed   | deletedFlag  | documentContent  |
-     * |            | size         | size         | (1=active,   | (compressed or   |
-     * |            |              |              | 0=deleted)   | uncompressed)    |
-     * +------------+--------------+--------------+--------------+------------------+
+     * +------------+------------+--------------+--------------+--------------+--------------------+
+     * | 8 bytes    | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte        | Variable          |
+     * | documentId | pageId     | decompressed | compressed   | deletedFlag   | documentContent   |
+     * |            |            | size         | size         | (1=active,    | (compressed or    |
+     * |            |            |              |              | 0=deleted)    | uncompressed)     |
+     * +------------+------------+--------------+--------------+--------------+--------------------+
      * </pre>
      * <ul>
      *   <li><b>Document ID (8 bytes):</b> Unique identifier for the document.</li>
@@ -323,7 +323,7 @@ public class Page {
      * @param document The {@link Document} to be inserted.
      * @throws IllegalStateException if the page does not have enough space.
      */
-    public void insertDocument(Document document) {
+    public Document insertDocument(Document document) {
         byte[] data = document.toBytes();
         int dcs = data.length;
         int cs = 0;
@@ -347,6 +347,7 @@ public class Page {
 
         // follow the metadata first then write the document content (data)
         buffer.putLong(document.getDocumentId());
+        buffer.putLong(this.pageId);
         buffer.putInt(dcs);
         buffer.putInt(cs);
         buffer.put(df);
@@ -359,6 +360,7 @@ public class Page {
 
         updateHeader();
         this.markDirty();
+        return retrieveDocument(document.getDocumentId());
     }
 
     /**
@@ -398,12 +400,12 @@ public class Page {
      * <h2>Document Storage Format:</h2>
      * Each document stored in a Page follows this structure:
      * <pre>
-     * +------------+--------------+--------------+--------------+------------------+
-     * | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte       | Variable         |
-     * | documentId | decompressed | compressed   | deletedFlag  | documentContent  |
-     * |            | size         | size         | (1=active,   | (compressed or   |
-     * |            |              |              | 0=deleted)   | uncompressed)    |
-     * +------------+--------------+--------------+--------------+------------------+
+     * +------------+------------+--------------+--------------+--------------+--------------------+
+     * | 8 bytes    | 8 bytes    | 4 bytes      | 4 bytes      | 1 byte        | Variable          |
+     * | documentId | pageId     | decompressed | compressed   | deletedFlag   | documentContent   |
+     * |            |            | size         | size         | (1=active,    | (compressed or    |
+     * |            |            |              |              | 0=deleted)    | uncompressed)     |
+     * +------------+------------+--------------+--------------+--------------+--------------------+
      * </pre>
      * <ul>
      *   <li><b>Document ID (8 bytes):</b> Unique identifier for the document.</li>
@@ -442,6 +444,7 @@ public class Page {
         buffer.position(start);
 
         long storedDocId = buffer.getLong();
+        long pageId = buffer.getLong();
         int dcs = buffer.getInt();
         int cs = buffer.getInt();
         byte df = buffer.get();
@@ -470,6 +473,7 @@ public class Page {
         }
         ByteBuffer updatedBuffer = ByteBuffer.allocate(DOCUMENT_METADATA_SIZE + document.length);
         updatedBuffer.putLong(storedDocId);
+        updatedBuffer.putLong(pageId);
         updatedBuffer.putInt(dcs);
         updatedBuffer.putInt(cs);
         updatedBuffer.put(df);
@@ -508,23 +512,24 @@ public class Page {
         ByteBuffer buffer = ByteBuffer.wrap(this.page);
 
         buffer.position(offset);
-        long id = buffer.getLong();
+        long docId = buffer.getLong();
+        buffer.getLong();
         int dcs = buffer.getInt();
-        int cs = buffer.getInt();
+        buffer.getInt();
         byte df = buffer.get();
 
         if (df == ACTIVE) {
             // move buffer position back to the flag's location and overwrite it
-            buffer.position(offset + 16);
+            buffer.position(offset + DOCUMENT_METADATA_SIZE - 1);
             buffer.put(INACTIVE);
 
             // check flag was correctly updated
-            byte tombstoneState = buffer.get(offset + 16);
+            byte tombstoneState = buffer.get(offset + DOCUMENT_METADATA_SIZE - 1);
             if (tombstoneState == INACTIVE) {
                 return dcs;
             } else {
-                System.err.println("Tombstone with state: " + tombstoneState + " for Document with ID " + id);
-                throw new IllegalStateException("ERROR: Tombstone not flagged for delete for Document with ID: " + id);
+                System.err.println("Tombstone with state: " + tombstoneState + " for Document with ID " + docId);
+                throw new IllegalStateException("ERROR: Tombstone not flagged for delete for Document with ID: " + docId);
             }
         }
         return -1;
@@ -622,52 +627,53 @@ public class Page {
 
             ByteBuffer buffer = ByteBuffer.wrap(this.page);
 
-            // write the first 32 bytes of header
+            // Copy the first 32 bytes of the header
             byte[] header = new byte[MAX_HEADER_SIZE];
             buffer.get(header);
             decompressedPageBuffer.put(header);
-            for (Map.Entry<Long, Integer> offsetMap: this.offsets.entrySet()) {
+
+            for (Map.Entry<Long, Integer> offsetMap : this.offsets.entrySet()) {
                 int start = offsetMap.getValue();
 
-                // go to document in page
+                // Move to document position in the page
                 buffer.position(start);
 
-                long id = buffer.getLong();
+                long docId = buffer.getLong();
+                long pageId = buffer.getLong();
                 int dcs = buffer.getInt();
                 int cs = buffer.getInt();
                 byte df = buffer.get();
 
-                // nuke tombstones before splitting
                 if (df == INACTIVE) {
-                    throw new IllegalStateException("Error: attempting to split Page with marked tombstones. Nuke all tombstones.");
+                    throw new IllegalStateException("Error: attempting to decompress a page with tombstoned documents.");
                 }
 
-                // wrong id or document is already decompressed
-                if (id != offsetMap.getKey()) {
-                    throw new IllegalStateException("Error: Document ID mismatch in page split process, wrong offset.");
+                if (docId != offsetMap.getKey()) {
+                    throw new IllegalStateException("Error: Document ID mismatch in page decompression.");
                 }
 
-                // page is not decompressed
                 if (cs == 0) {
-                    throw new IllegalStateException("Error: attempting to decompress an already decompressed page. Check " +
-                            "isAutoCompressOnInsert configuration.");
+                    throw new IllegalStateException("Error: attempting to decompress an already decompressed page.");
                 }
-                // if compressed size is greater than 0 - the document is compressed so says the header value
                 byte[] compressedDocumentBytes = new byte[cs];
                 buffer.get(compressedDocumentBytes);
-                int newOffset = decompressedPageBuffer.position();
-                newOffsetMap.put(id, newOffset);
+
+                byte[] decompressedDocumentBytes = decompressDocument(compressedDocumentBytes, dcs);
                 cs = 0;
 
-                decompressedPageBuffer.putLong(id);
+                int newOffset = decompressedPageBuffer.position();
+                newOffsetMap.put(docId, newOffset);
+
+                decompressedPageBuffer.putLong(docId);
+                decompressedPageBuffer.putLong(pageId);
                 decompressedPageBuffer.putInt(dcs);
                 decompressedPageBuffer.putInt(cs);
                 decompressedPageBuffer.put(df);
-                decompressedPageBuffer.put(compressedDocumentBytes);
+                decompressedPageBuffer.put(decompressedDocumentBytes);
             }
-            // need to update page headers as well
             this.page = decompressedPage;
             this.offsets = newOffsetMap;
+            this.pageSize = decompressedPageBuffer.position();
             this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
             return decompressedPage;
         } finally {
@@ -751,18 +757,13 @@ public class Page {
             // read document header an obtain id, dcs, cs, df
             // there's no need to read the document, it only
             // matters if it is marked for deletion or not.
-            long id = buffer.getLong();
+            long docId = buffer.getLong();
+            long pageId = buffer.getLong();
             int dcs = buffer.getInt();
             int cs = buffer.getInt();
             byte df = buffer.get();
 
-            System.out.println("doc id = " + id);
-            System.out.println("dcs = " + dcs);
-            System.out.println("cs = " + cs);
-            System.out.println("df = " + df);
-            System.out.println("-------------------------");
-
-            if (id != documentId) {
+            if (docId != documentId) {
                 throw new IllegalStateException("Error: offset does not match current document scanned " +
                         "in defragmentation process. Reverting to original page.");
             }
@@ -773,9 +774,10 @@ public class Page {
                 if (df == ACTIVE) {
                     // it's active write to the new buffer, get new offset and add to new offset map
                     int offsetPosition = newPageBuffer.position();
-                    newOffsetMap.put(id, offsetPosition);
+                    newOffsetMap.put(docId, offsetPosition);
 
-                    newPageBuffer.putLong(id);
+                    newPageBuffer.putLong(docId);
+                    newPageBuffer.putLong(pageId);
                     newPageBuffer.putInt(dcs);
                     newPageBuffer.putInt(cs);
                     newPageBuffer.put(df);
