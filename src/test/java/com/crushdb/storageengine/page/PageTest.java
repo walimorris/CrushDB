@@ -50,8 +50,7 @@ public class PageTest {
 
     @Test
     public void pageDocumentCompressedInsertAndReadTest() {
-        long pageId = 2L;
-        Page page = new Page(pageId, true);
+        Page page = new Page(2L, true);
 
         Document document1 = new Document(1);
         document1.put("Database", "MongoDB");
@@ -69,6 +68,12 @@ public class PageTest {
         Document retrievedDoc2 = page.retrieveDocument(document2.getDocumentId());
         assertNotNull(retrievedDoc1);
         assertNotNull(retrievedDoc2);
+
+        assertAll(
+                () -> assertEquals("MongoDB", retrievedDoc1.get("Database")),
+                () ->  assertEquals("Bson", retrievedDoc1.get("DataType"))
+        );
+
     }
 
 
@@ -190,6 +195,41 @@ public class PageTest {
                 () -> assertEquals("kimberly", compactedDocument3.get("name")),
                 () -> assertEquals("mike", compactedDocument4.get("name")),
                 () -> assertEquals("sam", compactedDocument5.get("name"))
+        );
+    }
+
+    @Test
+    public void decompressPage() {
+        // regardless if using compressPage(), when autoCompressOnInsert is on, pages are compressed
+        Page page = new Page(1L, true);
+        Document document1 = new Document(1);
+        Document document2 = new Document(2);
+        Document document3 = new Document(3);
+
+        document1.put("name", "jim");
+        document1.put("compressed", "true");
+
+//        document2.put("autoCompressOnInsert", "true");
+//        document2.put("maxPageSize", "4096");
+//
+//        document3.put("maxHeaderSize", "32");
+//        document3.put("documentSize", "variable");
+
+        page.insertDocument(document1);
+//        page.insertDocument(document2);
+//        page.insertDocument(document3);
+
+        Document retrieveDocument1 = page.retrieveDocument(document1.getDocumentId());
+        Document retrieveDocument2 = page.retrieveDocument(document2.getDocumentId());
+        Document retrieveDocument3 = page.retrieveDocument(document3.getDocumentId());
+
+        assertAll(
+                () -> assertEquals("jim", retrieveDocument1.get("name")),
+                () -> assertEquals("true", retrieveDocument1.get("compressed"))
+//                () -> assertEquals("true", retrieveDocument2.get("autoCompressOnInsert")),
+//                () -> assertEquals("4096", retrieveDocument2.get("maxPageSize")),
+//                () -> assertEquals("32", retrieveDocument3.get("maxHeaderSize")),
+//                () -> assertEquals("variable", retrieveDocument3.get("documentSize"))
         );
     }
 }

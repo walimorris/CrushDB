@@ -7,6 +7,7 @@ import net.jpountz.lz4.LZ4FastDecompressor;
 
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Represents a single Page in the CrushDB database storage system.
@@ -247,6 +248,8 @@ public class Page {
      * and should no longer be retrievable.
      */
     public static final byte INACTIVE = 0x00;
+
+    private final ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
     public Page(long pageId, boolean autoCompressOnInsert) {
         // TODO: external PageManager will generate ids
@@ -613,8 +616,75 @@ public class Page {
         return this.availableSpace >= documentSize;
     }
 
-    private void splitPage(byte[] rawPageData) {
+    public byte[] decompressPage() {
+        // one writer allowed
+        readWriteLock.writeLock().lock();
+        try {
+            byte[] decompressedPage = new byte[MAX_PAGE_SIZE];
+            ByteBuffer decompressedPageBuffer = ByteBuffer.wrap(decompressedPage);
+            Map<Long, Integer> newOffsetMap = new HashMap<>();
 
+            ByteBuffer buffer = ByteBuffer.wrap(this.page);
+
+            // write the first 32 bytes of header
+            byte[] header = new byte[MAX_HEADER_SIZE];
+            buffer.get(header);
+            decompressedPageBuffer.put(header);
+            for (Map.Entry<Long, Integer> offsetMap: this.offsets.entrySet()) {
+                int start = offsetMap.getValue();
+
+                // go to document in page
+                buffer.position(start);
+
+                long id = buffer.getLong();
+                int dcs = buffer.getInt();
+                int cs = buffer.getInt();
+                byte df = buffer.get();
+
+                // nuke tombstones before splitting
+                if (df == INACTIVE) {
+                    throw new IllegalStateException("Error: attempting to split Page with marked tombstones. Nuke all tombstones.");
+                }
+
+                // wrong id or document is already decompressed
+                if (id != offsetMap.getKey()) {
+                    throw new IllegalStateException("Error: Document ID mismatch in page split process, wrong offset.");
+                }
+
+                // page is not decompressed
+                if (cs == 0) {
+                    throw new IllegalStateException("Error: attempting to decompress an already decompressed page. Check " +
+                            "isAutoCompressOnInsert configuration.");
+                }
+                // if compressed size is greater than 0 - the document is compressed so says the header value
+                byte[] compressedDocumentBytes = new byte[cs];
+                buffer.get(compressedDocumentBytes);
+                int newOffset = decompressedPageBuffer.position();
+                newOffsetMap.put(id, newOffset);
+                cs = 0;
+
+                decompressedPageBuffer.putLong(id);
+                decompressedPageBuffer.putInt(dcs);
+                decompressedPageBuffer.putInt(cs);
+                decompressedPageBuffer.put(df);
+                decompressedPageBuffer.put(compressedDocumentBytes);
+            }
+            // need to update page headers as well
+            this.page = decompressedPage;
+            this.offsets = newOffsetMap;
+            this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
+            return decompressedPage;
+        } finally {
+            readWriteLock.writeLock().unlock();
+        }
+    }
+
+    private byte[] splitPage() {
+        // decompress a compressed page
+        if (this.autoCompressOnInsert) {
+            byte[] decompressedPage = decompressPage();
+        }
+        return null;
     }
 
     /**
@@ -661,8 +731,6 @@ public class Page {
      * </ul>
      *
      * <p><b>Note:</b>This method does not modify document content, only reorganizes it in memory.</p>
-     *
-     * @see Page#TOMBSTONE_GRACE_PERIOD_MS
      */
     public boolean compactPage() {
         int originalAvailableSpace = this.availableSpace;
