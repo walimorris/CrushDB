@@ -110,6 +110,7 @@ public class Document {
         this.decompressedSize = -1;
         this.compressedSize = -1;
         this.fields = new HashMap<>();
+        this.fields.put("_id", String.valueOf(this.documentId));
     }
 
     /**
@@ -336,5 +337,52 @@ public class Document {
             }
         }
         return doc;
+    }
+
+    /**
+     * Returns the document in json like format. Does not include
+     * Object or Array like format conventions.
+     *
+     * @return {@link String}
+     */
+    public String toString() {
+        if (this.fields.isEmpty()) {
+            return "{}";
+        }
+        StringBuilder fieldsStr = new StringBuilder();
+        for (Map.Entry<String, String> fields : this.fields.entrySet()) {
+            fieldsStr.append(fields.getKey()).append(":").append(fields.getValue()).append(";");
+        }
+        // only id exist
+        if (this.fields.size() == 1) {
+            return String.format("{%s:%s}", "_id", this.fields.get("_id"));
+        }
+        String content = fieldsStr.toString();
+        if (content.endsWith(";")) {
+            content = content.substring(0, content.length() - 1);
+        }
+        StringBuilder result = new StringBuilder();
+
+        result.append("{");
+        result.append("_id")
+                .append(":")
+                .append(this.fields.get("_id"))
+                .append(",");
+
+        String[] pairs = content.split(";");
+        for (int i = 0; i < pairs.length; i++) {
+            if (pairs[i].isEmpty() || pairs[i].contains("_id")) {
+                continue;
+            }
+            String[] fieldPairs = pairs[i].split(":");
+            result.append(fieldPairs[0])
+                    .append(":")
+                    .append(fieldPairs[1]);
+            if (i != pairs.length - 1) {
+                result.append(",");
+            }
+        }
+        result.append("}");
+        return result.toString();
     }
 }
