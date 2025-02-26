@@ -343,19 +343,20 @@ public class Document {
      * Returns the document in json like format. Does not include
      * Object or Array like format conventions.
      *
+     * TODO: apply rules to document fields
+     *
      * @return {@link String}
      */
     public String toString() {
         if (this.fields.isEmpty()) {
             return "{}";
         }
+        if (this.fields.size() == 1) { // only id exist
+            return String.format("{%s:%s}", "_id", this.fields.get("_id"));
+        }
         StringBuilder fieldsStr = new StringBuilder();
         for (Map.Entry<String, String> fields : this.fields.entrySet()) {
             fieldsStr.append(fields.getKey()).append(":").append(fields.getValue()).append(";");
-        }
-        // only id exist
-        if (this.fields.size() == 1) {
-            return String.format("{%s:%s}", "_id", this.fields.get("_id"));
         }
         String content = fieldsStr.toString();
         if (content.endsWith(";")) {
@@ -370,18 +371,17 @@ public class Document {
                 .append(",");
 
         String[] pairs = content.split(";");
-        for (int i = 0; i < pairs.length; i++) {
-            if (pairs[i].isEmpty() || pairs[i].contains("_id")) {
+        for (String pair : pairs) {
+            if (pair.isEmpty() || pair.contains("_id")) {
                 continue;
             }
-            String[] fieldPairs = pairs[i].split(":");
+            String[] fieldPairs = pair.split(":");
             result.append(fieldPairs[0])
                     .append(":")
-                    .append(fieldPairs[1]);
-            if (i != pairs.length - 1) {
-                result.append(",");
-            }
+                    .append(fieldPairs[1])
+                    .append(",");
         }
+        result = new StringBuilder(result.substring(0, result.toString().length() - 1));
         result.append("}");
         return result.toString();
     }
