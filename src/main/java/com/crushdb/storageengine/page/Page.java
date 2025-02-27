@@ -6,7 +6,6 @@ import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -628,7 +627,7 @@ public class Page {
             ByteBuffer buffer = ByteBuffer.wrap(this.page);
 
             // Copy the first 32 bytes of the header
-            byte[] header = new byte[MAX_HEADER_SIZE];
+            byte[] header = new byte[this.headerSize];
             buffer.get(header);
             decompressedPageBuffer.put(header);
 
@@ -670,6 +669,7 @@ public class Page {
                 decompressedPageBuffer.putInt(cs);
                 decompressedPageBuffer.put(df);
                 decompressedPageBuffer.put(decompressedDocumentBytes);
+                this.compressedPageSize = cs;
             }
             this.page = decompressedPage;
             this.offsets = newOffsetMap;
@@ -870,5 +870,25 @@ public class Page {
      */
     private void markDirty() {
         this.isDirty = true;
+    }
+
+    public int getPageSize() {
+        return this.pageSize;
+    }
+
+    public int getCompressedPageSize() {
+        return this.compressedPageSize;
+    }
+
+    public int getAvailableSpace() {
+        return this.availableSpace;
+    }
+
+    public int getHeaderSize() {
+        return this.headerSize;
+    }
+
+    public boolean isAutoCompressOnInsert() {
+        return this.autoCompressOnInsert;
     }
 }

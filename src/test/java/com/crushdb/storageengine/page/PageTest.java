@@ -1,6 +1,7 @@
 package com.crushdb.storageengine.page;
 
 import com.crushdb.model.Document;
+import com.sun.source.tree.AssertTree;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -232,11 +233,25 @@ public class PageTest {
         );
 
         // page is compressed with autoCompressOnInsert, now for decompressing the whole page
-        // this means, rather than decompressing individual pages, we batch decompress
+        // this means, rather than decompressing individual pages, we decompress all documents
+        // in the page in one go
         page.decompressPage();
-        Document retrievedResult = page.retrieveDocument(retrieveDocument1.getDocumentId());
-        assertEquals("jim", retrievedResult.get("name"));
-        System.out.println("decompressedSize = " + retrievedResult.getDecompressedSize());
-        System.out.println("compressedSize = " + retrievedResult.getCompressedSize());
+        Document retrievedResult1 = page.retrieveDocument(retrieveDocument1.getDocumentId());
+        Document retrievedResult2 = page.retrieveDocument(retrieveDocument2.getDocumentId());
+        Document retrievedResult3 = page.retrieveDocument(retrieveDocument3.getDocumentId());
+
+        assertAll(
+                () -> assertEquals("jim", retrievedResult1.get("name")),
+                () -> assertEquals("true", retrievedResult2.get("autoCompressOnInsert")),
+                () -> assertEquals("32", retrievedResult3.get("maxHeaderSize"))
+        );
+
+        // assert all documents are decompressed
+        assertAll(
+                () -> assertEquals(0, retrievedResult1.getCompressedSize()),
+                () -> assertEquals(0, retrievedResult2.getCompressedSize()),
+                () -> assertEquals(0, retrievedResult3.getCompressedSize()),
+                () -> assertEquals(4096, page.getAvailableSpace() + page.getPageSize())
+        );
     }
 }
