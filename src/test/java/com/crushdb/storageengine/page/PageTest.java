@@ -1,7 +1,6 @@
 package com.crushdb.storageengine.page;
 
 import com.crushdb.model.Document;
-import com.sun.source.tree.AssertTree;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
