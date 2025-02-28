@@ -76,6 +76,8 @@ import static com.crushdb.storageengine.page.Page.INACTIVE;
  * </p>
  *
  * TODO: reference to page to always reflect changes
+ * TODO: documents should follow compression state for compression size validation
+ * (if autoCompressOnInsert is on or off, the decompress value should reflect this)
  *
  * @author Wali Morris
  * @version 1.0
@@ -100,6 +102,16 @@ public class Document {
     private final Map<String, String> fields;
 
     /**
+     * The size of metadata stored with each document.
+     * This includes:
+     * - Document ID (8 bytes)
+     * - Decompressed Document Size (4 bytes)
+     * - Compressed Document Size (4 bytes)
+     * - Deleted Flag size (1 byte)
+     */
+    public static final int DOCUMENT_METADATA_SIZE = 25;
+
+    /**
      * Constructs a new document with a unique identifier.
      *
      * @param documentId The unique identifier for this document.
@@ -122,8 +134,8 @@ public class Document {
     public Document(long documentId, long pageId, int decompressedSize, int compressedSize) {
         this.documentId = documentId;
         this.pageId = pageId;
-        this.decompressedSize = decompressedSize;
-        this.compressedSize = compressedSize;
+        this.decompressedSize = DOCUMENT_METADATA_SIZE + decompressedSize;
+        this.compressedSize = DOCUMENT_METADATA_SIZE + compressedSize;
         this.fields = new HashMap<>();
     }
 

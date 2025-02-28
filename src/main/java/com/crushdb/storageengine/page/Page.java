@@ -333,7 +333,7 @@ public class Page {
             cs = data.length;
         }
 
-        int totalSize = DOCUMENT_METADATA_SIZE + (cs > 0 ? cs : dcs);
+        int totalSize = DOCUMENT_METADATA_SIZE + (this.autoCompressOnInsert ? cs : dcs);
         int insertionPosition = this.pageSize;
 
         if (insertionPosition + totalSize > MAX_PAGE_SIZE) {
@@ -354,7 +354,6 @@ public class Page {
 
         this.offsets.put(document.getDocumentId(), insertionPosition);
         this.availableSpace -= (short) totalSize;
-        System.out.println("Available Space After Insert: " + this.availableSpace + " bytes");
         this.pageSize = insertionPosition + totalSize;
 
         updateHeader();
@@ -860,7 +859,6 @@ public class Page {
 
         // Ensure header does not overwrite document data
         buffer.position(this.headerSize);
-        System.out.println("DEBUG: Updated Header Size: " + this.headerSize);
     }
 
     /**
