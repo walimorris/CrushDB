@@ -205,6 +205,8 @@ public class Page {
      */
     private final boolean autoCompressOnInsert;
 
+    private int numberOfDocuments;
+
     /**
      * The size of metadata stored with each document.
      * This includes:
@@ -272,6 +274,7 @@ public class Page {
         this.checksum = 0;
         this.modificationTimestamp = System.currentTimeMillis();
         this.autoCompressOnInsert = autoCompressOnInsert;
+        this.numberOfDocuments = 0;
     }
 
     public Page(long pageId) {
@@ -358,6 +361,7 @@ public class Page {
 
         updateHeader();
         this.markDirty();
+        this.numberOfDocuments += 1;
         return retrieveDocument(document.getDocumentId());
     }
 
@@ -502,6 +506,7 @@ public class Page {
                 System.out.println("Tombstone created for document with ID: " + documentId);
             }
             this.deletedDocuments.add(documentId);
+            this.numberOfDocuments -= 1;
             markDirty();
         }
     }
@@ -681,11 +686,16 @@ public class Page {
         }
     }
 
-    private byte[] splitPage() {
-        // decompress a compressed page
-        if (this.autoCompressOnInsert) {
-            byte[] decompressedPage = decompressPage();
+    private Page splitPage() {
+        // working on current page - no need to decompress as document headers
+        // are read and tombstone docs are removed.
+        Map<String, Object> compactState = this.compactPage();
+        if (!(boolean) compactState.get("state")) {
+            throw new IllegalStateException("Error: split page process fail due to compaction error on Page ID: " + this.pageId);
         }
+        // get the compacted page
+        Page currentPage = (Page) compactState.get("page");
+        int numDocsToSplit = (int) Math.ceil(this.numberOfDocuments * 0.5);
         return null;
     }
 
@@ -734,7 +744,7 @@ public class Page {
      *
      * <p><b>Note:</b>This method does not modify document content, only reorganizes it in memory.</p>
      */
-    public boolean compactPage() {
+    public Map<String, Object> compactPage() {
         int originalAvailableSpace = this.availableSpace;
         ByteBuffer buffer = ByteBuffer.wrap(this.page);
         ByteBuffer newPageBuffer = ByteBuffer.allocate(MAX_PAGE_SIZE);
@@ -789,7 +799,7 @@ public class Page {
                 }
             } catch (Exception e) {
                 System.err.println("ERROR: interruption during defragmentation process: " + e.getLocalizedMessage());
-                return false;
+                return Map.of("page", this, "state", false);
             }
         }
         System.out.println("old offset count: " + this.offsets.size());
@@ -810,7 +820,7 @@ public class Page {
         System.out.println("Original Available Space: " + originalAvailableSpace + " bytes");
         System.out.println("New Available space: " + this.availableSpace + " bytes");
         System.out.println("Space reclaimed: " + (this.availableSpace - originalAvailableSpace) + " bytes");
-        return true;
+        return Map.of("page", this, "state", true);
     }
 
     /**
@@ -897,5 +907,9 @@ public class Page {
 
     public Set<Long> getDeletedDocuments() {
         return deletedDocuments;
+    }
+
+    public int getNumberOfDocuments() {
+        return this.numberOfDocuments;
     }
 }

@@ -3,6 +3,8 @@ package com.crushdb.storageengine.page;
 import com.crushdb.model.Document;
 import org.junit.Test;
 
+import java.util.Map;
+
 import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -180,7 +182,7 @@ public class PageTest {
         // Documents that weren't deleted remain and are validated.
         // This only tells us that the offsets are being read correctly in the page.
         // Now we will compact the page and attempt the same validations.
-        boolean success = page.compactPage();
+        boolean success = (boolean) page.compactPage().get("state");
         assertTrue(success);
 
         Document compactedDocument3 = page.retrieveDocument(document3.getDocumentId());
@@ -195,6 +197,11 @@ public class PageTest {
                 () -> assertEquals("mike", compactedDocument4.get("name")),
                 () -> assertEquals("sam", compactedDocument5.get("name"))
         );
+    }
+
+    @Test
+    public void compactCompressedPageTest() {
+        System.out.println("PlaceHolder");
     }
 
     @Test
@@ -336,5 +343,71 @@ public class PageTest {
                 () -> assertEquals(4096, page.getAvailableSpace() + page.getPageSize()),
                 () -> assertEquals(page.getPageSize(), calculatedDecompressedSizePost)
         );
+    }
+
+    @Test
+    public void splitDecompressedPage() {
+        // compaction occurs so let's spice things up by adding documents, marking for
+        // deletion, ensuring quality, ensuring quality compaction first
+        Page page = new Page(99L, false);
+        Document doc1 = new Document(1L);
+        Document doc2 = new Document(2L);
+        Document doc3 = new Document(3L);
+        Document doc4 = new Document(4L);
+        Document doc5 = new Document(5L);
+        Document doc6 = new Document(6L);
+
+
+        doc1.put("name", "james");
+        doc1.put("hobby", "skating");
+
+        doc2.put("name", "amber");
+        doc2.put("hobby", "tennis");
+
+        doc3.put("name", "sam");
+        doc3.put("hobby", "piano");
+
+        doc4.put("name", "viki");
+        doc4.put("hobby", "art");
+
+        doc5.put("name", "lee");
+        doc5.put("hobby", "soccer");
+
+        doc6.put("name", "mohan");
+        doc6.put("hobby", "swimming");
+
+        page.insertDocument(doc1);
+        page.insertDocument(doc2);
+        page.insertDocument(doc3);
+        page.insertDocument(doc4);
+        page.insertDocument(doc5);
+        page.insertDocument(doc6);
+
+        Document result1 = page.retrieveDocument(doc1.getDocumentId());
+        Document result2 = page.retrieveDocument(doc2.getDocumentId());
+        Document result3 = page.retrieveDocument(doc3.getDocumentId());
+        Document result4 = page.retrieveDocument(doc4.getDocumentId());
+        Document result5 = page.retrieveDocument(doc5.getDocumentId());
+        Document result6 = page.retrieveDocument(doc6.getDocumentId());
+
+        assertAll(
+                () -> assertEquals("james", result1.get("name")),
+                () -> assertEquals("amber", result2.get("name")),
+                () -> assertEquals("sam", result3.get("name")),
+                () -> assertEquals("viki", result4.get("name")),
+                () -> assertEquals("lee", result5.get("name")),
+                () -> assertEquals("mohan", result6.get("name")),
+                () -> assertEquals(6, page.getNumberOfDocuments())
+        );
+        // delete document to create tombstone
+        page.deleteDocument(doc2.getDocumentId());
+        assertEquals(5, page.getNumberOfDocuments());
+
+        // compact
+        Map<String, Object> compactResult = page.compactPage();
+        assertEquals(true, compactResult.get("state"));
+        assertEquals(page, compactResult.get("page"));
+        assertEquals(5, page.getNumberOfDocuments());
+        assertEquals(3, Math.ceil(page.getNumberOfDocuments() * 0.5));
     }
 }
