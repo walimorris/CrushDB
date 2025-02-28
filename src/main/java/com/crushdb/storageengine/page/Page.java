@@ -203,7 +203,7 @@ public class Page {
      *
      * <p>Default state is `false` (no auto compression).</p>
      */
-    private boolean autoCompressOnInsert;
+    private final boolean autoCompressOnInsert;
 
     /**
      * The size of metadata stored with each document.
@@ -268,7 +268,7 @@ public class Page {
         this.offsets = new HashMap<>();
         this.isFull = false;
         this.isDirty = false;
-        this.isCompressed = false;
+        this.isCompressed = autoCompressOnInsert;
         this.checksum = 0;
         this.modificationTimestamp = System.currentTimeMillis();
         this.autoCompressOnInsert = autoCompressOnInsert;
@@ -674,6 +674,7 @@ public class Page {
             this.offsets = newOffsetMap;
             this.pageSize = decompressedPageBuffer.position();
             this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
+            this.isCompressed = false;
             return decompressedPage;
         } finally {
             readWriteLock.writeLock().unlock();
@@ -888,5 +889,13 @@ public class Page {
 
     public boolean isAutoCompressOnInsert() {
         return this.autoCompressOnInsert;
+    }
+
+    public boolean isCompressed() {
+        return this.isCompressed;
+    }
+
+    public Set<Long> getDeletedDocuments() {
+        return deletedDocuments;
     }
 }
