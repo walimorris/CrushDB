@@ -426,5 +426,8 @@ public class PageTest {
                 () -> assertEquals(99L, result.getNewPage().getPrevious()),
                 () -> assertEquals(newPageId, result.getCurrentPage().getNext())
         );
+
+        System.out.println("Current Page: " + result.getCurrentPage().getPageSize());
+        System.out.println("New Page: " + result.getNewPage().getPageSize());
     }
 }

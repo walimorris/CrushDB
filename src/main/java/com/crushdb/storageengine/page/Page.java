@@ -277,16 +277,16 @@ public class Page {
         this.numberOfDocuments = 0;
     }
 
-    public Page(long pageId, byte[] pageData, Map<Long, Integer> offsets, Long previous, Long next,
+    public Page(long pageId, byte[] pageData, int pageSize, Map<Long, Integer> offsets, Long previous, Long next,
                 boolean autoCompressOnInsert, int numberOfDocuments) {
         this.pageId = pageId;
         this.page = pageData;
         this.headerSize = 32;
         this.header = new byte[this.headerSize];
-        this.pageSize = pageData.length;
+        this.pageSize = pageSize;
         this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
         this.compressedPageSize = autoCompressOnInsert ? this.pageSize : 0;
-        this.compressedPage = null;
+        this.compressedPage = null; // initialize
         this.next = next;
         this.previous = previous;
         this.deletedDocuments = new HashSet<>();
@@ -709,133 +709,111 @@ public class Page {
         }
     }
 
-    // TODO: refactor with less complexity, method is way too long with initial bruteforce.
     public PageSplitResult splitPage() {
-        // working on current page - no need to decompress as document headers
-        // are read and tombstone docs are removed.
-        Map<String, Object> compactState = this.compactPage();
-        if (!(boolean) compactState.get("state")) {
-            throw new IllegalStateException("Error: split page process fail due to compaction error on Page ID: " + this.pageId);
+        readWriteLock.writeLock().lock();
+        try {
+            // working on current page - no need to decompress as document headers
+            // are read and tombstone docs are removed.
+            Map<String, Object> compactState = this.compactPage();
+            if (!(boolean) compactState.get("state")) {
+                throw new IllegalStateException("Error: split page process fail due to compaction error on Page ID: " + this.pageId);
+            }
+            // get the compacted page
+            byte[] currentPageBytes = new byte[MAX_PAGE_SIZE];
+            byte[] newPageBytes = new byte[MAX_PAGE_SIZE];
+            int numDocsRight = (int) Math.ceil(this.numberOfDocuments * 0.5);
+            int numDocsLeft = this.numberOfDocuments - numDocsRight;
+
+            // copy offsets list so no issue in setting this page offsets
+            Map<Long, Integer> copyOffsets = new TreeMap<>(this.offsets);
+
+
+            // I have ceil: first half stays, second half goes to new page
+            ByteBuffer currentPageBuffer = ByteBuffer.wrap(currentPageBytes);
+            ByteBuffer newPageBuffer = ByteBuffer.allocate(MAX_PAGE_SIZE);
+
+            // new new offsets
+            Map<Long, Integer> currentPageOffsets = new TreeMap<>();
+            Map<Long, Integer> newPageOffsets = new TreeMap<>();
+
+            // new page id
+            Random random = new Random();
+            long currentPageId = this.pageId;
+            long newPageId = random.nextLong(this.pageId, Long.MAX_VALUE);
+
+            ByteBuffer pageBuffer = ByteBuffer.wrap(this.page);
+
+            // put the header on current page
+            byte[] header = new byte[this.headerSize];
+            pageBuffer.get(header);
+            currentPageBuffer.put(header);
+            Iterator<Map.Entry<Long, Integer>> iterator = copyOffsets.entrySet().iterator();
+            int read = 0;
+            while (iterator.hasNext() && read < numberOfDocuments) {
+                Map.Entry<Long, Integer> entry = iterator.next();
+                Long id = entry.getKey();
+                int offset = entry.getValue();
+
+                // Move to document position in the page
+                pageBuffer.position(offset);
+
+                long docId = pageBuffer.getLong();
+                pageBuffer.getLong();
+                int dcs = pageBuffer.getInt();
+                int cs = pageBuffer.getInt();
+                byte df = pageBuffer.get();
+
+                if (docId != id) {
+                    throw new IllegalStateException("Error: Document ID mismatch in page split process." +
+                            " Document ID: " + id + ", but was " + docId);
+                }
+
+                byte[] documentBytes;
+                if (this.autoCompressOnInsert) {
+                    documentBytes = new byte[cs];
+                } else {
+                    documentBytes = new byte[dcs];
+                }
+
+                // add first batch docs to current page
+                if (read < numDocsLeft) {
+                    int newOffset = currentPageBuffer.position();
+                    currentPageOffsets.put(docId, newOffset);
+                    currentPageBuffer.putLong(docId);
+                    currentPageBuffer.putLong(currentPageId);
+                    currentPageBuffer.putInt(dcs);
+                    currentPageBuffer.putInt(cs);
+                    currentPageBuffer.put(df);
+                    currentPageBuffer.put(documentBytes);
+                    iterator.remove();
+                    System.out.println("insert in current");
+                } else {
+                    // add remaining docs to new page
+                    int newOffset = newPageBuffer.position();
+                    newPageOffsets.put(docId, newOffset);
+                    newPageBuffer.putLong(docId);
+                    newPageBuffer.putLong(newPageId);
+                    newPageBuffer.putInt(dcs);
+                    newPageBuffer.putInt(cs);
+                    newPageBuffer.put(df);
+                    newPageBuffer.put(documentBytes);
+                    iterator.remove();
+                    System.out.println("Insert in new");
+                }
+                read += 1;
+            }
+            this.page = currentPageBytes;
+            this.offsets = currentPageOffsets;
+            this.pageSize = currentPageBuffer.position();
+            this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
+            this.isCompressed = this.autoCompressOnInsert;
+            this.numberOfDocuments = numDocsLeft;
+            this.next = newPageId;
+            Page nextPage = new Page(newPageId, newPageBytes, newPageBuffer.position(), newPageOffsets, this.pageId, -1L, this.autoCompressOnInsert, numDocsRight);
+            return new PageSplitResult(this, nextPage);
+        } finally {
+            readWriteLock.writeLock().unlock();
         }
-        // get the compacted page
-        byte[] currentPageBytes = new byte[MAX_PAGE_SIZE];
-        byte[] newPageBytes = new byte[MAX_PAGE_SIZE];
-        int numDocsRight = (int) Math.ceil(this.numberOfDocuments * 0.5);
-        int numDocsLeft = this.numberOfDocuments - numDocsRight;
-
-        // copy offsets list so no issue in setting this page offsets
-        Map<Long, Integer> copyOffsets = new TreeMap<>(this.offsets);
-
-
-        // I have ceil: first half stays, second half goes to new page
-        ByteBuffer currentPageBuffer = ByteBuffer.wrap(currentPageBytes);
-        ByteBuffer newPageBuffer = ByteBuffer.allocate(MAX_PAGE_SIZE);
-
-        // new new offsets
-        Map<Long, Integer> currentPageOffsets = new TreeMap<>();
-        Map<Long, Integer> newPageOffsets = new TreeMap<>();
-
-        // new page id
-        Random random = new Random();
-        long currentPageId = this.pageId;
-        long newPageId = random.nextLong(this.pageId, Long.MAX_VALUE);
-
-        ByteBuffer pageBuffer = ByteBuffer.wrap(this.page);
-
-        // put the header on current page
-        byte[] header = new byte[this.headerSize];
-        pageBuffer.get(header);
-        currentPageBuffer.put(header);
-
-        // work through current page first
-        Iterator<Map.Entry<Long, Integer>> iterator = copyOffsets.entrySet().iterator();
-        int read = 0;
-        while (iterator.hasNext() && read < numDocsLeft) {
-            Map.Entry<Long, Integer> entry = iterator.next();
-            Long id = entry.getKey();
-            int offset = entry.getValue();
-
-            // Move to document position in the page
-            pageBuffer.position(offset);
-
-            long docId = pageBuffer.getLong();
-            pageBuffer.getLong();  // Skip pageId
-            int dcs = pageBuffer.getInt();
-            int cs = pageBuffer.getInt();
-            byte df = pageBuffer.get();
-
-            if (docId != id) {
-                throw new IllegalStateException("Error: Document ID mismatch in page split process." +
-                        " Document ID: " + id + ", but was " + docId);
-            }
-
-            byte[] documentBytes;
-            if (this.autoCompressOnInsert) {
-                documentBytes = new byte[cs];
-            } else {
-                documentBytes = new byte[dcs];
-            }
-
-            int newOffset = currentPageBuffer.position();
-            currentPageOffsets.put(docId, newOffset);
-            currentPageBuffer.putLong(docId);
-            currentPageBuffer.putLong(currentPageId);
-            currentPageBuffer.putInt(dcs);
-            currentPageBuffer.putInt(cs);
-            currentPageBuffer.put(df);
-            currentPageBuffer.put(documentBytes);
-
-            iterator.remove();
-        }
-        this.page = currentPageBytes;
-        this.offsets = currentPageOffsets;
-        this.pageSize = currentPageBuffer.position();
-        this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
-        this.isCompressed = this.autoCompressOnInsert;
-        this.numberOfDocuments = numDocsLeft;
-
-
-        // now do remaining offsets for new page
-        while (iterator.hasNext() && read < numDocsLeft) {
-            Map.Entry<Long, Integer> entry = iterator.next();
-            Long id = entry.getKey();
-            int offset = entry.getValue();
-
-            // Move to document position in the page
-            pageBuffer.position(offset);
-
-            long docId = pageBuffer.getLong();
-            pageBuffer.getLong();
-            int dcs = pageBuffer.getInt();
-            int cs = pageBuffer.getInt();
-            byte df = pageBuffer.get();
-
-            if (docId != id) {
-                throw new IllegalStateException("Error: Document ID mismatch in page split process. " +
-                        "Expected: " + id + ", Found: " + docId + " at offset: " + offset);
-            }
-
-            byte[] documentBytes;
-            if (this.autoCompressOnInsert) {
-                documentBytes = new byte[cs];
-            } else {
-                documentBytes = new byte[dcs];
-            }
-            int newOffset = newPageBuffer.position();
-            newPageOffsets.put(docId, newOffset);
-            newPageBuffer.putLong(docId);
-            newPageBuffer.putLong(newPageId);
-            newPageBuffer.putInt(dcs);
-            newPageBuffer.putInt(cs);
-            newPageBuffer.put(df);
-            newPageBuffer.put(documentBytes);
-
-            // remove the old offsets
-            copyOffsets.remove(id);
-        }
-        this.next = newPageId;
-        Page nextPage = new Page(newPageId, newPageBytes, newPageOffsets, this.pageId, -1L, this.autoCompressOnInsert, numDocsRight);
-        return new PageSplitResult(this, nextPage);
     }
 
     /**
@@ -884,82 +862,79 @@ public class Page {
      * <p><b>Note:</b>This method does not modify document content, only reorganizes it in memory.</p>
      */
     public Map<String, Object> compactPage() {
-        int originalAvailableSpace = this.availableSpace;
-        ByteBuffer buffer = ByteBuffer.wrap(this.page);
-        ByteBuffer newPageBuffer = ByteBuffer.allocate(MAX_PAGE_SIZE);
+        boolean locked = readWriteLock.writeLock().tryLock();
+        try {
+            int originalAvailableSpace = this.availableSpace;
+            ByteBuffer buffer = ByteBuffer.wrap(this.page);
+            ByteBuffer newPageBuffer = ByteBuffer.allocate(MAX_PAGE_SIZE);
 
-        // copy first 32 bytes into new buffer
-        byte[] header = new byte[this.headerSize];
-        buffer.get(header, 0, this.headerSize);
-        newPageBuffer.put(header);
+            // copy first 32 bytes into new buffer
+            byte[] header = new byte[this.headerSize];
+            buffer.get(header, 0, this.headerSize);
+            newPageBuffer.put(header);
 
-        // like buffer, create new offset map for later swap
-        Map<Long, Integer> newOffsetMap = new HashMap<>();
+            // like buffer, create new offset map for later swap
+            Map<Long, Integer> newOffsetMap = new HashMap<>();
 
-        for (Map.Entry<Long, Integer> offset: this.offsets.entrySet()) {
-            long documentId = offset.getKey();
-            int offsetValue = offset.getValue();
+            for (Map.Entry<Long, Integer> offset: this.offsets.entrySet()) {
+                long documentId = offset.getKey();
+                int offsetValue = offset.getValue();
 
-            // go straight to the offset
-            buffer.position(offsetValue);
+                // go straight to the offset
+                buffer.position(offsetValue);
 
-            // read document header an obtain id, dcs, cs, df
-            // there's no need to read the document, it only
-            // matters if it is marked for deletion or not.
-            long docId = buffer.getLong();
-            long pageId = buffer.getLong();
-            int dcs = buffer.getInt();
-            int cs = buffer.getInt();
-            byte df = buffer.get();
+                // read document header an obtain id, dcs, cs, df
+                // there's no need to read the document, it only
+                // matters if it is marked for deletion or not.
+                long docId = buffer.getLong();
+                long pageId = buffer.getLong();
+                int dcs = buffer.getInt();
+                int cs = buffer.getInt();
+                byte df = buffer.get();
 
-            if (docId != documentId) {
-                throw new IllegalStateException("Error: offset does not match current document scanned " +
-                        "in defragmentation process. Reverting to original page.");
-            }
-
-            try {
-                // check if document is active - ignoring flagged docs
-                // new space is reclaimed at end
-                if (df == ACTIVE) {
-                    // it's active write to the new buffer, get new offset and add to new offset map
-                    int offsetPosition = newPageBuffer.position();
-                    newOffsetMap.put(docId, offsetPosition);
-
-                    newPageBuffer.putLong(docId);
-                    newPageBuffer.putLong(pageId);
-                    newPageBuffer.putInt(dcs);
-                    newPageBuffer.putInt(cs);
-                    newPageBuffer.put(df);
-
-                    // get document and put in new buffer
-                    byte[] document = cs == 0 ? new byte[dcs] : new byte[cs];
-                    buffer.get(document);
-                    newPageBuffer.put(document);
+                if (docId != documentId) {
+                    throw new IllegalStateException("Error: offset does not match current document scanned " +
+                            "in defragmentation process. Reverting to original page.");
                 }
-            } catch (Exception e) {
-                System.err.println("ERROR: interruption during defragmentation process: " + e.getLocalizedMessage());
-                return Map.of("page", this, "state", false);
+
+                try {
+                    // check if document is active - ignoring flagged docs
+                    // new space is reclaimed at end
+                    if (df == ACTIVE) {
+                        // it's active write to the new buffer, get new offset and add to new offset map
+                        int offsetPosition = newPageBuffer.position();
+                        newOffsetMap.put(docId, offsetPosition);
+
+                        newPageBuffer.putLong(docId);
+                        newPageBuffer.putLong(pageId);
+                        newPageBuffer.putInt(dcs);
+                        newPageBuffer.putInt(cs);
+                        newPageBuffer.put(df);
+
+                        // get document and put in new buffer
+                        byte[] document = cs == 0 ? new byte[dcs] : new byte[cs];
+                        buffer.get(document);
+                        newPageBuffer.put(document);
+                    }
+                } catch (Exception e) {
+                    System.err.println("ERROR: interruption during defragmentation process: " + e.getLocalizedMessage());
+                    return Map.of("page", this, "state", false);
+                }
+            }
+            System.out.println("old offset count: " + this.offsets.size());
+            System.out.println("new ofsset count: " + newOffsetMap.size());
+
+            this.page = newPageBuffer.array();
+            this.pageSize = newPageBuffer.position();
+            this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
+            this.offsets = newOffsetMap;
+            this.deletedDocuments.clear();
+            return Map.of("page", this, "state", true);
+        } finally {
+            if (locked) {
+                readWriteLock.writeLock().unlock();
             }
         }
-        System.out.println("old offset count: " + this.offsets.size());
-        System.out.println("new ofsset count: " + newOffsetMap.size());
-
-        this.page = newPageBuffer.array();
-        this.pageSize = newPageBuffer.position();
-        this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
-        this.offsets = newOffsetMap;
-
-        // It's wild to think there's no way to reclaim these deleted documents - poof gone!
-        // this.page reset has officially obliterated any trace off the face of the planet.
-        // How many times have I thought how great it'd be to reclaim something that has
-        // been accidentally removed, however I guess that defeats the purpose. Bye.. for now.
-        this.deletedDocuments.clear();
-
-        System.out.println("Successful Defragmentation on Page with ID " + "'" + this.pageId + "'" + ".");
-        System.out.println("Original Available Space: " + originalAvailableSpace + " bytes");
-        System.out.println("New Available space: " + this.availableSpace + " bytes");
-        System.out.println("Space reclaimed: " + (this.availableSpace - originalAvailableSpace) + " bytes");
-        return Map.of("page", this, "state", true);
     }
 
     /**
