@@ -408,6 +408,23 @@ public class PageTest {
         assertEquals(true, compactResult.get("state"));
         assertEquals(page, compactResult.get("page"));
         assertEquals(5, page.getNumberOfDocuments());
-        assertEquals(3, Math.ceil(page.getNumberOfDocuments() * 0.5));
+
+        // number of docs in new page
+        int right = (int) Math.ceil(page.getNumberOfDocuments() * 0.5);
+        assertEquals(3, right);
+
+        // number of docs that stay in current page
+        int left = page.getNumberOfDocuments() - right;
+        assertEquals(2, left);
+
+        PageSplitResult result = page.splitPage();
+        long newPageId = result.getNewPage().getPageId();
+
+        assertAll(
+                () -> assertEquals(left, result.getCurrentPage().getNumberOfDocuments()),
+                () -> assertEquals(right, result.getNewPage().getNumberOfDocuments()),
+                () -> assertEquals(99L, result.getNewPage().getPrevious()),
+                () -> assertEquals(newPageId, result.getCurrentPage().getNext())
+        );
     }
 }

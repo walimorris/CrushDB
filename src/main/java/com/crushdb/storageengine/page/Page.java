@@ -264,8 +264,8 @@ public class Page {
         this.availableSpace = (short) (MAX_PAGE_SIZE - this.headerSize);
         this.compressedPageSize = -1;
         this.compressedPage = null;
-        this.next = -1;
-        this.previous = -1;
+        this.next = -1L;
+        this.previous = -1L;
         this.deletedDocuments = new HashSet<>();
         this.offsets = new HashMap<>();
         this.isFull = false;
@@ -276,6 +276,29 @@ public class Page {
         this.autoCompressOnInsert = autoCompressOnInsert;
         this.numberOfDocuments = 0;
     }
+
+    public Page(long pageId, byte[] pageData, Map<Long, Integer> offsets, Long previous, Long next,
+                boolean autoCompressOnInsert, int numberOfDocuments) {
+        this.pageId = pageId;
+        this.page = pageData;
+        this.headerSize = 32;
+        this.header = new byte[this.headerSize];
+        this.pageSize = pageData.length;
+        this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
+        this.compressedPageSize = autoCompressOnInsert ? this.pageSize : 0;
+        this.compressedPage = null;
+        this.next = next;
+        this.previous = previous;
+        this.deletedDocuments = new HashSet<>();
+        this.isFull = false;
+        this.isDirty = false;
+        this.offsets = new HashMap<>(offsets);
+        this.checksum = 0;
+        this.modificationTimestamp = System.currentTimeMillis();
+        this.autoCompressOnInsert = autoCompressOnInsert;
+        this.numberOfDocuments = numberOfDocuments;
+    }
+
 
     public Page(long pageId) {
         this(pageId, false);
@@ -686,7 +709,8 @@ public class Page {
         }
     }
 
-    private Page splitPage() {
+    // TODO: refactor with less complexity, method is way too long with initial bruteforce.
+    public PageSplitResult splitPage() {
         // working on current page - no need to decompress as document headers
         // are read and tombstone docs are removed.
         Map<String, Object> compactState = this.compactPage();
@@ -694,9 +718,124 @@ public class Page {
             throw new IllegalStateException("Error: split page process fail due to compaction error on Page ID: " + this.pageId);
         }
         // get the compacted page
-        Page currentPage = (Page) compactState.get("page");
-        int numDocsToSplit = (int) Math.ceil(this.numberOfDocuments * 0.5);
-        return null;
+        byte[] currentPageBytes = new byte[MAX_PAGE_SIZE];
+        byte[] newPageBytes = new byte[MAX_PAGE_SIZE];
+        int numDocsRight = (int) Math.ceil(this.numberOfDocuments * 0.5);
+        int numDocsLeft = this.numberOfDocuments - numDocsRight;
+
+        // copy offsets list so no issue in setting this page offsets
+        Map<Long, Integer> copyOffsets = new TreeMap<>(this.offsets);
+
+
+        // I have ceil: first half stays, second half goes to new page
+        ByteBuffer currentPageBuffer = ByteBuffer.wrap(currentPageBytes);
+        ByteBuffer newPageBuffer = ByteBuffer.allocate(MAX_PAGE_SIZE);
+
+        // new new offsets
+        Map<Long, Integer> currentPageOffsets = new TreeMap<>();
+        Map<Long, Integer> newPageOffsets = new TreeMap<>();
+
+        // new page id
+        Random random = new Random();
+        long currentPageId = this.pageId;
+        long newPageId = random.nextLong(this.pageId, Long.MAX_VALUE);
+
+        ByteBuffer pageBuffer = ByteBuffer.wrap(this.page);
+
+        // put the header on current page
+        byte[] header = new byte[this.headerSize];
+        pageBuffer.get(header);
+        currentPageBuffer.put(header);
+
+        // work through current page first
+        Iterator<Map.Entry<Long, Integer>> iterator = copyOffsets.entrySet().iterator();
+        int read = 0;
+        while (iterator.hasNext() && read < numDocsLeft) {
+            Map.Entry<Long, Integer> entry = iterator.next();
+            Long id = entry.getKey();
+            int offset = entry.getValue();
+
+            // Move to document position in the page
+            pageBuffer.position(offset);
+
+            long docId = pageBuffer.getLong();
+            pageBuffer.getLong();  // Skip pageId
+            int dcs = pageBuffer.getInt();
+            int cs = pageBuffer.getInt();
+            byte df = pageBuffer.get();
+
+            if (docId != id) {
+                throw new IllegalStateException("Error: Document ID mismatch in page split process." +
+                        " Document ID: " + id + ", but was " + docId);
+            }
+
+            byte[] documentBytes;
+            if (this.autoCompressOnInsert) {
+                documentBytes = new byte[cs];
+            } else {
+                documentBytes = new byte[dcs];
+            }
+
+            int newOffset = currentPageBuffer.position();
+            currentPageOffsets.put(docId, newOffset);
+            currentPageBuffer.putLong(docId);
+            currentPageBuffer.putLong(currentPageId);
+            currentPageBuffer.putInt(dcs);
+            currentPageBuffer.putInt(cs);
+            currentPageBuffer.put(df);
+            currentPageBuffer.put(documentBytes);
+
+            iterator.remove();
+        }
+        this.page = currentPageBytes;
+        this.offsets = currentPageOffsets;
+        this.pageSize = currentPageBuffer.position();
+        this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
+        this.isCompressed = this.autoCompressOnInsert;
+        this.numberOfDocuments = numDocsLeft;
+
+
+        // now do remaining offsets for new page
+        while (iterator.hasNext() && read < numDocsLeft) {
+            Map.Entry<Long, Integer> entry = iterator.next();
+            Long id = entry.getKey();
+            int offset = entry.getValue();
+
+            // Move to document position in the page
+            pageBuffer.position(offset);
+
+            long docId = pageBuffer.getLong();
+            pageBuffer.getLong();
+            int dcs = pageBuffer.getInt();
+            int cs = pageBuffer.getInt();
+            byte df = pageBuffer.get();
+
+            if (docId != id) {
+                throw new IllegalStateException("Error: Document ID mismatch in page split process. " +
+                        "Expected: " + id + ", Found: " + docId + " at offset: " + offset);
+            }
+
+            byte[] documentBytes;
+            if (this.autoCompressOnInsert) {
+                documentBytes = new byte[cs];
+            } else {
+                documentBytes = new byte[dcs];
+            }
+            int newOffset = newPageBuffer.position();
+            newPageOffsets.put(docId, newOffset);
+            newPageBuffer.putLong(docId);
+            newPageBuffer.putLong(newPageId);
+            newPageBuffer.putInt(dcs);
+            newPageBuffer.putInt(cs);
+            newPageBuffer.put(df);
+            newPageBuffer.put(documentBytes);
+
+            // remove the old offsets
+            copyOffsets.remove(id);
+        }
+        this.next = newPageId;
+        Page nextPage = new Page(newPageId, newPageBytes, newPageOffsets, this.pageId, -1L, this.autoCompressOnInsert, numDocsRight);
+        return new PageSplitResult(this, nextPage);
     }
 
     /**
@@ -881,6 +1020,10 @@ public class Page {
         this.isDirty = true;
     }
 
+    public long getPageId() {
+        return this.pageId;
+    }
+
     public int getPageSize() {
         return this.pageSize;
     }
@@ -911,5 +1054,13 @@ public class Page {
 
     public int getNumberOfDocuments() {
         return this.numberOfDocuments;
+    }
+
+    public long getNext() {
+        return this.next;
+    }
+
+    public long getPrevious() {
+        return this.previous;
     }
 }
