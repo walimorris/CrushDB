@@ -418,16 +418,16 @@ public class PageTest {
         assertEquals(2, left);
 
         PageSplitResult result = page.splitPage();
-        long newPageId = result.getNewPage().getPageId();
+        long newPageId = result.newPage().getPageId();
 
         assertAll(
-                () -> assertEquals(left, result.getCurrentPage().getNumberOfDocuments()),
-                () -> assertEquals(right, result.getNewPage().getNumberOfDocuments()),
-                () -> assertEquals(99L, result.getNewPage().getPrevious()),
-                () -> assertEquals(newPageId, result.getCurrentPage().getNext())
+                () -> assertEquals(left, result.currentPage().getNumberOfDocuments()),
+                () -> assertEquals(right, result.newPage().getNumberOfDocuments()),
+                () -> assertEquals(99L, result.newPage().getPrevious()),
+                () -> assertEquals(newPageId, result.currentPage().getNext())
         );
 
-        System.out.println("Current Page: " + result.getCurrentPage().getPageSize());
-        System.out.println("New Page: " + result.getNewPage().getPageSize());
+        System.out.println("Current Page: " + result.currentPage().getPageSize());
+        System.out.println("New Page: " + result.newPage().getPageSize());
     }
 }
