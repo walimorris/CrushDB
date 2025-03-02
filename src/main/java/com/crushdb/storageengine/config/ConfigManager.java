@@ -24,6 +24,8 @@ public class ConfigManager {
      */
     public static final String CONFIGURATION_FILE = BASE_DIR + "crushdb.conf";
 
+    public static final String DEFAULT_CONFIGURATION_FILE = "conf/crushdb.conf";
+
     /**
      * Directory where general application logs (errors, debug, performance metrics) are stored.
      * This is separate from WAL logs to maintain clarity between operational and transactional logs.
@@ -54,11 +56,10 @@ public class ConfigManager {
     private static final Properties properties = new Properties();
 
     public static boolean loadConfig() {
-        Path configPath = Paths.get(CONFIGURATION_FILE);
-        if (!Files.exists(configPath)) {
+        if (!Files.exists(Path.of(CONFIGURATION_FILE))) {
             writeDefaultConfig();
         }
-        try (BufferedReader reader = Files.newBufferedReader(configPath)) {
+        try (BufferedReader reader = Files.newBufferedReader(Path.of(CONFIGURATION_FILE))) {
             properties.load(reader);
             return true;
         } catch (IOException e) {
@@ -68,12 +69,8 @@ public class ConfigManager {
     }
 
     private static void writeDefaultConfig() {
-        Path configPath = Paths.get(CONFIGURATION_FILE);
-        try (InputStream inputStream = ConfigManager.class.getClassLoader().getResourceAsStream("config/crushdb.conf")) {
-            if (inputStream == null) {
-                throw new FileNotFoundException("Configuration file not found.");
-            }
-            Files.copy(inputStream, configPath, StandardCopyOption.REPLACE_EXISTING);
+        try (InputStream inputStream = Files.newInputStream(Path.of(DEFAULT_CONFIGURATION_FILE))) {
+            Files.copy(inputStream, Paths.get(CONFIGURATION_FILE), StandardCopyOption.REPLACE_EXISTING);
             System.out.println("CrushDB Configuration file written: " + CONFIGURATION_FILE);
         } catch (IOException e) {
             System.err.println("Error writing CrushDB configuration: " + e.getMessage());

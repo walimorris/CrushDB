@@ -19,6 +19,9 @@ public class DatabaseInitializer {
         if (base && log && data && wal && certs) {
             if(!new File(CONFIGURATION_FILE).exists()) {
                 isInit = ConfigManager.loadConfig();
+            } else {
+                System.out.println("Configuration already alive: " + CONFIGURATION_FILE);
+                isInit = true;
             }
         }
         return isInit;
