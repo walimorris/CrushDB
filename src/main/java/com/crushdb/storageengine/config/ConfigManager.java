@@ -53,18 +53,103 @@ public class ConfigManager {
      */
     public static final String CU_CA_CERT_PATH = BASE_DIR + "certs/";
 
+    /**
+     * Configuration file field representing the database page size.
+     * This field defines the size of a single page in the crushdb storage engine.
+     * Example: page_size=4096
+     */
+    public static final String PAGE_SIZE_FIELD = "page_size";
+
+    /**
+     * Configuration file field defining the tombstone garbage collection grace period.
+     * This determines how long deleted data (tombstones) should be retained before being permanently removed.
+     * Example: tombstone_gc=60000 (milliseconds)
+     */
+    public static final String TOMBSTONE_GRACE_PERIOD_MS_FIELD = "tombstone_gc";
+
+    /**
+     * Configuration file field indicating whether Write-Ahead Logging (WAL) is enabled.
+     * If set to true, WAL is used for durability and crash recovery.
+     * Example: wal_enabled=true
+     */
+    public static final String WAL_ENABLED_FIELD = "wal_enabled";
+
+    /**
+     * Configuration file field indicating whether TLS (Transport Layer Security) is enabled.
+     * When set to {@code true}, CrushDB enforces encrypted communication for secure data transmission.
+     * Example configuration entry:{@code tls_enabled=true}
+     */
+    public static final String TLS_ENABLED_FIELD = "tls_enabled";
+
+    /**
+     * Configuration file field specifying the path to the system-wide CA (Certificate Authority) certificate file.
+     * This certificate is used to verify the identity of external servers when establishing secure connections.
+     * By default, CrushDB uses the standard CA certificate location for Debian/Ubuntu systems:
+     * {@code /etc/ssl/certs/ca-certificates.crt}
+     *
+     * Example configuration entry:
+     * {@code ca_cert_path=/etc/ssl/certs/ca-certificates.crt}
+     */
+    public static final String CA_CERT_PATH_FIELD = "ca_cert_path";
+
+    /**
+     * Configuration file field specifying the path to a custom user-supplied CA certificate file.
+     * If set, CrushDB will use this certificate instead of the default system CA certificate.
+     * This is useful for:
+     * <ul>
+     *   <li>Private cloud environments with custom certificate authorities.</li>
+     *   <li>Enterprise security policies requiring non-standard CA certificates.</li>
+     *   <li>Self-signed certificates for internal services.</li>
+     * </ul>
+     *
+     * Example configuration entry:
+     * {@code custom_ca_cert_path=~/.crushdb/certs/my_ca_cert.pem}
+     */
+    public static final String CU_CA_CERT_PATH_FIELD = "custom_ca_cert_path";
+
+    /**
+     * Configuration file field representing the storage path.
+     * This field is used in the configuration file to specify where database files should be stored.
+     * Example: storage_path=/home/user/.crushdb/data/
+     */
+    public static final String STORAGE_PATH_FIELD = "storage_path";
+
+    /**
+     * The maximum log size (in MB) before the system deletes old logs.
+     * When the total log size in the `/log/` directory exceeds this limit,
+     * the oldest log files are deleted to make space for new entries.
+     */
+    public static final String LOG_MAX_SIZE_MB_FIELD = "log_max_size_mb";
+
+    /**
+     * The number of days logs are retained before deletion. CrushDB handles log rotation
+     * by periodically checking log files and enforcing a retention policy. This process
+     * ensures that logs do not grow indefinitely, keeping the embedded database lightweight.
+     */
+    public static final String LOG_RETENTION_DAYS_FIELD = "log_retention_days";
+
+    /**
+     * Supported log levels for CrushDB.
+     * CrushDB allows logging at different levels of severity:
+     *     INFO  - General informational messages about database operations.
+     *     ERROR - Critical errors or failures that require attention.
+     */
+    public static final String LOG_LEVEL = "log_level";
+
+    public static final String LOG_MAX_FILES = "log_max_files";
+
     private static final Properties properties = new Properties();
 
-    public static boolean loadConfig() {
+    public static Properties loadConfig() {
         if (!Files.exists(Path.of(CONFIGURATION_FILE))) {
             writeDefaultConfig();
         }
         try (BufferedReader reader = Files.newBufferedReader(Path.of(CONFIGURATION_FILE))) {
             properties.load(reader);
-            return true;
+            return properties;
         } catch (IOException e) {
             System.err.println("Error loading CrushDB configuration: " + e.getMessage());
-            return false;
+            return null;
         }
     }
 

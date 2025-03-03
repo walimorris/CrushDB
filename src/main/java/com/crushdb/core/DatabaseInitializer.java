@@ -3,13 +3,14 @@ package com.crushdb.core;
 import com.crushdb.storageengine.config.ConfigManager;
 
 import java.io.File;
+import java.util.Properties;
 
 import static com.crushdb.storageengine.config.ConfigManager.*;
 
 public class DatabaseInitializer {
 
-    public static boolean init() {
-        boolean isInit = false;
+    public static Properties init() {
+        Properties properties = null;
         boolean base = createDirectory(BASE_DIR);
         boolean log = createDirectory(LOG_DIR);
         boolean data = createDirectory(DATA_DIR);
@@ -17,14 +18,12 @@ public class DatabaseInitializer {
         boolean certs = createDirectory(CU_CA_CERT_PATH);
 
         if (base && log && data && wal && certs) {
-            if(!new File(CONFIGURATION_FILE).exists()) {
-                isInit = ConfigManager.loadConfig();
-            } else {
+            if (new File(CONFIGURATION_FILE).exists()) {
                 System.out.println("Configuration already alive: " + CONFIGURATION_FILE);
-                isInit = true;
             }
+            properties = ConfigManager.loadConfig();
         }
-        return isInit;
+        return properties;
     }
 
     private static boolean createDirectory(String path) {
