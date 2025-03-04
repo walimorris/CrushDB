@@ -14,6 +14,6 @@ public class CrushDBLoggerTest {
                 () -> assertEquals(7, logger.getMaxLogRetentionDays()),
                 () -> assertEquals(52428800, logger.getMaxLogSize())
         );
-        logger.info("CrushDB Logger Initialized");
+        logger.info("CrushDB Logger Initialized", null);
     }
 }

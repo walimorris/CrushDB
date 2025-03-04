@@ -316,7 +316,7 @@ public class PageTest {
 
         // assertion is thrown trying to decompress an already decompressed page
         Exception exception = assertThrows(IllegalStateException.class, page::decompressPage);
-        String expectedMessage = "Error: attempting to decompress an already decompressed page.";
+        String expectedMessage = String.format("ERROR: Attempting to decompress page with ID '%d' that is already decompressed", page.getPageId());
         String actualMessage = exception.getMessage();
         assertEquals(expectedMessage, actualMessage);
 

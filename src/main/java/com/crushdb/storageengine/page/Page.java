@@ -1,5 +1,6 @@
 package com.crushdb.storageengine.page;
 
+import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.model.Document;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
@@ -97,6 +98,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @version 1.0
  */
 public class Page {
+    private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(Page.class);
 
     /**
      * Unique identifier for this page.
@@ -363,7 +365,9 @@ public class Page {
         int insertionPosition = this.pageSize;
 
         if (insertionPosition + totalSize > MAX_PAGE_SIZE) {
-            throw new IllegalStateException("ERROR: Not enough space in page.");
+            LOGGER.error(String.format("Not enough space in page with ID: '%d'", this.pageId),
+                    IllegalStateException.class.getName());
+            throw new IllegalStateException(String.format("ERROR: Not enough space in page with ID: %d", this.pageId));
         }
 
         // prep buffer to write data to page
@@ -457,11 +461,11 @@ public class Page {
      */
     private byte[] retrieveDocumentBytes(long documentId) {
         if (this.deletedDocuments.contains(documentId)) {
-            System.err.println("Document with ID " + "'" + documentId + "'" + "marked for deletion.");
+            LOGGER.info(String.format("Document with ID '%d' marked for deletion", documentId), null);
             return null;
         }
         if (!this.offsets.containsKey(documentId)) {
-            System.err.println("ERROR: Document ID " + documentId + " not found in offsets.");
+            LOGGER.error(String.format("Document ID '%d' not found in offsets on Page '%d'", documentId, this.pageId), null);
             return null;
         }
         int start = this.offsets.get(documentId);
@@ -475,13 +479,13 @@ public class Page {
         byte df = buffer.get();
 
         if (df == INACTIVE) {
-            System.out.println("WARNING: Document with ID " + documentId + ", is marked for deletion.");
+            LOGGER.info(String.format("Document with ID '%d' is marked for deletion.", documentId), null);
             // TODO: update document delete flag value
             return null;
         }
 
         if (storedDocId != documentId) {
-            System.err.println("ERROR: Document ID mismatch! Expected: " + documentId + ", Found: " + storedDocId);
+            LOGGER.error(String.format("Document ID mismatch! Expected '%d', but found '%d'", documentId, storedDocId), null);
             return null;
         }
 
@@ -493,6 +497,8 @@ public class Page {
         if (cs > 0) {
             document = decompressDocument(document, dcs);
             if (document.length != dcs) {
+                LOGGER.error(String.format("Decompression size mismatch! Expected '%d' but got '%d'", dcs, document.length),
+                        IllegalStateException.class.getName());
                 throw new IllegalStateException("Decompression size mismatch! Expected " + dcs + " but got " + document.length);
             }
         }
@@ -522,11 +528,11 @@ public class Page {
             int tombstoneDcs = createTombstone(offset);
 
             if (tombstoneDcs == -1) {
-                System.out.println("Failed to create tombstone for Document with ID: " + documentId);
+                LOGGER.error(String.format("Failed to create tombstone for Document with ID: '%d'", documentId), null);
                 this.offsets.put(documentId, offset); // need to put this back for retry
                 return;
             } else {
-                System.out.println("Tombstone created for document with ID: " + documentId);
+                LOGGER.info(String.format("Tombstone created for document with ID: '%s'", documentId), null);
             }
             this.deletedDocuments.add(documentId);
             this.numberOfDocuments -= 1;
@@ -554,7 +560,8 @@ public class Page {
             if (tombstoneState == INACTIVE) {
                 return dcs;
             } else {
-                System.err.println("Tombstone with state: " + tombstoneState + " for Document with ID " + docId);
+                LOGGER.error(String.format("Tombstone not flagged for delete on Document with ID: '%s'", docId),
+                        IllegalStateException.class.getName());
                 throw new IllegalStateException("ERROR: Tombstone not flagged for delete for Document with ID: " + docId);
             }
         }
@@ -671,15 +678,21 @@ public class Page {
                 byte df = buffer.get();
 
                 if (df == INACTIVE) {
-                    throw new IllegalStateException("Error: attempting to decompress a page with tombstoned documents.");
+                    LOGGER.error(String.format("Attempting to decompress a page with ID '%d' that contains tombstones", this.pageId),
+                            IllegalStateException.class.getName());
+                    throw new IllegalStateException(String.format("Error: Attempting to decompress a page with ID '%d' that contains tombstones", this.pageId));
                 }
 
                 if (docId != offsetMap.getKey()) {
-                    throw new IllegalStateException("Error: Document ID mismatch in page decompression.");
+                    LOGGER.error(String.format("Document ID mismatch in page decompression: expected '%d' but got '%d'", offsetMap.getKey(), docId),
+                            IllegalStateException.class.getName());
+                    throw new IllegalStateException(String.format("Error: Document ID mismatch in page compression: expected '%d' but got '%d'", offsetMap.getKey(), docId));
                 }
 
                 if (cs == 0) {
-                    throw new IllegalStateException("Error: attempting to decompress an already decompressed page.");
+                    LOGGER.error(String.format("Attempting to decompress page with ID '%d' that is already decompressed", this.pageId),
+                            IllegalStateException.class.getName());
+                    throw new IllegalStateException(String.format("ERROR: Attempting to decompress page with ID '%d' that is already decompressed", this.pageId));
                 }
                 byte[] compressedDocumentBytes = new byte[cs];
                 buffer.get(compressedDocumentBytes);
@@ -716,7 +729,9 @@ public class Page {
             // are read and tombstone docs are removed.
             Map<String, Object> compactState = this.compactPage();
             if (!(boolean) compactState.get("state")) {
-                throw new IllegalStateException("Error: split page process fail due to compaction error on Page ID: " + this.pageId);
+                LOGGER.error(String.format("Split page process failed due to compaction error on Page ID: '%d'", this.pageId),
+                        IllegalStateException.class.getName());
+                throw new IllegalStateException(String.format("Error: Split page process failed due to compaction error on Page ID: '%d'", this.pageId));
             }
             // get the compacted page
             byte[] currentPageBytes = new byte[MAX_PAGE_SIZE];
@@ -764,10 +779,11 @@ public class Page {
                 byte df = pageBuffer.get();
 
                 if (docId != id) {
-                    throw new IllegalStateException("Error: Document ID mismatch in page split process." +
-                            " Document ID: " + id + ", but was " + docId);
+                    LOGGER.error(String.format("Document ID mismatch in page split process, expected Document ID: '%d', but was %s",
+                                    id, docId), IllegalStateException.class.getName());
+                    throw new IllegalStateException(String.format("ERROR: Document ID mismatch in page split process, expected Document ID:" +
+                            " '%d', but was %s", id, docId));
                 }
-
                 byte[] documentBytes;
                 if (this.autoCompressOnInsert) {
                     documentBytes = new byte[cs];
@@ -893,8 +909,10 @@ public class Page {
                 byte df = buffer.get();
 
                 if (docId != documentId) {
-                    throw new IllegalStateException("Error: offset does not match current document scanned " +
-                            "in defragmentation process. Reverting to original page.");
+                    LOGGER.error(String.format("Offset mismatch for Document with ID '%d' in page '%d' in defragmentation precess. " +
+                            "reverting to original page", docId, pageId), IllegalStateException.class.getName());
+                    throw new IllegalStateException(String.format("ERROR: Offset mismatch for Document with ID '%d' in page '%d' in defragmentation precess. " +
+                            "reverting to original page", docId, pageId));
                 }
 
                 try {
@@ -917,7 +935,8 @@ public class Page {
                         newPageBuffer.put(document);
                     }
                 } catch (Exception e) {
-                    System.err.println("ERROR: interruption during defragmentation process: " + e.getLocalizedMessage());
+                    LOGGER.error(String.format("Interruption during defragmentation process on page with ID '%s': %s",
+                            this.pageId, e.getLocalizedMessage()), null);
                     return Map.of("page", this, "state", false);
                 }
             }

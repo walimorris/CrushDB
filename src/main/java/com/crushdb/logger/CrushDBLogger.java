@@ -64,23 +64,28 @@ public class CrushDBLogger {
         }
     }
 
-    public void info(String message) {
+    public void info(String message, String exception) {
         if (logLevel.contains(INFO)) {
-            log(message, INFO);
+            log(message, INFO, exception);
         }
     }
 
-    public void error(String message) {
+    public void error(String message, String exception) {
         if (logLevel.contains(ERROR)) {
-            log(message, ERROR);
+            log(message, ERROR, exception);
         }
     }
 
-    private void log(String message, String level) {
+    private void log(String message, String level, String exception) {
         lock.lock();
         try {
             logRotationCheck();
-            String log = String.format("[%s] [%s] [%s] %s%n", LocalDateTime.now().format(FORMATTER), level, className, message);
+            String log;
+            if (exception != null) {
+                log = String.format("[%s] [%s] [%s] [%s] %s%n", LocalDateTime.now().format(FORMATTER), level, className, exception, message);
+            } else {
+                log = String.format("[%s] [%s] [%s] %s%n", LocalDateTime.now().format(FORMATTER), level, className, message);
+            }
             Files.write(Paths.get(LOG_FILE), log.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException e) {
             System.out.printf("Error: cannot write log %s%n", e.getMessage());
