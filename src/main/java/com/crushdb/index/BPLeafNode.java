@@ -19,7 +19,7 @@ import com.crushdb.storageengine.page.Page;
  * <ul>
  *     <li>Leaf nodes are the end nodes of search queries.</li>
  *     <li>They store the actual document locations in a {@link Page} (PageOffsetReference).</li>
- *     <li>When a leaf node splits, it promotes a key to the internal node above.</li>
+ *     <li>When a leaf node splits, it promotes a key to the internal node above (Parent)</li>
  * </ul>
  *
  * @author Wali Morris
@@ -55,20 +55,20 @@ public class BPLeafNode extends BPNode {
     /**
      * Array of key-value mappings (key → (pageId, offset)).
      */
-    BPMappings[] bpMappings;
+    BPMapping[] bpMappings;
 
     /**
      * Creates a new leaf node with an initial key-value pair.
      *
      * @param m The order of the Tree (determines maxPairs).
-     * @param mappings The first key-value pair to insert.
+     * @param mapping The first key-value pair to insert.
      */
-    public BPLeafNode(int m, BPMappings mappings) {
+    public BPLeafNode(int m, BPMapping mapping) {
         this.maxPairs = m - 1;
-        this.minPairs = (int) (Math.ceil(m / 2 )- 1);
+        this.minPairs = (int) (Math.ceil(m / 2 ) - 1);
         this.numPairs = 0;
-        this.bpMappings = new BPMappings[m];
-        this.insert(mappings);
+        this.bpMappings = new BPMapping[m];
+        this.insert(mapping);
     }
 
     /**
@@ -79,7 +79,7 @@ public class BPLeafNode extends BPNode {
      * @param mappings An array of key-value pairs.
      * @param parent The internal node that references this leaf.
      */
-    public BPLeafNode(int m, BPMappings[] mappings, BPInternalNode parent) {
+    public BPLeafNode(int m, BPMapping[] mappings, BPInternalNode parent) {
         this.maxPairs = m - 1;
         this.minPairs = (int) (Math.ceil(m / 2 )- 1);
         this.bpMappings = mappings;
@@ -93,7 +93,7 @@ public class BPLeafNode extends BPNode {
      * @param mappings The key-value mapping to insert.
      * @return boolean
      */
-    public boolean insert(BPMappings mappings) {
+    public boolean insert(BPMapping mappings) {
         // can't insert if node is full
         if (this.isFull()) {
             return false;
@@ -123,7 +123,7 @@ public class BPLeafNode extends BPNode {
      * @param mappings The array of key-value mappings.
      * @return The index of the first empty slot, or -1 if full.
      */
-    public int linearSearch(BPMappings[] mappings) {
+    public int linearSearch(BPMapping[] mappings) {
         for (int i = 0; i < mappings.length; i++) {
             if (mappings[i] == null) {
                 return i;

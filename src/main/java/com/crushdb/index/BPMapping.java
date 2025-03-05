@@ -21,7 +21,7 @@ import com.crushdb.storageengine.page.Page;
  * @author Wali Morris
  * @version 1.0
  */
-public class BPMappings implements Comparable<BPMappings> {
+public class BPMapping implements Comparable<BPMapping> {
 
     /**
      * The key associated with this mapping, used for indexing in the B+Tree.
@@ -43,13 +43,13 @@ public class BPMappings implements Comparable<BPMappings> {
      * @param key       The key associated with the reference.
      * @param reference The reference pointing to the data location.
      */
-    public BPMappings(long key, PageOffsetReference reference) {
+    public BPMapping(long key, PageOffsetReference reference) {
         this.key = key;
         this.reference = reference;
     }
 
     @Override
-    public int compareTo(BPMappings o) {
+    public int compareTo(BPMapping o) {
         return Long.compare(this.key, o.key);
     }
 }
