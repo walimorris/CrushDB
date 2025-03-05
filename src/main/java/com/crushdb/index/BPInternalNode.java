@@ -5,17 +5,17 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
     /**
      * The maximum number of child nodes the internal node can have.
      */
-    int maxDegree;
+    int maxChildNodes;
 
     /**
      * The minimum number of child nodes the internal node must have.
      */
-    int minDegree;
+    int minChildNodes;
 
     /**
      *  The current number of child nodes the internal node has.
      */
-    int degree;
+    int childNodes;
 
     /**
      * A reference to the previous left internal node at the same level.
