@@ -21,6 +21,22 @@ import com.crushdb.storageengine.page.Page;
  *     <li>They store the actual document locations in a {@link Page} (PageOffsetReference).</li>
  *     <li>When a leaf node splits, it promotes a key to the internal node above (Parent)</li>
  * </ul>
+ * <h2>B+ Tree - Leaf Node rules:</h2>
+ * <ul>
+ *     <li>Note: The "order(m)" is the maximum number of children an internal node can have.
+ *     (see {@link BPInternalNode} for it's rules</li>
+ *
+ *     <li>    Stores at most m - 1 keys</li>
+ *     <li>    Stores at least ceil(m/2) - 1 keys</li>
+ *     <li>    Utilizing a doubly linked list for siblings</li>
+ *     <li>    Leaf nodes do not contain child pointers</li>
+ *     <li>    All leaf nodes are at the same depth</li>
+ *     <li>    Contain the actual pointers to data</li>
+ *     <li>    Keys are stored in ascending order</li>
+ *     <li>    Splitting a leaf node creates a new leaf</li>
+ *     <li>    Deletion may require merging or redistribution</li>
+ *     <li>    Supports efficient range queries</li>
+ * </ul>
  *
  * @author Wali Morris
  * @version 1.0
