@@ -81,7 +81,7 @@ public class BPLeafNode extends BPNode {
      */
     public BPLeafNode(int m, BPMapping[] mappings, BPInternalNode parent) {
         this.maxPairs = m - 1;
-        this.minPairs = (int) (Math.ceil(m / 2 )- 1);
+        this.minPairs = (int) (Math.ceil(m / 2 ) - 1);
         this.bpMappings = mappings;
         this.numPairs = linearSearch(mappings);
         this.parent = parent;
@@ -90,15 +90,15 @@ public class BPLeafNode extends BPNode {
     /**
      * Inserts a key-value mapping into the leaf node.
      *
-     * @param mappings The key-value mapping to insert.
+     * @param mapping The key-value mapping to insert.
      * @return boolean
      */
-    public boolean insert(BPMapping mappings) {
+    public boolean insert(BPMapping mapping) {
         // can't insert if node is full
         if (this.isFull()) {
             return false;
         } else {
-            this.bpMappings[numPairs] = mappings;
+            this.bpMappings[numPairs] = mapping;
             numPairs++;
             // maintain order of keys
             Arrays.sort(this.bpMappings, 0, numPairs);
