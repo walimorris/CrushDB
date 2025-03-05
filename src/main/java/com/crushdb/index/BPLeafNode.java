@@ -41,7 +41,7 @@ import com.crushdb.storageengine.page.Page;
  * @author Wali Morris
  * @version 1.0
  */
-public class BPLeafNode extends BPNode {
+public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
 
     /**
      * Maximum number of key-value pairs in the node (m - 1).
@@ -61,17 +61,17 @@ public class BPLeafNode extends BPNode {
     /**
      * Left sibling for ordered traversal and borrowing/merging.
      */
-    BPLeafNode leftSibling;
+    BPLeafNode<T> leftSibling;
 
     /**
      * Right sibling for ordered traversal and borrowing/merging.
      */
-    BPLeafNode rightSibling;
+    BPLeafNode<T> rightSibling;
 
     /**
      * Array of key-value mappings (key → (pageId, offset)).
      */
-    BPMapping[] bpMappings;
+    BPMapping<T>[] bpMappings;
 
     /**
      * Creates a new leaf node with an initial key-value pair.
@@ -79,11 +79,12 @@ public class BPLeafNode extends BPNode {
      * @param m The order of the Tree (determines maxPairs).
      * @param mapping The first key-value pair to insert.
      */
-    public BPLeafNode(int m, BPMapping mapping) {
+    @SuppressWarnings("unchecked")
+    public BPLeafNode(int m, BPMapping<T> mapping) {
         this.maxPairs = m - 1;
         this.minPairs = (int) (Math.ceil(m / 2 ) - 1);
         this.numPairs = 0;
-        this.bpMappings = new BPMapping[m];
+        this.bpMappings = (BPMapping<T>[]) new BPMapping[m];
         this.insert(mapping);
     }
 
@@ -95,7 +96,7 @@ public class BPLeafNode extends BPNode {
      * @param mappings An array of key-value pairs.
      * @param parent The internal node that references this leaf.
      */
-    public BPLeafNode(int m, BPMapping[] mappings, BPInternalNode parent) {
+    public BPLeafNode(int m, BPMapping<T>[] mappings, BPInternalNode<T> parent) {
         this.maxPairs = m - 1;
         this.minPairs = (int) (Math.ceil(m / 2 ) - 1);
         this.bpMappings = mappings;
@@ -109,7 +110,12 @@ public class BPLeafNode extends BPNode {
      * @param mapping The key-value mapping to insert.
      * @return boolean
      */
-    public boolean insert(BPMapping mapping) {
+    public boolean insert(BPMapping<T> mapping) {
+        if (mapping.key == null || mapping.reference == null) {
+            // added integrity to the structure. Every key should be valid and comparable.
+            // every reference is initialized. Pointing to an empty page could cause damage.
+            throw new IllegalArgumentException("Keys and References cannot be Null. This will collapse the Tree.");
+        }
         // can't insert if node is full
         if (this.isFull()) {
             return false;
@@ -139,7 +145,7 @@ public class BPLeafNode extends BPNode {
      * @param mappings The array of key-value mappings.
      * @return The index of the first empty slot, or -1 if full.
      */
-    public int linearSearch(BPMapping[] mappings) {
+    public int linearSearch(BPMapping<T>[] mappings) {
         for (int i = 0; i < mappings.length; i++) {
             if (mappings[i] == null) {
                 return i;
