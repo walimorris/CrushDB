@@ -82,7 +82,7 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
     @SuppressWarnings("unchecked")
     public BPLeafNode(int m, BPMapping<T> mapping) {
         this.maxPairs = m - 1;
-        this.minPairs = (int) (Math.ceil(m / 2 ) - 1);
+        this.minPairs = (int) (Math.ceil(m / 2.0 ) - 1);
         this.numPairs = 0;
         this.bpMappings = (BPMapping<T>[]) new BPMapping[m];
         this.insert(mapping);
@@ -98,7 +98,7 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
      */
     public BPLeafNode(int m, BPMapping<T>[] mappings, BPInternalNode<T> parent) {
         this.maxPairs = m - 1;
-        this.minPairs = (int) (Math.ceil(m / 2 ) - 1);
+        this.minPairs = (int) (Math.ceil(m / 2.0 ) - 1);
         this.bpMappings = mappings;
         this.numPairs = linearSearch(mappings);
         this.parent = parent;
