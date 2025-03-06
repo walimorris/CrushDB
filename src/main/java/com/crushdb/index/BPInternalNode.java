@@ -35,7 +35,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
     /**
      *  Pointers to child nodes. These can be either other internal nodes or leaf nodes.
      */
-    BPNode<T>[] pointers;
+    BPNode<T>[] childPointers;
 
     /**
      * Constructs an internal node in a B+Tree with a given order (m).
@@ -54,7 +54,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         this.minChildNodes = (int) Math.ceil(m / 2.0);
         this.childNodes = 0;
         this.keys = keys;
-        this.pointers = (BPNode<T>[]) new BPNode[this.maxChildNodes + 1];
+        this.childPointers = (BPNode<T>[]) new BPNode[this.maxChildNodes + 1];
     }
 
     /**
@@ -73,7 +73,58 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         // determines number of child nodes
         this.childNodes = linearSearch(pointers);
         this.keys = keys;
-        this.pointers = pointers;
+        this.childPointers = pointers;
+    }
+
+    /**
+     * Inserts a child pointer into the internal node.
+     *
+     * <p>This method adds a reference to a child node at the next available position.
+     * Internal nodes do not store actual data but instead store keys and pointers to
+     * child nodes. This is the means of searching, these nodes make decisions about
+     * which route to go.
+     *
+     * <h2>Use Cases:</h2>
+     * <ul>
+     *   <li>When splitting an internal node, new child pointers need to be inserted.</li>
+     *   <li>When constructing the tree, inserting the first child pointers.</li>
+     * </ul>
+     *
+     * @param pointer The added child node reference.
+     */
+    private void insertChildPointer(BPNode<T> pointer) {
+        this.childPointers[this.childNodes] = pointer;
+        this.childNodes++;
+    }
+
+    /**
+     * Finds the index of a given child pointer in the internal node.
+     *
+     * <p>Searches through the child pointer array to find the index
+     * of a specific child node.
+     * <ul>
+     *   <li>Determines which subtree to traverse during a search operation.</li>
+     *   <li>Finding the child that should be split when inserting new keys.</li>
+     *   <li>Locating a child pointer that needs to be adjusted or removed.</li>
+     * </ul>
+     *
+     * <h2>Use Cases:</h2>
+     * <ul>
+     *   <li>Searching, to determine which subtree to traverse.</li>
+     *   <li>Splitting, to locate the child being split.</li>
+     *   <li>Deletion, to find and remove the correct child pointer.</li>
+     * </ul>
+     *
+     * @param pointer The child node reference to search.
+     * @return The index of the child pointer, or -1.
+     */
+    private int findChildPointerIndex(BPNode<T> pointer) {
+        for (int i = 0; i < this.childNodes; i++) {
+            if (this.childPointers[i] == pointer) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
