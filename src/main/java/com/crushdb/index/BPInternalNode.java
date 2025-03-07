@@ -79,7 +79,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
     /**
      * Inserts a child pointer into the internal node.
      *
-     * <p>This method adds a reference to a child node at the next available position.
+     * <p>This method adds a reference to a child node at the given index position.
      * Internal nodes do not store actual data but instead store keys and pointers to
      * child nodes. This is the means of searching, these nodes make decisions about
      * which route to go.
@@ -92,8 +92,11 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      *
      * @param pointer The added child node reference.
      */
-    private void insertChildPointer(BPNode<T> pointer) {
-        this.childPointers[this.childNodes] = pointer;
+    private void insertChildPointer(BPNode<T> pointer, int index) {
+        for (int i = this.childNodes - 1; i >= index; i--) {
+            this.childPointers[i+1] = childPointers[i];
+        }
+        this.childPointers[index] = pointer;
         this.childNodes++;
     }
 
@@ -125,6 +128,11 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
             }
         }
         return -1;
+    }
+
+    private void appendChildPointer(BPNode<T> pointer) {
+        this.childPointers[this.childNodes] = pointer;
+        this.childNodes++;
     }
 
     /**
