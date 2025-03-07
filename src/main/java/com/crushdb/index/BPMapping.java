@@ -52,4 +52,12 @@ public class BPMapping<T extends Comparable<T>> implements Comparable<BPMapping<
     public int compareTo(BPMapping<T> o) {
         return this.key.compareTo(o.key);
     }
+
+    public T getKey() {
+        return key;
+    }
+
+    public PageOffsetReference getReference() {
+        return reference;
+    }
 }

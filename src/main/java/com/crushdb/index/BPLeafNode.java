@@ -190,4 +190,20 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
     public boolean isAppendable() {
         return this.numPairs == this.minPairs;
     }
+
+    public int getMinPairs() {
+        return minPairs;
+    }
+
+    public int getMaxPairs() {
+        return maxPairs;
+    }
+
+    public int getNumPairs() {
+        return numPairs;
+    }
+
+    public BPMapping<T>[] getBpMappings() {
+        return bpMappings;
+    }
 }
