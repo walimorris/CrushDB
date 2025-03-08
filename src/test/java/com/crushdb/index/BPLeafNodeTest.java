@@ -104,6 +104,15 @@ class BPLeafNodeTest {
 
     @Test
     void isFull() {
+       BPMapping<String> bpMapping1 = new BPMapping<>("United States", new PageOffsetReference(100L, 100));
+       BPMapping<String> bpMapping2 = new BPMapping<>("Columbia", new PageOffsetReference(200L, 200));
+
+       // max keys = 2 - initially contains 1 key
+       BPLeafNode<String> leafNode = new BPLeafNode<>(3, bpMapping1);
+       assertFalse(leafNode.isFull());
+
+       leafNode.insert(bpMapping2);
+       assertTrue(leafNode.isFull());
     }
 
     @Test
