@@ -41,10 +41,65 @@ class BPLeafNodeTest {
 
     @Test
     void delete() {
+        BPMapping<Long> bpMapping1 = new BPMapping<>(10L, new PageOffsetReference(1L, 32));
+        BPMapping<Long> bpMapping2 = new BPMapping<>(20L, new PageOffsetReference(2L, 64));
+        BPMapping<Long> bpMapping3 = new BPMapping<>(30L, new PageOffsetReference(3L, 128));
+        BPMapping<Long> bpMapping4 = new BPMapping<>(40L, new PageOffsetReference(4L, 256));
+
+        // max keys is m - 1 (3)
+        BPLeafNode<Long> leafNode = new BPLeafNode<>(4, bpMapping3);
+
+        boolean insert1 = leafNode.insert(bpMapping1);
+        boolean insert2 = leafNode.insert(bpMapping4);
+        boolean insert3 = leafNode.insert(bpMapping2);
+
+        // trying to insert m (4) keys should fail rules of b+tree
+        assertTrue(insert1);
+        assertTrue(insert2);
+        assertFalse(insert3);
+
+        leafNode.delete(0);
+
+        // after deleting a single key at index 0, we should have 2 keys remaining
+        // index[0] should be null and the remainder key slots should be occupied
+        assertAll(
+                () -> assertEquals(2, leafNode.getNumPairs()),
+                () -> assertNull(leafNode.getBpMappings()[0]),
+                () -> assertNotNull(leafNode.getBpMappings()[1]),
+                () -> assertNotNull(leafNode.getBpMappings()[2])
+        );
+
+        leafNode.delete(2);
+
+        // deleting another key should bear 2 null indexes (0, 2) and a single
+        // key remaining at index 1
+        assertAll(
+                () -> assertEquals(1, leafNode.getNumPairs()),
+                () -> assertNull(leafNode.getBpMappings()[0]),
+                () -> assertNull(leafNode.getBpMappings()[2]),
+                () -> assertNotNull(leafNode.getBpMappings()[1])
+        );
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void linearSearch() {
+        // let's create a simple linear search test. A leaf node with max keys of 6 will be created.
+        // the BPMapping[] will contain keys at every index but the last, letting the client know
+        // at which index the next node can be inserted
+        BPMapping<Long> bpMapping1 = new BPMapping<>(10L, new PageOffsetReference(1L, 32));
+        BPMapping<Long> bpMapping2 = new BPMapping<>(20L, new PageOffsetReference(2L, 64));
+        BPMapping<Long> bpMapping3 = new BPMapping<>(30L, new PageOffsetReference(3L, 128));
+        BPMapping<Long> bpMapping4 = new BPMapping<>(40L, new PageOffsetReference(4L, 256));
+        BPMapping<Long> bpMapping5 = new BPMapping<>(50L, new PageOffsetReference(5L, 512));
+        BPMapping<Long> bpMapping6 = new BPMapping<>(60L, new PageOffsetReference(6L, 1024));
+
+        BPMapping<Long>[] mappings = (BPMapping<Long>[]) new BPMapping[]{
+                bpMapping1, bpMapping2, bpMapping3, bpMapping4,
+                bpMapping5, bpMapping6, null
+        };
+        BPLeafNode<Long> leafNode = new BPLeafNode<>(7, mappings, null);
+        assertEquals(6, leafNode.linearSearch(leafNode.getBpMappings()));
     }
 
     @Test
