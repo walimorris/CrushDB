@@ -113,7 +113,7 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
      * @param mapping The key-value mapping to insert.
      * @return boolean
      */
-    public boolean insert(BPMapping<T> mapping) {
+    public boolean insert(BPMapping<T> mapping) throws IllegalArgumentException {
         if (mapping.key == null || mapping.reference == null) {
             // added integrity to the structure. Every key should be valid and comparable.
             // every reference is initialized. Pointing to an empty page could cause damage.
@@ -138,12 +138,16 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
      * @param index The index of the key-value pair to delete.
      */
     public boolean delete(int index) throws IndexOutOfBoundsException {
-        if (index < 0 || index >= this.minPairs) {
+        if (index < 0 || index >= this.numPairs) {
             // fail fast, but catch in caller (i.e. transaction or storage manager)
             throw new IndexOutOfBoundsException("Failure to delete key mapping on index: " + index);
         }
-        this.bpMappings[index] = null;
-        this.numPairs--;
+        // handle shift immediately - leave no gaps
+        for (int i = index; i < numPairs - 1; i++) {
+            bpMappings[i] = bpMappings[i + 1];
+        }
+        bpMappings[numPairs - 1] = null;
+        numPairs--;
         return true;
     }
 

@@ -350,7 +350,7 @@ public class Page {
      * @param document The {@link Document} to be inserted.
      * @throws IllegalStateException if the page does not have enough space.
      */
-    public Document insertDocument(Document document) {
+    public Document insertDocument(Document document) throws IllegalStateException {
         byte[] data = document.toBytes();
         int dcs = data.length;
         int cs = 0;
@@ -399,7 +399,7 @@ public class Page {
      *
      * @return {@link Document}
      */
-    public Document retrieveDocument(long documentId) {
+    public Document retrieveDocument(long documentId) throws IllegalStateException {
         byte[] data = retrieveDocumentBytes(documentId);
         return (data != null) ? Document.fromBytes(data) : null;
     }
@@ -459,7 +459,7 @@ public class Page {
      *         Returns {@code null} if the document is not found or if an error occurs.
      * @throws IllegalStateException If decompression fails or size mismatches are detected.
      */
-    private byte[] retrieveDocumentBytes(long documentId) {
+    private byte[] retrieveDocumentBytes(long documentId) throws IllegalStateException {
         if (this.deletedDocuments.contains(documentId)) {
             LOGGER.info(String.format("Document with ID '%d' marked for deletion", documentId), null);
             return null;
@@ -540,7 +540,7 @@ public class Page {
         }
     }
 
-    private int createTombstone(int offset) {
+    private int createTombstone(int offset) throws IllegalStateException {
         ByteBuffer buffer = ByteBuffer.wrap(this.page);
 
         buffer.position(offset);
@@ -650,7 +650,7 @@ public class Page {
         return this.availableSpace >= documentSize;
     }
 
-    public byte[] decompressPage() {
+    public byte[] decompressPage() throws IllegalStateException {
         // one writer allowed
         readWriteLock.writeLock().lock();
         try {
@@ -722,7 +722,7 @@ public class Page {
         }
     }
 
-    public PageSplitResult splitPage() {
+    public PageSplitResult splitPage() throws IllegalStateException {
         readWriteLock.writeLock().lock();
         try {
             // working on current page - no need to decompress as document headers
@@ -877,7 +877,7 @@ public class Page {
      *
      * <p><b>Note:</b>This method does not modify document content, only reorganizes it in memory.</p>
      */
-    public Map<String, Object> compactPage() {
+    public Map<String, Object> compactPage() throws IllegalStateException {
         boolean locked = readWriteLock.writeLock().tryLock();
         try {
             int originalAvailableSpace = this.availableSpace;

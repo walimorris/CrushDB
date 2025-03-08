@@ -13,10 +13,10 @@ class BPLeafNodeTest {
         BPMapping<Long> bpMapping3 = new BPMapping<>(3L, new PageOffsetReference(30L, 300));
         BPMapping<Long> bpMapping4 = new BPMapping<>(4L, new PageOffsetReference(40L, 400));
 
-        BPLeafNode<Long> leafNode  = new BPLeafNode<>(4, bpMapping1);
-        boolean insert1 = leafNode.insert(bpMapping2);
-        boolean insert2 = leafNode.insert(bpMapping3);
-        boolean insert3 = leafNode.insert(bpMapping4);
+        BPLeafNode<Long> leafNode  = new BPLeafNode<>(4, bpMapping3);
+        boolean insert1 = leafNode.insert(bpMapping1);
+        boolean insert2 = leafNode.insert(bpMapping4);
+        boolean insert3 = leafNode.insert(bpMapping2);
 
          // Remember the b+ tree rules: order (m) in this test is 4. Meaning maxPairs (keys) is m - 1.
          // In this case, that's three. The leaf node starts with 1 key. So, the first two inserts are
@@ -34,9 +34,11 @@ class BPLeafNodeTest {
         // keys are sorted in leaf nodes - which is a prominent feature of b+ tree. Let's ensure our
         // keys are indeed sorted. Sorts are conducted on insert. This, perhaps, takes some amount of
         // performance hit. Is there a better data structure to optimize this?
-        for (int i = 1; i < leafNode.getBpMappings().length; i++) {
-            assertEquals(i, leafNode.getBpMappings()[i-1].getKey());
-        }
+        assertAll(
+                () -> assertEquals(bpMapping1, leafNode.getBpMappings()[0]),
+                () -> assertEquals(bpMapping3, leafNode.getBpMappings()[1]),
+                () -> assertEquals(bpMapping4, leafNode.getBpMappings()[2])
+        );
     }
 
     @Test
@@ -64,20 +66,23 @@ class BPLeafNodeTest {
         // index[0] should be null and the remainder key slots should be occupied
         assertAll(
                 () -> assertEquals(2, leafNode.getNumPairs()),
-                () -> assertNull(leafNode.getBpMappings()[0]),
+                () -> assertNotNull(leafNode.getBpMappings()[0]),
                 () -> assertNotNull(leafNode.getBpMappings()[1]),
-                () -> assertNotNull(leafNode.getBpMappings()[2])
+                () -> assertNull(leafNode.getBpMappings()[2])
         );
 
-        leafNode.delete(2);
+        // deletion merges immediately, check correct values and CORRECT ORDER (inserts are in order)
+        assertEquals(bpMapping3, leafNode.getBpMappings()[0]);
+        leafNode.delete(0);
+        assertEquals(bpMapping4, leafNode.getBpMappings()[0]);
 
-        // deleting another key should bear 2 null indexes (0, 2) and a single
-        // key remaining at index 1
+        // deleting another key should bear 2 null indexes (1, 2) and a single
+        // key remaining at index 0
         assertAll(
                 () -> assertEquals(1, leafNode.getNumPairs()),
-                () -> assertNull(leafNode.getBpMappings()[0]),
+                () -> assertNull(leafNode.getBpMappings()[1]),
                 () -> assertNull(leafNode.getBpMappings()[2]),
-                () -> assertNotNull(leafNode.getBpMappings()[1])
+                () -> assertNotNull(leafNode.getBpMappings()[0])
         );
     }
 
@@ -126,6 +131,7 @@ class BPLeafNodeTest {
 
         // remove key to make leaf node contain 0 keys, which is lacking min number of keys
         boolean delete1 = leafNode.delete(0);
+        assertTrue(delete1);
         assertTrue(leafNode.isLacking());
 
         boolean insert1 = leafNode.insert(bpMapping1);
