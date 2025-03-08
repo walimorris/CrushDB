@@ -1,6 +1,8 @@
 package com.crushdb.index;
 
 import java.util.Arrays;
+
+import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.storageengine.page.Page;
 
 /**
@@ -42,6 +44,7 @@ import com.crushdb.storageengine.page.Page;
  * @version 1.0
  */
 public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
+    private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(BPLeafNode.class);
 
     /**
      * Maximum number of key-value pairs in the node (m - 1).
@@ -134,9 +137,14 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
      *
      * @param index The index of the key-value pair to delete.
      */
-    public void delete(int index) {
+    public boolean delete(int index) throws IndexOutOfBoundsException {
+        if (index < 0 || index >= this.minPairs) {
+            // fail fast, but catch in caller (i.e. transaction or storage manager)
+            throw new IndexOutOfBoundsException("Failure to delete key mapping on index: " + index);
+        }
         this.bpMappings[index] = null;
         this.numPairs--;
+        return true;
     }
 
     /**

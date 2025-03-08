@@ -117,6 +117,28 @@ class BPLeafNodeTest {
 
     @Test
     void isLacking() {
+        BPMapping<String> bpMapping1 = new BPMapping<>("United States", new PageOffsetReference(100L, 100));
+        BPMapping<String> bpMapping2 = new BPMapping<>("United States", new PageOffsetReference(100L, 100));
+
+        // max keys = 3 - initially contains 1 key and must have minimum 1 ceil(3/2) - 1
+        BPLeafNode<String> leafNode = new BPLeafNode<>(4, bpMapping1);
+        assertFalse(leafNode.isLacking());
+
+        // remove key to make leaf node contain 0 keys, which is lacking min number of keys
+        boolean delete1 = leafNode.delete(0);
+        assertTrue(leafNode.isLacking());
+
+        boolean insert1 = leafNode.insert(bpMapping1);
+        boolean insert2 = leafNode.insert(bpMapping2);
+
+        assertTrue(insert1);
+        assertTrue(insert2);
+
+        // deleting at index 2 should throw exception
+        Exception exception = assertThrows(IndexOutOfBoundsException.class, () -> leafNode.delete(4));
+        String expected = "Failure to delete key mapping on index: " + 4;
+        String actual = exception.getMessage();
+        assertEquals(expected, actual);
     }
 
     @Test
