@@ -155,10 +155,15 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      * This method is typically used when a new child is added during a node split.
      *
      * @param pointer The child node pointer to be added.
+     * @return boolean determines if child pointer was inserted or not.
      */
-    public void appendChildPointer(BPNode<T> pointer) {
+    public boolean appendChildPointer(BPNode<T> pointer) {
+        if (isOverfull()) {
+            return false;
+        }
         this.childPointers[this.childNodes] = pointer;
         this.childNodes++;
+        return true;
     }
 
     /**
@@ -167,13 +172,18 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      * children during a balancing operation.
      *
      * @param pointer The child node pointer to be inserted at the first position.
+     * @return boolean determines if child pointer was inserted or not.
      */
-    public void prependChildPointer(BPNode<T> pointer) {
+    public boolean prependChildPointer(BPNode<T> pointer) {
+        if (isOverfull()) {
+            return false;
+        }
         for (int i = this.childNodes - 1; i >= 0; i--) {
             this.childPointers[i + 1] = this.childPointers[i];
         }
         this.childPointers[0] = pointer;
         this.childNodes++;
+        return true;
     }
 
     /**

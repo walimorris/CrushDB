@@ -87,7 +87,36 @@ class BPInternalNodeTest {
 
     @Test
     void appendChildPointer() {
+        BPInternalNode<String> pointer1 = new BPInternalNode<>(3, null);
+        BPInternalNode<String> pointer2 = new BPInternalNode<>(3, null);
+        BPInternalNode<String> pointer3 = new BPInternalNode<>(3, null);
+        BPInternalNode<String> pointer4 = new BPInternalNode<>(3, null);
+        BPInternalNode<String> pointer5 = new BPInternalNode<>(3, null);
 
+        BPInternalNode<String> parent = new BPInternalNode<>(3, null);
+        boolean insert1 = parent.insertChildPointerAtIndex(pointer4, 0);
+        boolean insert2 = parent.appendChildPointer(pointer2);
+        boolean insert3 = parent.appendChildPointer(pointer1);
+        boolean insert4 = parent.appendChildPointer(pointer3);
+
+        // max is 4 child-child pointers, after which the node is overfull
+        boolean insert5 = parent.appendChildPointer(pointer5);
+
+        // append insert order -> pointer4, pointer2, pointer1, pointer3
+        assertAll(
+                () -> assertTrue(insert1),
+                () -> assertTrue(insert2),
+                () -> assertTrue(insert3),
+                () -> assertTrue(insert4),
+                () -> assertFalse(insert5),
+                () -> assertEquals(pointer4, parent.getChildPointers()[0]),
+                () -> assertEquals(pointer2, parent.getChildPointers()[1]),
+                () -> assertEquals(pointer1, parent.getChildPointers()[2]),
+                // max = 4
+                () -> assertEquals(pointer3, parent.getChildPointers()[parent.getMaxChildNodes()]),
+                // max nodes is 4(m), however overfull will be max + 1 (zero indexed) or current number of child nodes
+                () -> assertEquals(pointer3, parent.getChildPointers()[parent.getChildNodes() - 1])
+        );
     }
 
     @Test
