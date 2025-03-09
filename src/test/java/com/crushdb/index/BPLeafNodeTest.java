@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class BPLeafNodeTest {
 
     @Test
-    void insert() {
+    void insertASC() {
         BPMapping<Long> bpMapping1 = new BPMapping<>(1L, new PageOffsetReference(10L, 100));
         BPMapping<Long> bpMapping2 = new BPMapping<>(2L, new PageOffsetReference(20L, 200));
         BPMapping<Long> bpMapping3 = new BPMapping<>(3L, new PageOffsetReference(30L, 300));
@@ -149,9 +149,39 @@ class BPLeafNodeTest {
 
     @Test
     void isSharable() {
+        BPMapping<String> bpMapping1 = new BPMapping<>("Hamilton", new PageOffsetReference(21L, 200));
+        BPMapping<String> bpMapping2 = new BPMapping<>("King", new PageOffsetReference(35L, 201));
+
+        BPLeafNode<String> leafNode = new BPLeafNode<>(4, bpMapping1);
+
+        // min pairs right now is 1 - therefore sharable should be false
+        assertFalse(leafNode.isSharable());
+
+        // adding a key mapping makes this leaf node sharable. Sharable leaf nodes contain
+        // more than the minimum required keys in the node. ceil(m/2) - 1
+        leafNode.insert(bpMapping2);
+        assertTrue(leafNode.isSharable());
     }
 
     @Test
     void isAppendable() {
+        // notice the sort here, the leaf node will maintain sort order - imagine these are machine temp reading
+        BPMapping<Float> bpMapping1 = new BPMapping<>(120.4f, new PageOffsetReference(21L, 100));
+        BPMapping<Float> bpMapping2 = new BPMapping<>(121.2f, new PageOffsetReference(21L, 200));
+
+        BPLeafNode<Float> leafNode = new BPLeafNode<>(5, bpMapping2);
+
+        // min pairs is ceil(5/2) - 1 or 2. The node currently contains 1 key
+        assertFalse(leafNode.isAppendable());
+
+        // adding a key makes the current number of keys equal to min number of keys required
+        // therefore making this node appendable
+        leafNode.insert(bpMapping1);
+        assertTrue(leafNode.isAppendable());
+
+        // we inserted temp readings out of order, however they should be sorted - this is important for
+        // ESR rule (equality, sort, range) - imagine we want keys sorted in DESC order v. ASC order
+        // we could do that by creating the index and sorting in whichever order
+        assertTrue(leafNode.getBpMappings()[0].getKey() < leafNode.getBpMappings()[1].getKey());
     }
 }

@@ -77,6 +77,11 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
     BPMapping<T>[] bpMappings;
 
     /**
+     * Establishing sort type, ASC v. DESC. Default is ASC sort order
+     */
+    SortOrder sortOrder;
+
+    /**
      * Creates a new leaf node with an initial key-value pair.
      *
      * @param m The order of the Tree (determines maxPairs).
@@ -89,6 +94,24 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         this.numPairs = 0;
         this.bpMappings = (BPMapping<T>[]) new BPMapping[m];
         this.insert(mapping);
+        this.sortOrder = SortOrder.ASC;
+    }
+
+    /**
+     * Creates a new leaf node with an initial key-value pair.
+     *
+     * @param m The order of the Tree (determines maxPairs).
+     * @param sortOrder Sort order for leafNode
+     * @param mapping The first key-value pair to insert.
+     */
+    @SuppressWarnings("unchecked")
+    public BPLeafNode(int m, BPMapping<T> mapping, SortOrder sortOrder) {
+        this.maxPairs = m - 1;
+        this.minPairs = (int) (Math.ceil(m / 2.0 ) - 1);
+        this.numPairs = 0;
+        this.bpMappings = (BPMapping<T>[]) new BPMapping[m];
+        this.insert(mapping);
+        this.sortOrder = sortOrder;
     }
 
     /**
@@ -105,6 +128,25 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         this.bpMappings = mappings;
         this.numPairs = linearSearch(mappings);
         this.parent = parent;
+        this.sortOrder = SortOrder.ASC;
+    }
+
+    /**
+     * Creates a new leaf node with multiple mappings and a parent.
+     * Used when splitting or initializing a Tree with existing keys.
+     *
+     * @param m The order of the Tree.
+     * @param mappings An array of key-value pairs.
+     * @param sortOrder Sort order for leaf node
+     * @param parent The internal node that references this leaf.
+     */
+    public BPLeafNode(int m, BPMapping<T>[] mappings, SortOrder sortOrder, BPInternalNode<T> parent) {
+        this.maxPairs = m - 1;
+        this.minPairs = (int) (Math.ceil(m / 2.0 ) - 1);
+        this.bpMappings = mappings;
+        this.numPairs = linearSearch(mappings);
+        this.parent = parent;
+        this.sortOrder = sortOrder;
     }
 
     /**
@@ -123,6 +165,7 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         if (this.isFull()) {
             return false;
         } else {
+            // TODO: add a reverse sort algo for DESC
             this.bpMappings[numPairs] = mapping;
             numPairs++;
             // maintain order of keys
