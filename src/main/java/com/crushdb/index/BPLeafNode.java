@@ -159,6 +159,9 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         if (mapping.key == null || mapping.reference == null) {
             // added integrity to the structure. Every key should be valid and comparable.
             // every reference is initialized. Pointing to an empty page could cause damage.
+            LOGGER.error("Keys and References cannot be Null. This will collapse the Tree.",
+                    IllegalArgumentException.class.getName()
+            );
             throw new IllegalArgumentException("Keys and References cannot be Null. This will collapse the Tree.");
         }
         // can't insert if node is full
@@ -183,6 +186,9 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
     public boolean delete(int index) throws IndexOutOfBoundsException {
         if (index < 0 || index >= this.numPairs) {
             // fail fast, but catch in caller (i.e. transaction or storage manager)
+            LOGGER.error("Failure to delete key mapping on index: " + index,
+                    IndexOutOfBoundsException.class.getName()
+            );
             throw new IndexOutOfBoundsException("Failure to delete key mapping on index: " + index);
         }
         // handle shift immediately - leave no gaps
