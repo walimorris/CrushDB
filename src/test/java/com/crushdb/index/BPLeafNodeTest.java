@@ -42,6 +42,94 @@ class BPLeafNodeTest {
     }
 
     @Test
+    void insertDESC() {
+        BPMapping<Long> bpMapping1 = new BPMapping<>(12L, new PageOffsetReference(1L, 45));
+        BPMapping<Long> bpMapping2 = new BPMapping<>(25L, new PageOffsetReference(2L, 46));
+        BPMapping<Long> bpMapping3 = new BPMapping<>(33L, new PageOffsetReference(4L, 105));
+        BPMapping<Long> bpMapping4 = new BPMapping<>(103L, new PageOffsetReference(5L, 123));
+        BPMapping<Long> bpMapping5 = new BPMapping<>(156L, new PageOffsetReference(16L, 203));
+        BPMapping<Long> bpMapping6 = new BPMapping<>(233L, new PageOffsetReference(1L, 66));
+        BPMapping<Long> bpMapping7 = new BPMapping<>(255L, new PageOffsetReference(2L, 88));
+        BPMapping<Long> bpMapping8 = new BPMapping<>(333L, new PageOffsetReference(45L, 865));
+        BPMapping<Long> bpMapping9 = new BPMapping<>(333L, new PageOffsetReference(10L, 55));
+        BPMapping<Long> bpMapping10 = new BPMapping<>(405L, new PageOffsetReference(116L, 34));
+
+        BPLeafNode<Long> leafNode = new BPLeafNode<>(11, bpMapping1, SortOrder.DESC);
+        // 333L, 156L, 103L, 33L, 25L, 12L
+        boolean insert1 = leafNode.insert(bpMapping4);
+        boolean insert2 = leafNode.insert(bpMapping8);
+        boolean insert3 = leafNode.insert(bpMapping2);
+        boolean insert4 = leafNode.insert(bpMapping5);
+        boolean insert5 = leafNode.insert(bpMapping3);
+
+        assertAll(
+                () -> assertTrue(insert1),
+                () -> assertTrue(insert2),
+                () -> assertTrue(insert3),
+                () -> assertTrue(insert4),
+                () -> assertTrue(insert5),
+                () -> assertEquals(6, leafNode.getNumPairs()),
+                () -> assertEquals(bpMapping8, leafNode.getBpMappings()[0]),
+                () -> assertEquals(bpMapping5, leafNode.getBpMappings()[1]),
+                () -> assertEquals(bpMapping4, leafNode.getBpMappings()[2]),
+                () -> assertEquals(bpMapping3, leafNode.getBpMappings()[3]),
+                () -> assertEquals(bpMapping2, leafNode.getBpMappings()[4]),
+                () -> assertEquals(bpMapping1, leafNode.getBpMappings()[5])
+        );
+
+        // 405L, 333L, 333L, 255L, 233L, 156L, 103L, 33L, 25L, 12L
+        boolean insert6 = leafNode.insert(bpMapping7);
+        boolean insert7 = leafNode.insert(bpMapping9);
+        boolean insert8 = leafNode.insert(bpMapping10);
+        boolean insert9 = leafNode.insert(bpMapping6);
+
+        // values should be in descending order - although they were inserted out of order.
+        assertAll(
+                () -> assertTrue(insert6),
+                () -> assertTrue(insert7),
+                () -> assertTrue(insert8),
+                () -> assertTrue(insert9),
+                () -> assertEquals(bpMapping10, leafNode.getBpMappings()[0]),
+                () -> assertEquals(bpMapping9, leafNode.getBpMappings()[1]),
+                () -> assertEquals(bpMapping8, leafNode.getBpMappings()[2]),
+                () -> assertEquals(bpMapping7, leafNode.getBpMappings()[3]),
+                () -> assertEquals(bpMapping6, leafNode.getBpMappings()[4]),
+                () -> assertEquals(bpMapping5, leafNode.getBpMappings()[5]),
+                () -> assertEquals(bpMapping4, leafNode.getBpMappings()[6]),
+                () -> assertEquals(bpMapping3, leafNode.getBpMappings()[7]),
+                () -> assertEquals(bpMapping2, leafNode.getBpMappings()[8]),
+                () -> assertEquals(bpMapping1, leafNode.getBpMappings()[9])
+        );
+
+        // order(m) = 11, therefore 10 key pairs are max
+        assertEquals(10, leafNode.getNumPairs());
+
+        // trying to insert another key should fail
+        BPMapping<Long> bpMapping11 = new BPMapping<>(777L, new PageOffsetReference(100L, 555));
+        boolean insert10 = leafNode.insert(bpMapping11);
+
+        assertFalse(insert10);
+
+        // let you see
+        StringBuilder descendingKeyList = new StringBuilder();
+        descendingKeyList.append("[");
+        for (int i = 0; i < leafNode.getBpMappings().length; i++) {
+            if (leafNode.getBpMappings()[i] == null) {
+                descendingKeyList.append("NULL");
+            } else {
+                descendingKeyList.append(leafNode.getBpMappings()[i].getKey()).append(",");
+            }
+        }
+        descendingKeyList.append("]");
+
+        // we can visualize the key pairs. Notice the last value is null, as the map is initialized
+        // as the size of the order, however the maximum keys in the leaf node are m - 1. This extra
+        // space is here on for splitting/merging process.
+        String result = "[405,333,333,255,233,156,103,33,25,12,NULL]";
+        assertEquals(result, descendingKeyList.toString());
+    }
+
+    @Test
     void delete() {
         BPMapping<Long> bpMapping1 = new BPMapping<>(10L, new PageOffsetReference(1L, 32));
         BPMapping<Long> bpMapping2 = new BPMapping<>(20L, new PageOffsetReference(2L, 64));

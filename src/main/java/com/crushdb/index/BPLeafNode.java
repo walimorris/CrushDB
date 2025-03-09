@@ -168,12 +168,48 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         if (this.isFull()) {
             return false;
         } else {
-            // TODO: add a reverse sort algo for DESC
-            this.bpMappings[numPairs] = mapping;
-            numPairs++;
-            // maintain order of keys
-            Arrays.sort(this.bpMappings, 0, numPairs);
+            if (this.sortOrder == SortOrder.ASC) {
+                this.bpMappings[numPairs] = mapping;
+                numPairs++;
+                // maintain order of keys
+                Arrays.sort(this.bpMappings, 0, numPairs);
+                return true;
+            }
+            sortDescending(this.bpMappings, this.numPairs, mapping);
+            this.numPairs++;
             return true;
+        }
+    }
+
+    /**
+     * Leaf nodes are sorted in two ways, ASC which is the default and DESC. In the case of DESC
+     * nodes, this method ensures larger values bubble to the front of the BPMapping array to
+     * keep descending order of the leaf node.
+     *
+     * @param arr the arr to sort
+     * @param numPairs current number of pairs,
+     * @param value {@link BPMapping<T>} to insert
+     */
+    private void sortDescending(BPMapping<T>[] arr, int numPairs, BPMapping<T> value) {
+        // find the first index this value belongs
+        int insertIndex = 0;
+        for (int i = 0; i < numPairs; i++) {
+            if (value.compareTo(arr[i]) >= 0) {
+                break;
+            }
+            insertIndex++;
+        }
+
+        // the insert index is last index, means it's the smallest value, insert here
+        if (insertIndex == numPairs) {
+            arr[insertIndex] = value;
+            // we have the index where n belongs, move values starting at this index to the right
+        } else {
+            for (int i = numPairs; i > insertIndex; i--) {
+                arr[i] = arr[i - 1];
+            }
+            // insert the value at starting index in desc order
+            arr[insertIndex] = value;
         }
     }
 
