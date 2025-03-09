@@ -49,37 +49,37 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
     /**
      * Maximum number of key-value pairs in the node (m - 1).
      */
-    int maxPairs;
+    private final int maxPairs;
 
     /**
      * Minimum number of key-value pairs before needing to merge or borrow.
      */
-    int minPairs;
+    private final int minPairs;
 
     /**
      * Current number of key-value pairs.
      */
-    int numPairs;
+    private int numPairs;
 
     /**
      * Left sibling for ordered traversal and borrowing/merging.
      */
-    BPLeafNode<T> leftSibling;
+    private BPLeafNode<T> leftSibling;
 
     /**
      * Right sibling for ordered traversal and borrowing/merging.
      */
-    BPLeafNode<T> rightSibling;
+    private BPLeafNode<T> rightSibling;
 
     /**
      * Array of key-value mappings (key → (pageId, offset)).
      */
-    BPMapping<T>[] bpMappings;
+    private BPMapping<T>[] bpMappings;
 
     /**
      * Establishing sort type, ASC v. DESC. Default is ASC sort order
      */
-    SortOrder sortOrder;
+    private final SortOrder sortOrder;
 
     /**
      * Creates a new leaf node with an initial key-value pair.
