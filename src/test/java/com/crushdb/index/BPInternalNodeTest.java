@@ -121,6 +121,55 @@ class BPInternalNodeTest {
 
     @Test
     void prependChildPointer() {
+        // let's point to a leaf node - bp internal node and bp leaf node extends bp node
+        BPLeafNode<Long> pointer1 = new BPLeafNode<>(3, new BPMapping<>(1L, new PageOffsetReference(10L, 36)));
+        BPLeafNode<Long> pointer2 = new BPLeafNode<>(3, new BPMapping<>(2L, new PageOffsetReference(20L, 72)));
+        BPLeafNode<Long> pointer3 = new BPLeafNode<>(3, new BPMapping<>(3L, new PageOffsetReference(30L, 144)));
+        BPLeafNode<Long> pointer4 = new BPLeafNode<>(3, new BPMapping<>(4L, new PageOffsetReference(60L, 288)));
+
+        // max = 2, pointersMax = 3 - max pointer index will be index[2]
+        BPInternalNode<Long> parent = new BPInternalNode<>(2, null);
+        boolean insert1 = parent.insertChildPointerAtIndex(pointer1, 0);
+        boolean insert2 = parent.prependChildPointer(pointer3);
+        boolean insert3 = parent.prependChildPointer(pointer2);
+        boolean insert4 = parent.prependChildPointer(pointer4);
+
+        // we've insert 3 nodes, this is overfull
+        assertAll(
+                () -> assertTrue(parent.isOverfull()),
+                () -> assertTrue(insert1),
+                () -> assertTrue(insert2),
+                () -> assertTrue(insert3),
+                () -> assertFalse(insert4)
+        );
+
+        // the max child nodes should be 2(m) - however to account for splitting we leave space
+        // for one more node pointer, so the current number of child nodes should be the max of 3
+        assertEquals(3, parent.getChildNodes());
+        assertEquals(2, parent.getMaxChildNodes());
+
+        // we can count on the latest inserts being the earliest in the pointers array
+        assertAll(
+                () -> assertEquals(pointer2, parent.getChildPointers()[0]),
+                () -> assertEquals(pointer3, parent.getChildPointers()[1]),
+                // we can count on the last pointer being the limit (account for zero index) and last valid insert
+                () -> assertEquals(pointer1, parent.getChildPointers()[parent.getMaxChildNodes()])
+        );
+
+        // let's visualize this
+        String result = "[2, 3, 1]";
+        StringBuilder resultString = new StringBuilder();
+        resultString.append("[");
+        for (int i = 0; i < parent.getChildPointers().length; i++) {
+            BPLeafNode<Long> leafNode = (BPLeafNode<Long>) parent.getChildPointers()[i];
+            if (i == parent.getMaxChildNodes()) {
+                resultString.append(leafNode.getBpMappings()[0].getKey());
+            } else {
+                resultString.append(leafNode.getBpMappings()[0].getKey()).append(", ");
+            }
+        }
+        resultString.append("]");
+        assertEquals(result, resultString.toString());
     }
 
     @Test
