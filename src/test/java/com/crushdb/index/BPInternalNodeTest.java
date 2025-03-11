@@ -2,6 +2,8 @@ package com.crushdb.index;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class BPInternalNodeTest {
@@ -173,16 +175,82 @@ class BPInternalNodeTest {
     }
 
     @Test
+    void removeKeyAndPointer() {
+        // create a node with 4 nodes and 3 keys. The structure should look like such
+        // P0 | K1 | P1 | K2 | P2 | K3 | P3
+        // we can see that keys direct to pointers, in this case deleting K1 key, deletes the P1 Pointer
+        //and hence keeps the internal node balanced in this way, until the tree solves for splits and merges
+        // P0 is special, it is a pointer to values < K1. Note that tree class will prepend or append based
+        // on value so we can just add these indexes in sorted order now
+        String[] keys = {"Columbia", "Kenya", "United States"};
+        BPLeafNode<String> pointer0 = new BPLeafNode<>(4, new BPMapping<>("Nigeria", new PageOffsetReference(1L, 36)));
+        BPLeafNode<String> pointer1 = new BPLeafNode<>(4, new BPMapping<>("United Kingdom", new PageOffsetReference(2L, 72)));
+        BPLeafNode<String> pointer2 = new BPLeafNode<>(4, new BPMapping<>("Liberia", new PageOffsetReference(3L, 144)));
+        BPLeafNode<String> pointer3 = new BPLeafNode<>(4, new BPMapping<>("Brazil", new PageOffsetReference(4L, 36)));
+        BPInternalNode<String> internalNode = new BPInternalNode<>(4, keys);
+
+        // we can imagine tree logic would insert pointers correctly
+        internalNode.appendChildPointer(pointer3); // "Brazil" (P0)
+        internalNode.appendChildPointer(pointer0); // "Columbia" (P1)
+        internalNode.appendChildPointer(pointer2); // "Kenya" (P2)
+        internalNode.appendChildPointer(pointer1); // "UK" (P3)
+
+        String initialKeysArray = "[Columbia, Kenya, United States]";
+        String initialPointerArray = "[Brazil, Nigeria, Liberia, United Kingdom]";
+
+        assertEquals(initialKeysArray, Arrays.toString(internalNode.getKeys()));
+        assertEquals(initialPointerArray, createChildPointersArray(internalNode));
+
+        // removing K1 also remove P1 - this means Columbia (key) and Nigeria (pointer) are deleted
+        String deletionKeyArray1 = "[Kenya, United States, null]";
+        String deletionPointerArray1 = "[Brazil, Liberia, United Kingdom]";
+        internalNode.removeKeyAndPointer(0);
+
+        assertEquals(deletionKeyArray1, Arrays.toString(internalNode.getKeys()));
+        assertEquals(deletionPointerArray1, createChildPointersArray(internalNode));
+
+        // removing K2 also remove P2 - this means US (key) and UK (pointer) are deleted
+        String deletionKeyArray2 = "[Kenya, null, null]";
+        String deletionPointerArray2 = "[Brazil, Liberia]";
+        internalNode.removeKeyAndPointer(1);
+
+        assertEquals(deletionKeyArray2, Arrays.toString(internalNode.getKeys()));
+        assertEquals(deletionPointerArray2, createChildPointersArray(internalNode));
+    }
+
+    @SuppressWarnings("unchecked")
+    private String createChildPointersArray(BPInternalNode<?> internalNode) {
+        StringBuilder pointersArray = new StringBuilder("[");
+        BPNode<?>[] childPointers = internalNode.getChildPointers();
+        int validChildNodes = internalNode.getChildNodes();
+        for (int i = 0; i < validChildNodes; i++) {
+            BPLeafNode<String> current = (BPLeafNode<String>) childPointers[i];
+            if (current != null) {
+                pointersArray.append(current.getBpMappings()[0].getKey());
+                if (i < validChildNodes - 1) {
+                    pointersArray.append(", ");
+                }
+            }
+        }
+        pointersArray.append("]");
+        return pointersArray.toString();
+    }
+
+    @Test
     void removeKeyAtIndex() {
+
     }
 
     @Test
     void removePointerAtIndex() {
+
     }
 
     @Test
     void removePointer() {
     }
+
+
 
     @Test
     void isLacking() {

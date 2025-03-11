@@ -1,6 +1,9 @@
 package com.crushdb.index;
 
+import com.crushdb.logger.CrushDBLogger;
+
 public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
+    private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(BPInternalNode.class);
 
     /**
      * The maximum number of child nodes the internal node can have.
@@ -186,40 +189,72 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         return true;
     }
 
-    /**
-     * Removes a key from the internal node at the specified index.
-     * This does not shift elements, only nullifies the entry.
-     *
-     * @param index The index of the key to be removed.
-     */
-    public void removeKeyAtIndex(int index) {
-        this.keys[index] = null;
+    public void removeKeyAndPointer(int index) {
+        boolean validKeyRemoval = removeKeyAtIndex(index, false);
+        boolean validPointerRemoval = removePointerAtIndex(index + 1, false);
+        if (validKeyRemoval && validPointerRemoval) {
+            childNodes--;
+        }
     }
 
-    /**
-     * Removes a child pointer at the specified index and decrements the child count.
-     * Used when a child is being merged or removed.
-     *
-     * @param index The index of the child pointer to be removed.
-     */
-    public void removePointerAtIndex(int index) {
-        this.childPointers[index] = null;
-        this.childNodes--;
+    public boolean removeKeyAtIndex(int index, boolean exclusive) {
+        boolean valid = keyShiftCloseGap(index);
+        if (valid && exclusive) {
+            this.childNodes--;
+        }
+        return valid;
     }
 
-    /**
-     * Searches for a specific child pointer and removes it.
-     * This does not shift the remaining pointers, only nulls the reference.
-     *
-     * @param pointer The child node to be removed from the internal node.
-     */
-    public void removePointer(BPNode<T> pointer) {
-        for (int i = 0; i < childPointers.length; i++) {
+    public boolean removePointerAtIndex(int index, boolean exclusive) {
+        boolean valid = pointerShiftCloseGap(index);
+        if (valid && exclusive) {
+            this.childNodes--;
+        }
+        return valid;
+    }
+
+    public void removePointer(BPNode<T> pointer) throws IllegalStateException {
+        int index = -1;
+        for (int i = 0; i < this.childNodes; i++) {
             if (this.childPointers[i] == pointer) {
-                this.childPointers[i] = null;
+                index = i;
+                break;
             }
         }
+        // index was not found
+        if (index == -1) {
+            LOGGER.info("Given Pointer was not found in removal process.",
+                    IllegalStateException.class.getName());
+            throw new IllegalStateException("Given Pointer was not found in removal process.");
+        }
+        pointerShiftCloseGap(index);
         this.childNodes--;
+    }
+
+    private boolean keyShiftCloseGap(int index) {
+        // edge case: index less than zero or index greater than or equal to
+        // the current number of child nodes. No way - return false
+        if (index < 0 || index >= this.keys.length) {
+            return false;
+        }
+        for (int i = index; i < this.keys.length - 1; i++) {
+            this.keys[i] = this.keys[i + 1];
+        }
+        this.keys[this.keys.length - 1] = null;
+        return true;
+    }
+
+    private boolean pointerShiftCloseGap(int index) {
+        // edge case: index less than zero or index greater than or equal to
+        // the current number of child nodes. No way - return false
+        if (index < 0 || index >= this.childNodes) {
+            return false;
+        }
+        for (int i = index; i < this.childNodes - 1; i++) {
+            this.childPointers[i] = this.childPointers[i + 1];
+        }
+        this.childPointers[this.childNodes - 1] = null;
+        return true;
     }
 
     /**
