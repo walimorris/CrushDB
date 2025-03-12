@@ -337,6 +337,39 @@ class BPInternalNodeTest {
 
     @Test
     void isLacking() {
+        // we are only testing single part of internal node so we isolate this to testing child nodes
+        BPLeafNode<Long> childNode0 = new BPLeafNode<>(5, new BPMapping<>(1L, new PageOffsetReference(1L, 20)));
+        BPLeafNode<Long> childNode1 = new BPLeafNode<>(5, new BPMapping<>(2L, new PageOffsetReference(2L, 40)));
+        BPLeafNode<Long> childNode2 = new BPLeafNode<>(5, new BPMapping<>(3L, new PageOffsetReference(3L, 50)));
+        BPLeafNode<Long> childNode3 = new BPLeafNode<>(5, new BPMapping<>(4L, new PageOffsetReference(4L, 60)));
+        BPLeafNode<Long> childNode4 = new BPLeafNode<>(5, new BPMapping<>(5L, new PageOffsetReference(5L, 70)));
+
+        // internal node min child nodes = ceil(m/2) = 3
+        BPInternalNode<Long> internalParentNode = new BPInternalNode<>(5, null);
+
+        //insert two nodes and check childNodes count and validate it's lacking
+        boolean insert0 = internalParentNode.insertChildPointerAtIndex(childNode0, 0);
+        boolean insert1 = internalParentNode.insertChildPointerAtIndex(childNode1, 1);
+
+        assertAll(
+                () -> assertTrue(insert0),
+                () -> assertTrue(insert1),
+                () -> assertTrue(internalParentNode.isLacking()),
+                () -> assertEquals(2, internalParentNode.getChildNodes())
+        );
+
+        // 3rd insert means childNodes count = min, and we aren't lacking the minimum child nodes
+        boolean insert2 = internalParentNode.insertChildPointerAtIndex(childNode2, 1);
+        boolean insert3 = internalParentNode.insertChildPointerAtIndex(childNode3, 0);
+        boolean insert4 = internalParentNode.insertChildPointerAtIndex(childNode4, 2);
+
+        assertAll(
+                () -> assertTrue(insert2),
+                () -> assertTrue(insert3),
+                () -> assertTrue(insert4),
+                () -> assertFalse(internalParentNode.isLacking()),
+                () -> assertEquals(5, internalParentNode.getChildNodes())
+        );
     }
 
     @Test
