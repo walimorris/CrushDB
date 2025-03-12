@@ -215,7 +215,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         return valid;
     }
 
-    public int removePointer(BPNode<T> pointer) throws IllegalStateException {
+    public int removePointer(BPNode<T> pointer) {
         int index = -1;
         for (int i = 0; i < this.childNodes; i++) {
             if (this.childPointers[i] == pointer) {

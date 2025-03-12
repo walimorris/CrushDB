@@ -295,6 +295,43 @@ class BPInternalNodeTest {
 
     @Test
     void removePointer() {
+        BPLeafNode<String> pointer0 = new BPLeafNode<>(4, new BPMapping<>("Nigeria", new PageOffsetReference(1L, 36)));
+        BPLeafNode<String> pointer1 = new BPLeafNode<>(4, new BPMapping<>("United Kingdom", new PageOffsetReference(2L, 72)));
+        BPLeafNode<String> pointer2 = new BPLeafNode<>(4, new BPMapping<>("Liberia", new PageOffsetReference(3L, 144)));
+        BPLeafNode<String> pointer3 = new BPLeafNode<>(4, new BPMapping<>("Brazil", new PageOffsetReference(4L, 36)));
+
+        BPLeafNode<String> pointer4 = new BPLeafNode<>(4, new BPMapping<>("Canada", new PageOffsetReference(5L, 77)));
+        BPInternalNode<String> internalNode = new BPInternalNode<>(4, null);
+
+        // we can imagine tree logic would insert pointers correctly
+        internalNode.appendChildPointer(pointer3); // "Brazil" (P0)
+        internalNode.appendChildPointer(pointer2); // "Liberia" (P1)
+        internalNode.appendChildPointer(pointer0); // "Nigeria" (P2)
+        internalNode.appendChildPointer(pointer1); // "UK" (P3)
+
+        // we'll be passing the pointer object in this method - first delete should fail we didn't insert
+        int result0 = internalNode.removePointer(pointer4);
+        assertEquals(-1, result0);
+        assertEquals(4, internalNode.getChildNodes());
+
+        // deleting Brazil will shift all other pointers
+        String result1Array = "[Liberia, Nigeria, United Kingdom]";
+        int result1 = internalNode.removePointer(pointer3);
+        assertEquals(0, result1);
+        assertEquals(result1Array, createChildPointersArray(internalNode));
+        assertEquals(3, internalNode.getChildNodes());
+
+        String result2Array = "[Liberia, United Kingdom]";
+        int result2 = internalNode.removePointer(pointer0);
+        assertEquals(1, result2);
+        assertEquals(result2Array, createChildPointersArray(internalNode));
+        assertEquals(2, internalNode.getChildNodes());
+
+        // deleting a pointer node that's already been deleted should fail
+        int result3 = internalNode.removePointer(pointer3);
+        assertEquals(-1, result3);
+        assertEquals(result2Array, createChildPointersArray(internalNode));
+        assertEquals(2, internalNode.getChildNodes());
     }
 
 
