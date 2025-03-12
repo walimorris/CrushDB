@@ -241,7 +241,23 @@ class BPInternalNodeTest {
 
     @Test
     void removeKeyAtIndex() {
+        Long[] keys = {0L, 1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L, 9L, 10L};
+        BPInternalNode<Long> internalNode = new BPInternalNode<>(12, keys);
 
+        String initialKeys = "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]";
+        assertEquals(initialKeys, Arrays.toString(internalNode.getKeys()));
+
+        boolean removal1 = internalNode.removeKeyAtIndex(5, true);
+        String removalArray1 = "[0, 1, 2, 3, 4, 6, 7, 8, 9, 10, null]";
+        assertTrue(removal1);
+        assertEquals(removalArray1, Arrays.toString(internalNode.getKeys()));
+
+        boolean removal2 = internalNode.removeKeyAtIndex(8, false);
+        String removalArray2 = "[0, 1, 2, 3, 4, 6, 7, 8, 10, null, null]";
+        assertTrue((removal2));
+        assertEquals(removalArray2, Arrays.toString(internalNode.getKeys()));
+
+        // test exclusive removals with child nodes!
     }
 
     @Test

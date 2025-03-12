@@ -51,6 +51,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      * @param m The order of the B+Tree, which determining the maximum number of child nodes.
      * @param keys The keys stored in the internal node. Acts as separators between child nodes.
      */
+    // TODO: ensure keys are m - 1 or throw IllegalArgument - that breaks the tree
     @SuppressWarnings("unchecked")
     public BPInternalNode(int m, T[] keys) {
         this.maxChildNodes = m;
@@ -70,6 +71,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      * @param keys The keys stored in the internal node. Acts as separators between child nodes.
      * @param pointers The child node pointers corresponding to the keys.
      */
+    // TODO: ensure keys are m - 1 or throw IllegalArgument - that breaks the tree
     public BPInternalNode(int m, T[] keys, BPNode<T>[] pointers) {
         this.maxChildNodes = m;
         this.minChildNodes = (int) Math.ceil(m / 2.0);
