@@ -14,13 +14,16 @@ class BPInternalNodeTest {
         // m + 1 child nodes to account for splits
         Long[] keys = {12L, 13L, 14L};
 
+        // placeholder keys
+        Long[] placeHolderKeys = {1L, 2L, 3L};
+
         // we will point to other internal nodes
-        BPInternalNode<Long> childNode1 = new BPInternalNode<>(4, null);
-        BPInternalNode<Long> childNode2 = new BPInternalNode<>(4, null);
-        BPInternalNode<Long> childNode3 = new BPInternalNode<>(4, null);
-        BPInternalNode<Long> childNode4 = new BPInternalNode<>(4, null);
-        BPInternalNode<Long> childNode5 = new BPInternalNode<>(4, null);
-        BPInternalNode<Long> childNode6 = new BPInternalNode<>(4, null);
+        BPInternalNode<Long> childNode1 = new BPInternalNode<>(4, placeHolderKeys);
+        BPInternalNode<Long> childNode2 = new BPInternalNode<>(4, placeHolderKeys);
+        BPInternalNode<Long> childNode3 = new BPInternalNode<>(4, placeHolderKeys);
+        BPInternalNode<Long> childNode4 = new BPInternalNode<>(4, placeHolderKeys);
+        BPInternalNode<Long> childNode5 = new BPInternalNode<>(4, placeHolderKeys);
+        BPInternalNode<Long> childNode6 = new BPInternalNode<>(4, placeHolderKeys);
 
         BPInternalNode<Long> internalNode = new BPInternalNode<>(4, keys);
 
@@ -65,11 +68,14 @@ class BPInternalNodeTest {
 
     @Test
     void findChildPointerIndex() {
-        BPInternalNode<String> pointer1 = new BPInternalNode<>(3, null);
-        BPInternalNode<String> pointer2 = new BPInternalNode<>(3, null);
-        BPInternalNode<String> pointer3 = new BPInternalNode<>(3, null);
-
         String[] keys = {"United States", "Peru"};
+
+        // placeholder keys
+        String[] placeHolderKeys = {"Apple", "Orange"};
+
+        BPInternalNode<String> pointer1 = new BPInternalNode<>(3, placeHolderKeys);
+        BPInternalNode<String> pointer2 = new BPInternalNode<>(3, placeHolderKeys);
+        BPInternalNode<String> pointer3 = new BPInternalNode<>(3, placeHolderKeys);
 
         BPInternalNode<String> internalNode = new BPInternalNode<>(3, keys);
         boolean insert1 = internalNode.insertChildPointerAtIndex(pointer1, 0);
@@ -89,13 +95,15 @@ class BPInternalNodeTest {
 
     @Test
     void appendChildPointer() {
-        BPInternalNode<String> pointer1 = new BPInternalNode<>(3, null);
-        BPInternalNode<String> pointer2 = new BPInternalNode<>(3, null);
-        BPInternalNode<String> pointer3 = new BPInternalNode<>(3, null);
-        BPInternalNode<String> pointer4 = new BPInternalNode<>(3, null);
-        BPInternalNode<String> pointer5 = new BPInternalNode<>(3, null);
+        // placeholder keys
+        String[] placeHolderKeys = {"Apple", "Orange"};
+        BPInternalNode<String> pointer1 = new BPInternalNode<>(3, placeHolderKeys);
+        BPInternalNode<String> pointer2 = new BPInternalNode<>(3, placeHolderKeys);
+        BPInternalNode<String> pointer3 = new BPInternalNode<>(3, placeHolderKeys);
+        BPInternalNode<String> pointer4 = new BPInternalNode<>(3, placeHolderKeys);
+        BPInternalNode<String> pointer5 = new BPInternalNode<>(3, placeHolderKeys);
 
-        BPInternalNode<String> parent = new BPInternalNode<>(3, null);
+        BPInternalNode<String> parent = new BPInternalNode<>(3, placeHolderKeys);
         boolean insert1 = parent.insertChildPointerAtIndex(pointer4, 0);
         boolean insert2 = parent.appendChildPointer(pointer2);
         boolean insert3 = parent.appendChildPointer(pointer1);
@@ -123,6 +131,9 @@ class BPInternalNodeTest {
 
     @Test
     void prependChildPointer() {
+        // placeholder keys
+        Long[] placeHolderKeys = {1L};
+
         // let's point to a leaf node - bp internal node and bp leaf node extends bp node
         BPLeafNode<Long> pointer1 = new BPLeafNode<>(3, new BPMapping<>(1L, new PageOffsetReference(10L, 36)));
         BPLeafNode<Long> pointer2 = new BPLeafNode<>(3, new BPMapping<>(2L, new PageOffsetReference(20L, 72)));
@@ -130,7 +141,7 @@ class BPInternalNodeTest {
         BPLeafNode<Long> pointer4 = new BPLeafNode<>(3, new BPMapping<>(4L, new PageOffsetReference(60L, 288)));
 
         // max = 2, pointersMax = 3 - max pointer index will be index[2]
-        BPInternalNode<Long> parent = new BPInternalNode<>(2, null);
+        BPInternalNode<Long> parent = new BPInternalNode<>(2, placeHolderKeys);
         boolean insert1 = parent.insertChildPointerAtIndex(pointer1, 0);
         boolean insert2 = parent.prependChildPointer(pointer3);
         boolean insert3 = parent.prependChildPointer(pointer2);
@@ -262,11 +273,12 @@ class BPInternalNodeTest {
 
     @Test
     void removePointerAtIndex() {
+        String[] placeHolderKeys = {"Apple", "Orange", "Banana"};
         BPLeafNode<String> pointer0 = new BPLeafNode<>(4, new BPMapping<>("Nigeria", new PageOffsetReference(1L, 36)));
         BPLeafNode<String> pointer1 = new BPLeafNode<>(4, new BPMapping<>("United Kingdom", new PageOffsetReference(2L, 72)));
         BPLeafNode<String> pointer2 = new BPLeafNode<>(4, new BPMapping<>("Liberia", new PageOffsetReference(3L, 144)));
         BPLeafNode<String> pointer3 = new BPLeafNode<>(4, new BPMapping<>("Brazil", new PageOffsetReference(4L, 36)));
-        BPInternalNode<String> internalNode = new BPInternalNode<>(4, null);
+        BPInternalNode<String> internalNode = new BPInternalNode<>(4, placeHolderKeys);
 
         // we can imagine tree logic would insert pointers correctly
         internalNode.appendChildPointer(pointer3); // "Brazil" (P0)
@@ -295,13 +307,14 @@ class BPInternalNodeTest {
 
     @Test
     void removePointer() {
+        String[] placeHolderKeys = {"Apple", "Orange", "Banana"};
         BPLeafNode<String> pointer0 = new BPLeafNode<>(4, new BPMapping<>("Nigeria", new PageOffsetReference(1L, 36)));
         BPLeafNode<String> pointer1 = new BPLeafNode<>(4, new BPMapping<>("United Kingdom", new PageOffsetReference(2L, 72)));
         BPLeafNode<String> pointer2 = new BPLeafNode<>(4, new BPMapping<>("Liberia", new PageOffsetReference(3L, 144)));
         BPLeafNode<String> pointer3 = new BPLeafNode<>(4, new BPMapping<>("Brazil", new PageOffsetReference(4L, 36)));
 
         BPLeafNode<String> pointer4 = new BPLeafNode<>(4, new BPMapping<>("Canada", new PageOffsetReference(5L, 77)));
-        BPInternalNode<String> internalNode = new BPInternalNode<>(4, null);
+        BPInternalNode<String> internalNode = new BPInternalNode<>(4, placeHolderKeys);
 
         // we can imagine tree logic would insert pointers correctly
         internalNode.appendChildPointer(pointer3); // "Brazil" (P0)
@@ -337,6 +350,7 @@ class BPInternalNodeTest {
 
     @Test
     void isLacking() {
+        Long[] placeHolderKeys = {1L, 2L, 3L, 4L};
         // we are only testing single part of internal node so we isolate this to testing child nodes
         BPLeafNode<Long> childNode0 = new BPLeafNode<>(5, new BPMapping<>(1L, new PageOffsetReference(1L, 20)));
         BPLeafNode<Long> childNode1 = new BPLeafNode<>(5, new BPMapping<>(2L, new PageOffsetReference(2L, 40)));
@@ -345,7 +359,7 @@ class BPInternalNodeTest {
         BPLeafNode<Long> childNode4 = new BPLeafNode<>(5, new BPMapping<>(5L, new PageOffsetReference(5L, 70)));
 
         // internal node min child nodes = ceil(m/2) = 3
-        BPInternalNode<Long> internalParentNode = new BPInternalNode<>(5, null);
+        BPInternalNode<Long> internalParentNode = new BPInternalNode<>(5, placeHolderKeys);
 
         //insert two nodes and check childNodes count and validate it's lacking
         boolean insert0 = internalParentNode.insertChildPointerAtIndex(childNode0, 0);
@@ -386,10 +400,23 @@ class BPInternalNodeTest {
 
     @Test
     void getMinChildNodes() {
+        String[] keys = {"Ubuntu", "Debian", "Fedora", "Arch Linux", "Manjaro", "openSUSE", "RHEL", "centOS", "AlmaLinux",
+                "Rocky Linux", "Kali Linux", "Parrot OS", "Zorin OS", "Linux Mint"
+        };
+        BPInternalNode<String> internalNode = new BPInternalNode<>(15, keys);
+        int minChildNodes = (int) Math.ceil(15 / 2.0); // 8
+        assertEquals(minChildNodes, internalNode.getMinChildNodes());
     }
 
     @Test
     void getMaxChildNodes() {
+        String[] keys = {"Ubuntu", "Debian", "Fedora", "Arch Linux", "Manjaro", "openSUSE", "RHEL", "centOS", "AlmaLinux",
+                "Rocky Linux", "Kali Linux", "Parrot OS", "Zorin OS", "Linux Mint"
+        };
+        BPInternalNode<String> internalNode = new BPInternalNode<>(15, keys);
+
+        // max child nodes is equal to m
+        assertEquals(15, internalNode.getMaxChildNodes());
     }
 
     @Test
@@ -405,7 +432,32 @@ class BPInternalNodeTest {
     }
 
     @Test
+    void getKeysIllegalArgumentException() {
+        String[] keys = {"Ubuntu", "Debian", "Fedora", "Arch Linux", "Manjaro", "openSUSE", "RHEL", "centOS", "AlmaLinux",
+                "Rocky Linux", "Kali Linux", "Parrot OS", "Zorin OS"
+        };
+        String expected1 = "Order of tree is 100. Key length must be 99, but key is null.";
+        Exception actual1 = assertThrows(IllegalArgumentException.class, () -> new BPInternalNode<>(100, null));
+        assertEquals(expected1, actual1.getMessage());
+
+        String expected2 = "Order of tree is 15. Key length must be 14, but got 13.";
+        Exception actual2 = assertThrows(IllegalArgumentException.class, () -> new BPInternalNode<>(15, keys));
+        assertEquals(expected2, actual2.getMessage());
+
+    }
+
+    @Test
     void getKeys() {
+        Integer[] keys = {200, 190, 180, 170, 160, 150, 140, 130, 120, 110, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0};
+        BPInternalNode<Integer> internalNode = new BPInternalNode<>(22, keys);
+        String keysString = "[200, 190, 180, 170, 160, 150, 140, 130, 120, 110, 100, 90, 80, 70, 60, 50, 40, 30, 20, 10, 0]";
+        assertEquals(keysString, Arrays.toString(internalNode.getKeys()));
+
+        // what about key array with nulls - often key arrays will have null values and this is valid
+        String[] nullKeys = {null, null, null};
+        BPInternalNode<String> nulledInternalNode = new BPInternalNode<>(4, nullKeys);
+        String nulledKeyString = "[null, null, null]";
+        assertEquals(nulledKeyString, Arrays.toString(nulledInternalNode.getKeys()));
     }
 
     @Test

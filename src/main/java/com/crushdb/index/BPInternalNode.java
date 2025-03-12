@@ -2,6 +2,8 @@ package com.crushdb.index;
 
 import com.crushdb.logger.CrushDBLogger;
 
+import static java.lang.String.*;
+
 public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
     private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(BPInternalNode.class);
 
@@ -51,9 +53,20 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      * @param m The order of the B+Tree, which determining the maximum number of child nodes.
      * @param keys The keys stored in the internal node. Acts as separators between child nodes.
      */
-    // TODO: ensure keys are m - 1 or throw IllegalArgument - that breaks the tree
     @SuppressWarnings("unchecked")
-    public BPInternalNode(int m, T[] keys) {
+    public BPInternalNode(int m, T[] keys) throws IllegalArgumentException {
+        if (keys == null) {
+            LOGGER.error(format("Order of tree is %d. Key length must be %d, but key is null.", m, m - 1),
+                    IllegalArgumentException.class.getName());
+            throw new IllegalArgumentException(format("Order of tree is %d. Key length must be %d, but key is null.",
+                    m, m - 1));
+        }
+        if (keys.length != (m - 1)) {
+            LOGGER.error(format("Order of tree is %d. Key length must be %d, but got %d.", m, m - 1, keys.length),
+                    IllegalArgumentException.class.getName());
+            throw new IllegalArgumentException(format("Order of tree is %d. Key length must be %d, but got %d.",
+                    m, m - 1, keys.length));
+        }
         this.maxChildNodes = m;
         this.minChildNodes = (int) Math.ceil(m / 2.0);
         this.childNodes = 0;
@@ -71,8 +84,19 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      * @param keys The keys stored in the internal node. Acts as separators between child nodes.
      * @param pointers The child node pointers corresponding to the keys.
      */
-    // TODO: ensure keys are m - 1 or throw IllegalArgument - that breaks the tree
     public BPInternalNode(int m, T[] keys, BPNode<T>[] pointers) {
+        if (keys == null) {
+            LOGGER.error(format("Order of tree is %d. Key length must be %d, but key is null.", m, m - 1),
+                    IllegalArgumentException.class.getName());
+            throw new IllegalArgumentException(format("Order of tree is %d. Key length must be %d, but key is null.",
+                    m, m - 1));
+        }
+        if (keys.length != (m - 1)) {
+            LOGGER.error(format("Order of tree is %d. Key length must be %d, but got %d.", m, m - 1, keys.length),
+                    IllegalArgumentException.class.getName());
+            throw new IllegalArgumentException(format("Order of tree is %d. Key length must be %d, but got %d.",
+                    m, m - 1, keys.length));
+        }
         this.maxChildNodes = m;
         this.minChildNodes = (int) Math.ceil(m / 2.0);
         // determines number of child nodes
