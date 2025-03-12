@@ -200,6 +200,7 @@ class BPInternalNodeTest {
 
         assertEquals(initialKeysArray, Arrays.toString(internalNode.getKeys()));
         assertEquals(initialPointerArray, createChildPointersArray(internalNode));
+        assertEquals(4, internalNode.getChildNodes());
 
         // removing K1 also remove P1 - this means Columbia (key) and Nigeria (pointer) are deleted
         String deletionKeyArray1 = "[Kenya, United States, null]";
@@ -208,6 +209,7 @@ class BPInternalNodeTest {
 
         assertEquals(deletionKeyArray1, Arrays.toString(internalNode.getKeys()));
         assertEquals(deletionPointerArray1, createChildPointersArray(internalNode));
+        assertEquals(3, internalNode.getChildNodes());
 
         // removing K2 also remove P2 - this means US (key) and UK (pointer) are deleted
         String deletionKeyArray2 = "[Kenya, null, null]";
@@ -216,6 +218,7 @@ class BPInternalNodeTest {
 
         assertEquals(deletionKeyArray2, Arrays.toString(internalNode.getKeys()));
         assertEquals(deletionPointerArray2, createChildPointersArray(internalNode));
+        assertEquals(2, internalNode.getChildNodes());
     }
 
     @SuppressWarnings("unchecked")
