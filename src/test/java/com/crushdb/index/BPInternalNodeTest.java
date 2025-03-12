@@ -191,12 +191,12 @@ class BPInternalNodeTest {
 
         // we can imagine tree logic would insert pointers correctly
         internalNode.appendChildPointer(pointer3); // "Brazil" (P0)
-        internalNode.appendChildPointer(pointer0); // "Columbia" (P1)
-        internalNode.appendChildPointer(pointer2); // "Kenya" (P2)
+        internalNode.appendChildPointer(pointer2); // "Liberia" (P1)
+        internalNode.appendChildPointer(pointer0); // "Nigeria" (P2)
         internalNode.appendChildPointer(pointer1); // "UK" (P3)
 
         String initialKeysArray = "[Columbia, Kenya, United States]";
-        String initialPointerArray = "[Brazil, Nigeria, Liberia, United Kingdom]";
+        String initialPointerArray = "[Brazil, Liberia, Nigeria, United Kingdom]";
 
         assertEquals(initialKeysArray, Arrays.toString(internalNode.getKeys()));
         assertEquals(initialPointerArray, createChildPointersArray(internalNode));
@@ -204,7 +204,7 @@ class BPInternalNodeTest {
 
         // removing K1 also remove P1 - this means Columbia (key) and Nigeria (pointer) are deleted
         String deletionKeyArray1 = "[Kenya, United States, null]";
-        String deletionPointerArray1 = "[Brazil, Liberia, United Kingdom]";
+        String deletionPointerArray1 = "[Brazil, Nigeria, United Kingdom]";
         internalNode.removeKeyAndPointer(0);
 
         assertEquals(deletionKeyArray1, Arrays.toString(internalNode.getKeys()));
@@ -213,7 +213,7 @@ class BPInternalNodeTest {
 
         // removing K2 also remove P2 - this means US (key) and UK (pointer) are deleted
         String deletionKeyArray2 = "[Kenya, null, null]";
-        String deletionPointerArray2 = "[Brazil, Liberia]";
+        String deletionPointerArray2 = "[Brazil, Nigeria]";
         internalNode.removeKeyAndPointer(1);
 
         assertEquals(deletionKeyArray2, Arrays.toString(internalNode.getKeys()));
@@ -262,13 +262,40 @@ class BPInternalNodeTest {
 
     @Test
     void removePointerAtIndex() {
+        BPLeafNode<String> pointer0 = new BPLeafNode<>(4, new BPMapping<>("Nigeria", new PageOffsetReference(1L, 36)));
+        BPLeafNode<String> pointer1 = new BPLeafNode<>(4, new BPMapping<>("United Kingdom", new PageOffsetReference(2L, 72)));
+        BPLeafNode<String> pointer2 = new BPLeafNode<>(4, new BPMapping<>("Liberia", new PageOffsetReference(3L, 144)));
+        BPLeafNode<String> pointer3 = new BPLeafNode<>(4, new BPMapping<>("Brazil", new PageOffsetReference(4L, 36)));
+        BPInternalNode<String> internalNode = new BPInternalNode<>(4, null);
 
+        // we can imagine tree logic would insert pointers correctly
+        internalNode.appendChildPointer(pointer3); // "Brazil" (P0)
+        internalNode.appendChildPointer(pointer2); // "Liberia" (P1)
+        internalNode.appendChildPointer(pointer0); // "Nigeria" (P2)
+        internalNode.appendChildPointer(pointer1); // "UK" (P3)
+
+        String initialPointerArray = "[Brazil, Liberia, Nigeria, United Kingdom]";
+        assertEquals(4, internalNode.getChildNodes());
+        assertEquals(initialPointerArray, createChildPointersArray(internalNode));
+
+        // remove P2 - Liberia
+        String pointerArray1 = "[Brazil, Liberia, United Kingdom]";
+        boolean removal1 = internalNode.removePointerAtIndex(2, true);
+        assertTrue(removal1);
+        assertEquals(3, internalNode.getChildNodes());
+        assertEquals(pointerArray1, createChildPointersArray(internalNode));
+
+        // remove new P0
+        String pointerArray2 = "[Liberia, United Kingdom]";
+        boolean removal2 = internalNode.removePointerAtIndex(0, true);
+        assertTrue(removal2);
+        assertEquals(2, internalNode.getChildNodes());
+        assertEquals(pointerArray2, createChildPointersArray(internalNode));
     }
 
     @Test
     void removePointer() {
     }
-
 
 
     @Test

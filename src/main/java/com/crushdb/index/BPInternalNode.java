@@ -215,7 +215,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         return valid;
     }
 
-    public void removePointer(BPNode<T> pointer) throws IllegalStateException {
+    public int removePointer(BPNode<T> pointer) throws IllegalStateException {
         int index = -1;
         for (int i = 0; i < this.childNodes; i++) {
             if (this.childPointers[i] == pointer) {
@@ -225,12 +225,11 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         }
         // index was not found
         if (index == -1) {
-            LOGGER.info("Given Pointer was not found in removal process.",
-                    IllegalStateException.class.getName());
-            throw new IllegalStateException("Given Pointer was not found in removal process.");
+            return index;
         }
         pointerShiftCloseGap(index);
         this.childNodes--;
+        return index;
     }
 
     private boolean keyShiftCloseGap(int index) {
