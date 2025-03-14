@@ -423,12 +423,48 @@ class BPInternalNodeTest {
     void getChildNodes() {
     }
 
+    /**
+     * The tree that is being created in these more involved node tests (siblings tests) and later in
+     * Tree tests is the first example tree in this course paper.
+     *
+     * See the course documentation here: credit to CS 186, Spring 2021, Jenny Huang:
+     * <a href="https://cs186berkeley.net/sp21/resources/static/notes/n03-B%2BTrees.pdf">LINK</a>
+     */
     @Test
-    void getLeftSibling() {
+    @SuppressWarnings("unchecked")
+    void checkInternalNodeSiblings() {
+        Long[] rootKeys = {17L, null};
+        Long[] leftInternalNodeKeys = {5L, 14L};
+        Long[] rightInternalNodeKeys = {27L, null};
+
+        BPNode<Long>[] internalPointers1 = new BPNode[]{null, null, null};
+        BPInternalNode<Long> internalNode1 = new BPInternalNode<>(3, leftInternalNodeKeys, internalPointers1);
+
+        BPNode<Long>[] internalPointers2 = new BPNode[]{null, null};
+        BPInternalNode<Long> internalNode2 = new BPInternalNode<>(3, rightInternalNodeKeys, internalPointers2);
+
+        // setSiblings
+        internalNode1.setRightSibling(internalNode2);
+        internalNode2.setLeftSibling(internalNode1);
+
+        BPNode<Long>[] rootPointers = new BPNode[]{internalNode1, internalNode2};
+        BPInternalNode<Long> rootNode = new BPInternalNode<>(3, rootKeys, rootPointers);
+
+        // let's check siblings of internal node
+        BPInternalNode<Long>[] rootNodeChildPointers = safeCastToInternalNodeArray(rootNode.getChildPointers());
+
+        // left pointer is 0 indexed - check keys
+        assertEquals(leftInternalNodeKeys, rootNodeChildPointers[0].getKeys());
+        assertEquals(rootNodeChildPointers[0], internalNode2.getLeftSibling());
+
+        // right pointer is 1 indexed - check keys
+        assertEquals(rightInternalNodeKeys, rootNodeChildPointers[1].getKeys());
+        assertEquals(rootNodeChildPointers[1], internalNode1.getRightSibling());
     }
 
-    @Test
-    void getRightSibling() {
+    @SuppressWarnings("unchecked")
+    private static <T extends Comparable<T>> BPInternalNode<T>[] safeCastToInternalNodeArray(BPNode<T>[] nodes) {
+        return Arrays.copyOf(nodes, nodes.length, BPInternalNode[].class);
     }
 
     @Test

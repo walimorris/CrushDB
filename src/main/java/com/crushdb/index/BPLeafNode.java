@@ -288,6 +288,14 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         return this.numPairs == this.minPairs;
     }
 
+    public void setRightSibling(BPLeafNode<T> rightSibling) {
+        this.rightSibling = rightSibling;
+    }
+
+    public void setLeftSibling(BPLeafNode<T> leftSibling) {
+        this.leftSibling = leftSibling;
+    }
+
     public int getMinPairs() {
         return minPairs;
     }

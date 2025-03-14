@@ -322,6 +322,14 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         return this.childNodes == maxChildNodes + 1;
     }
 
+    public void setRightSibling(BPInternalNode<T> rightSibling) {
+        this.rightSibling = rightSibling;
+    }
+
+    public void setLeftSibling(BPInternalNode<T> leftSibling) {
+        this.leftSibling = leftSibling;
+    }
+
     public int getMinChildNodes() {
         return minChildNodes;
     }
