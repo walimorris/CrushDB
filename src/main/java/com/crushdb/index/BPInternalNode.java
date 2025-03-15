@@ -2,8 +2,52 @@ package com.crushdb.index;
 
 import com.crushdb.logger.CrushDBLogger;
 
-import static java.lang.String.*;
+import static java.lang.String.format;
 
+/**
+ * Represents an internal node in a B+ Tree structure.
+ * Internal nodes do not store actual data but act as decision points for traversal.
+ *
+ * <h2>Responsibilities:</h2>
+ * <ul>
+ *     <li>Stores keys that direct search queries down the tree.</li>
+ *     <li>Manages child pointers, which can be other internal nodes or leaf nodes.</li>
+ *     <li>Handles insertion, deletion, and search traversal.</li>
+ *     <li>Splits when full and merges/borrows when under-filled.</li>
+ * </ul>
+ *
+ * <h2>B+ Tree Integration:</h2>
+ * <ul>
+ *     <li>Internal nodes serve as decision points for routing queries.</li>
+ *     <li>Keys in internal nodes act as separators between child nodes.</li>
+ *     <li>They ensure the tree remains balanced by promoting keys when splitting.</li>
+ *     <li>When an internal node splits, it promotes a key to its parent node.</li>
+ * </ul>
+ *
+ * <h2>B+ Tree - Internal Node Rules:</h2>
+ * <ul>
+ *     <li>Stores at most <code>m - 1</code> keys.</li>
+ *     <li>Stores at least <code>ceil(m / 2) - 1</code> keys.</li>
+ *     <li>Contains exactly <code>m</code> child pointers for <code>m - 1</code> keys.</li>
+ *     <li>Keys are stored in sort order {@code ASC(default) or DESC}</li>
+ *     <li>All internal nodes (except root) must have at least <code>ceil(m / 2)</code> child nodes.</li>
+ *     <li>Root can have a minimum of two child nodes.</li>
+ *     <li>When an internal node splits, the middle key is pushed to the parent.</li>
+ *     <li>Deletion may trigger merging or borrowing from siblings.</li>
+ * </ul>
+ *
+ * <h2>Sibling Relationships:</h2>
+ * <ul>
+ *     <li>Internal nodes may have left and right siblings.</li>
+ *     <li>Borrowing occurs between siblings when underfilled.</li>
+ *     <li>Merging occurs if borrowing is not possible.</li>
+ * </ul>
+ *
+ * TODO: add sort order in constructor
+ *
+ * @author Wali Morris
+ * @version 1.0
+ */
 public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
     private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(BPInternalNode.class);
 
@@ -215,6 +259,17 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         return true;
     }
 
+    /**
+     * Removes a key and its associated pointer at the given index.
+     * <p>
+     * This method ensures that both the key and its corresponding pointer
+     * are removed while maintaining the correct tree structure. The child node count
+     * is decremented only if both key and pointer removals are valid.
+     *
+     * TODO: Possibly throw a informational message here in an unlikely turn of events.
+     *
+     * @param index The index of the key to be removed.
+     */
     public void removeKeyAndPointer(int index) {
         boolean validKeyRemoval = removeKeyAtIndex(index, false);
         boolean validPointerRemoval = removePointerAtIndex(index + 1, false);
@@ -223,6 +278,22 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         }
     }
 
+    /**
+     * Removes a key from the internal node at the given index.
+     * <p>
+     * This method shifts the remaining keys to maintain order and structure.
+     * If the {@code exclusive} flag is set to {@code true}, the child node count
+     * is decremented to reflect the change.
+     * <p>
+     * {@code exclusive} means the key is being removed without also removing
+     * any pointer. Consider the relationship between keys and pointers in an
+     * internal node.
+     *
+     * @param index The index of the key to remove.
+     * @param exclusive the key is removed exclusively without removal of pointer.
+     *
+     * @return {@code true} if the removal was successful, otherwise {@code false}.
+     */
     public boolean removeKeyAtIndex(int index, boolean exclusive) {
         boolean valid = keyShiftCloseGap(index);
         if (valid && exclusive) {
@@ -231,6 +302,22 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         return valid;
     }
 
+    /**
+     * Removes a child pointer at the given index.
+     * <p>
+     * The remaining pointers are shifted to maintain order.
+     * If {@code exclusive} is set to {@code true}, the child count is decremented.
+     *
+     * <p>
+     * {@code exclusive} means the pointer is being removed without also removing
+     * any key. Consider the relationship between keys and pointers in an
+     * internal node.
+     *
+     * @param index The index of the pointer to remove.
+     * @param exclusive the pointer is removed exclusively without removal of key.
+     *
+     * @return {@code true} if the removal was successful, otherwise {@code false}.
+     */
     public boolean removePointerAtIndex(int index, boolean exclusive) {
         boolean valid = pointerShiftCloseGap(index);
         if (valid && exclusive) {
@@ -239,6 +326,16 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         return valid;
     }
 
+    /**
+     * Removes a specific child pointer from the internal node.
+     * <p>
+     * This method searches for the given pointer within the child pointers array,
+     * shifts the remaining pointers, and decrements the child count if found.
+     *
+     * @param pointer The pointer to remove.
+     *
+     * @return The index of the removed pointer, or {@code -1} if not found.
+     */
     public int removePointer(BPNode<T> pointer) {
         int index = -1;
         for (int i = 0; i < this.childNodes; i++) {
@@ -256,8 +353,20 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         return index;
     }
 
+    /**
+     * Shifts keys to fill a gap left by a removed key.
+     * <p>
+     * This method ensures that the keys remain in sequential order by shifting
+     * elements to the left, maintaining the tree structure.
+     * <p>
+     * {@code Note: This can leave keys null, not empty or non-existent}
+     *
+     * @param index The index where the shift should start.
+     *
+     * @return {@code true} if the shift was successful, otherwise {@code false}.
+     */
     private boolean keyShiftCloseGap(int index) {
-        // edge case: index less than zero or index greater than or equal to
+        // edge case: index less than zero or index out-of-bounds
         // the current number of child nodes. No way - return false
         if (index < 0 || index >= this.keys.length) {
             return false;
@@ -269,8 +378,18 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         return true;
     }
 
+    /**
+     * Shifts child pointers to fill a gap left by a removed pointer.
+     * <p>
+     * This method ensures the child pointer array maintains its correct order
+     * by shifting elements leftward.
+     *
+     * @param index The index where the shift should start.
+     *
+     * @return {@code true} if the shift was successful, otherwise {@code false}.
+     */
     private boolean pointerShiftCloseGap(int index) {
-        // edge case: index less than zero or index greater than or equal to
+        // edge case: index less than zero or index out-of-bounds
         // the current number of child nodes. No way - return false
         if (index < 0 || index >= this.childNodes) {
             return false;

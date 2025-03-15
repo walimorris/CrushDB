@@ -5,7 +5,12 @@ import com.crushdb.storageengine.config.ConfigManager;
 import java.io.File;
 import java.util.Properties;
 
-import static com.crushdb.storageengine.config.ConfigManager.*;
+import static com.crushdb.storageengine.config.ConfigManager.BASE_DIR;
+import static com.crushdb.storageengine.config.ConfigManager.LOG_DIR;
+import static com.crushdb.storageengine.config.ConfigManager.DATA_DIR;
+import static com.crushdb.storageengine.config.ConfigManager.WAL_DIR;
+import static com.crushdb.storageengine.config.ConfigManager.CU_CA_CERT_PATH;
+import static com.crushdb.storageengine.config.ConfigManager.CONFIGURATION_FILE;
 
 public class DatabaseInitializer {
 
