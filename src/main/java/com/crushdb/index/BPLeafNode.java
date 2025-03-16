@@ -173,10 +173,10 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
                 numPairs++;
                 // maintain order of keys
                 Arrays.sort(this.bpMappings, 0, numPairs);
-                return true;
+            } else {
+                sortDescending(this.bpMappings, this.numPairs, mapping);
+                this.numPairs++;
             }
-            sortDescending(this.bpMappings, this.numPairs, mapping);
-            this.numPairs++;
             return true;
         }
     }
