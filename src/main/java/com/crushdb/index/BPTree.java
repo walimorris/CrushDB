@@ -1,12 +1,15 @@
 package com.crushdb.index;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+
 /**
  * Represents a B+Tree, an ordered tree structure optimized for fast searches, inserts, and deletions.
  * This implementation supports dynamic balancing and range queries.
  *
  * @param <T> The type of keys stored in the tree, which must be Comparable.
  *
- * TODO: should sort order originate from tree creation?
  * @author Wali Morris
  * @version 1.0
  */
@@ -31,6 +34,11 @@ public class BPTree<T extends Comparable<T>> {
     private BPLeafNode<T> initialLeafNode;
 
     /**
+     * Establishing sort type, ASC v. DESC. Default is ASC sort order
+     */
+    private final SortOrder sortOrder;
+
+    /**
      * Constructs a B+Tree with a given order (m).
      * Initially, the tree starts empty.
      *
@@ -38,7 +46,113 @@ public class BPTree<T extends Comparable<T>> {
      */
     public BPTree(int m) {
         this.m = m;
+        this.sortOrder = SortOrder.ASC;
         this.root = null;
+    }
+
+    /**
+     * Constructs a B+Tree with a given order (m).
+     * Initially, the tree starts empty.
+     *
+     * @param m The order of the tree (maximum number of child nodes per internal node).
+     * @param sortOrder Sort order for Tree
+     */
+    public BPTree(int m, SortOrder sortOrder) {
+        this.m = m;
+        this.sortOrder = sortOrder;
+        this.root = null;
+    }
+
+//    public boolean insert(T key, PageOffsetReference reference) {
+//        if (this.isEmpty()) {
+//            this.initialLeafNode = new BPLeafNode<>(this.m, new BPMapping<>(key, reference), sortOrder);
+//        } else {
+//            BPLeafNode<T> leafNode = this.root == null ? this.initialLeafNode : findLeafNode(key);
+//            if (!leafNode.insert(new BPMapping<>(key, reference))) {
+//
+//            }
+//        }
+//    }
+
+    /**
+     * Searches for a specific key and retrieves its reference.
+     *
+     * @param key The key to search for.
+     *
+     * @return The {@link PageOffsetReference} if the key exists, otherwise {@code null}.
+     */
+    public PageOffsetReference search(T key) {
+        if (isEmpty()) {
+            return null;
+        }
+        BPLeafNode<T> leafNode = this.root == null ? this.initialLeafNode : findLeafNode(key);
+        BPMapping<T>[] mappings = leafNode.getBpMappings();
+        int index = binarySearch(mappings, leafNode.getNumPairs(), key);
+        // binary search will return neg int if not found
+        if (index < 0) {
+            return null;
+        } else {
+            return mappings[index].reference;
+        }
+    }
+
+    /**
+     * Searches for all keys within a given range and retrieves their references.
+     *
+     * @param lowerBound The minimum key value (inclusive).
+     * @param upperBound The maximum key value (inclusive).
+     *
+     * @return A list of {@link PageOffsetReference} objects within the range, or {@code null} if empty.
+     */
+    public ArrayList<PageOffsetReference> rangeSearch(T lowerBound, T upperBound) {
+        if (isEmpty()) {
+            return null;
+        }
+        ArrayList<PageOffsetReference> pageOffsetReferences = new ArrayList<>();
+        BPLeafNode<T> currentLeafNode = this.initialLeafNode;
+        while (currentLeafNode != null) {
+            // get mappings and iterate until null
+            BPMapping<T>[] mappings = currentLeafNode.getBpMappings();
+            for (BPMapping<T> mapping : mappings) {
+                if (mapping == null) {
+                    break;
+                }
+                // check that the key is within the bounds, inclusive and add to array
+                if (lowerBound.compareTo(mapping.getKey()) <= 0 &&
+                        mapping.getKey().compareTo(upperBound) <= 0) {
+                    pageOffsetReferences.add(mapping.getReference());
+                }
+            }
+            // go to next leaf - linked
+            currentLeafNode = currentLeafNode.getRightSibling();
+        }
+        return pageOffsetReferences;
+    }
+
+    /**
+     * Performs a binary search in a sorted array of key-value mappings.
+     *
+     * @param mappings  The sorted array of {@link BPMapping} objects.
+     * @param numPairs  The number of elements in the array.
+     * @param key       The key to search for.
+     *
+     * @return The index of the key if found, otherwise a negative value.
+     */
+    private int binarySearch(BPMapping<T>[] mappings, int numPairs, T key) {
+        Comparator<BPMapping<T>> c = Comparator.comparing(o -> o.key);
+
+        // wrap the key into a BPMapping so it matches the array
+        BPMapping<T> searchKey = new BPMapping<>(key, null);
+        return Arrays.binarySearch(mappings, 0, numPairs, searchKey, c);
+    }
+
+    /**
+     * Checks if the tree is empty.
+     *
+     * @return {@code true} if the tree has no nodes, otherwise {@code false}.
+     */
+    private boolean isEmpty() {
+        return this.initialLeafNode == null;
     }
 
     /**

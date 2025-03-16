@@ -296,6 +296,14 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         this.leftSibling = leftSibling;
     }
 
+    public BPLeafNode<T> getRightSibling() {
+        return this.rightSibling;
+    }
+
+    public BPLeafNode<T> getLeftSibling() {
+        return this.leftSibling;
+    }
+
     public int getMinPairs() {
         return minPairs;
     }
