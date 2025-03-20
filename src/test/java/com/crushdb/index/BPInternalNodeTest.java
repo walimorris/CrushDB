@@ -4,11 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 class BPInternalNodeTest {
 
@@ -27,7 +23,6 @@ class BPInternalNodeTest {
         BPInternalNode<Long> childNode3 = new BPInternalNode<>(4, placeHolderKeys);
         BPInternalNode<Long> childNode4 = new BPInternalNode<>(4, placeHolderKeys);
         BPInternalNode<Long> childNode5 = new BPInternalNode<>(4, placeHolderKeys);
-        BPInternalNode<Long> childNode6 = new BPInternalNode<>(4, placeHolderKeys);
 
         BPInternalNode<Long> internalNode = new BPInternalNode<>(4, keys);
 
@@ -53,20 +48,20 @@ class BPInternalNodeTest {
         );
 
         boolean insert4 = internalNode.insertChildPointerAtIndex(childNode4, internalNode.getChildNodes());
-        boolean insert5 = internalNode.insertChildPointerAtIndex(childNode5, internalNode.getChildNodes());
 
-        // this calls insert on the max child value (5) - however this is out-of-bounds for zero indexing
-        // in this case, overFull should deny this insert
-        boolean insert6 = internalNode.insertChildPointerAtIndex(childNode6, internalNode.getChildNodes());
+        // this calls insert on the max child value (5) - and will deny insert because pointers is full
+        boolean insert5 = internalNode.insertChildPointerAtIndex(childNode5, internalNode.getChildNodes());
 
         assertAll(
                 () -> assertTrue(insert4),
-                () -> assertTrue(insert5),
-                () -> assertFalse(insert6),
-                () -> assertTrue(internalNode.isOverfull()),
+                () -> assertFalse(insert5),
+                () -> assertTrue(internalNode.isPointersFull()),
+
+                // account for zero index with max four nodes
                 () -> assertEquals(childNode4, internalNode.getChildPointers()[3]),
-                // we can ensure that the last node inserted is the max
-                () -> assertEquals(childNode5, internalNode.getChildPointers()[internalNode.getMaxChildNodes()])
+
+                // the last available node, used for splits, should be available but null
+                () -> assertNull(internalNode.getChildPointers()[internalNode.getMaxChildNodes()])
         );
     }
 
@@ -101,35 +96,31 @@ class BPInternalNodeTest {
     void appendChildPointer() {
         // placeholder keys
         String[] placeHolderKeys = {"Apple", "Orange"};
+
         BPInternalNode<String> pointer1 = new BPInternalNode<>(3, placeHolderKeys);
         BPInternalNode<String> pointer2 = new BPInternalNode<>(3, placeHolderKeys);
         BPInternalNode<String> pointer3 = new BPInternalNode<>(3, placeHolderKeys);
         BPInternalNode<String> pointer4 = new BPInternalNode<>(3, placeHolderKeys);
-        BPInternalNode<String> pointer5 = new BPInternalNode<>(3, placeHolderKeys);
 
         BPInternalNode<String> parent = new BPInternalNode<>(3, placeHolderKeys);
         boolean insert1 = parent.insertChildPointerAtIndex(pointer4, 0);
         boolean insert2 = parent.appendChildPointer(pointer2);
         boolean insert3 = parent.appendChildPointer(pointer1);
+
+        // max is 3 child-child pointers, after which the node is full - a 4th insert needs split
         boolean insert4 = parent.appendChildPointer(pointer3);
 
-        // max is 4 child-child pointers, after which the node is overfull
-        boolean insert5 = parent.appendChildPointer(pointer5);
-
-        // append insert order -> pointer4, pointer2, pointer1, pointer3
+        // append insert order -> pointer4, pointer2, pointer1
         assertAll(
                 () -> assertTrue(insert1),
                 () -> assertTrue(insert2),
                 () -> assertTrue(insert3),
-                () -> assertTrue(insert4),
-                () -> assertFalse(insert5),
+                () -> assertFalse(insert4),
                 () -> assertEquals(pointer4, parent.getChildPointers()[0]),
                 () -> assertEquals(pointer2, parent.getChildPointers()[1]),
                 () -> assertEquals(pointer1, parent.getChildPointers()[2]),
-                // max = 4
-                () -> assertEquals(pointer3, parent.getChildPointers()[parent.getMaxChildNodes()]),
-                // max nodes is 4(m), however overfull will be max + 1 (zero indexed) or current number of child nodes
-                () -> assertEquals(pointer3, parent.getChildPointers()[parent.getChildNodes() - 1])
+                // max = 3
+                () -> assertNull(parent.getChildPointers()[parent.getMaxChildNodes()])
         );
     }
 
@@ -142,51 +133,69 @@ class BPInternalNodeTest {
         BPLeafNode<Long> pointer1 = new BPLeafNode<>(3, new BPMapping<>(1L, new PageOffsetReference(10L, 36)));
         BPLeafNode<Long> pointer2 = new BPLeafNode<>(3, new BPMapping<>(2L, new PageOffsetReference(20L, 72)));
         BPLeafNode<Long> pointer3 = new BPLeafNode<>(3, new BPMapping<>(3L, new PageOffsetReference(30L, 144)));
-        BPLeafNode<Long> pointer4 = new BPLeafNode<>(3, new BPMapping<>(4L, new PageOffsetReference(60L, 288)));
 
-        // max = 2, pointersMax = 3 - max pointer index will be index[2]
+        // max = 2, pointersMax = 3,  max pointer index will be index[1]
         BPInternalNode<Long> parent = new BPInternalNode<>(2, placeHolderKeys);
         boolean insert1 = parent.insertChildPointerAtIndex(pointer1, 0);
         boolean insert2 = parent.prependChildPointer(pointer3);
         boolean insert3 = parent.prependChildPointer(pointer2);
-        boolean insert4 = parent.prependChildPointer(pointer4);
 
-        // we've insert 3 nodes, this is overfull
+        // we've attempted to insert 3 nodes, this is full
         assertAll(
-                () -> assertTrue(parent.isOverfull()),
+                () -> assertTrue(parent.isPointersFull()),
                 () -> assertTrue(insert1),
                 () -> assertTrue(insert2),
-                () -> assertTrue(insert3),
-                () -> assertFalse(insert4)
+                () -> assertFalse(insert3)
         );
 
         // the max child nodes should be 2(m) - however to account for splitting we leave space
-        // for one more node pointer, so the current number of child nodes should be the max of 3
-        assertEquals(3, parent.getChildNodes());
+        // for one more node pointer (3), so the current number of child nodes should be the max of 2
+        assertEquals(2, parent.getChildNodes());
         assertEquals(2, parent.getMaxChildNodes());
+        assertEquals(3, parent.getChildPointers().length);
 
         // we can count on the latest inserts being the earliest in the pointers array
         assertAll(
-                () -> assertEquals(pointer2, parent.getChildPointers()[0]),
-                () -> assertEquals(pointer3, parent.getChildPointers()[1]),
-                // we can count on the last pointer being the limit (account for zero index) and last valid insert
-                () -> assertEquals(pointer1, parent.getChildPointers()[parent.getMaxChildNodes()])
+                () -> assertEquals(pointer3, parent.getChildPointers()[0]),
+                () -> assertEquals(pointer1, parent.getChildPointers()[1]),
+                // we can count on the last pointer being the limit (account for zero index)
+                // and it being null since max was reached and insert failed. In this case
+                // a forced insert is done. see forceInsert test
+                () -> assertNull(parent.getChildPointers()[parent.getMaxChildNodes()])
         );
 
         // let's visualize this
-        String result = "[2, 3, 1]";
+        String result = "[3, 1, NULL]";
+
+        assertEquals(result, visualizeChildNodePointers(parent));
+
+        // add force insert here
+        String forceInsertResult = "[3, 1, 2]";
+        boolean forceInsert = parent.forceInsertChildPointer(pointer2, parent.getMaxChildNodes());
+        assertTrue(forceInsert);
+        assertNotNull(parent.getChildPointers()[parent.getMaxChildNodes()]);
+        assertEquals(forceInsertResult, visualizeChildNodePointers(parent));
+    }
+
+    private String visualizeChildNodePointers(BPInternalNode<?> internalNode) {
         StringBuilder resultString = new StringBuilder();
         resultString.append("[");
-        for (int i = 0; i < parent.getChildPointers().length; i++) {
-            BPLeafNode<Long> leafNode = (BPLeafNode<Long>) parent.getChildPointers()[i];
-            if (i == parent.getMaxChildNodes()) {
+        for (int i = 0; i < internalNode.getChildPointers().length; i++) {
+            BPLeafNode<?> leafNode = (BPLeafNode<?>) internalNode.getChildPointers()[i];
+            if (leafNode == null && !(i == internalNode.getMaxChildNodes())) {
+                resultString.append("NULL").append(",");
+            } else if (leafNode == null && (i == internalNode.getMaxChildNodes())) {
+                resultString.append("NULL");
+            } else if (leafNode != null && (i == internalNode.getMaxChildNodes())) {
                 resultString.append(leafNode.getBpMappings()[0].getKey());
             } else {
-                resultString.append(leafNode.getBpMappings()[0].getKey()).append(", ");
+                if (leafNode != null) {
+                    resultString.append(leafNode.getBpMappings()[0].getKey()).append(", ");
+                }
             }
         }
         resultString.append("]");
-        assertEquals(result, resultString.toString());
+        return resultString.toString();
     }
 
     @Test
@@ -442,17 +451,17 @@ class BPInternalNodeTest {
         Long[] rightInternalNodeKeys = {27L, null};
 
         BPNode<Long>[] internalPointers1 = new BPNode[]{null, null, null};
-        BPInternalNode<Long> internalNode1 = new BPInternalNode<>(3, leftInternalNodeKeys, internalPointers1);
+        BPInternalNode<Long> internalNode1 = new BPInternalNode<>(3, leftInternalNodeKeys, internalPointers1, SortOrder.ASC);
 
         BPNode<Long>[] internalPointers2 = new BPNode[]{null, null};
-        BPInternalNode<Long> internalNode2 = new BPInternalNode<>(3, rightInternalNodeKeys, internalPointers2);
+        BPInternalNode<Long> internalNode2 = new BPInternalNode<>(3, rightInternalNodeKeys, internalPointers2, SortOrder.ASC);
 
         // setSiblings
         internalNode1.setRightSibling(internalNode2);
         internalNode2.setLeftSibling(internalNode1);
 
         BPNode<Long>[] rootPointers = new BPNode[]{internalNode1, internalNode2};
-        BPInternalNode<Long> rootNode = new BPInternalNode<>(3, rootKeys, rootPointers);
+        BPInternalNode<Long> rootNode = new BPInternalNode<>(3, rootKeys, rootPointers, SortOrder.ASC);
 
         // let's check siblings of internal node
         BPInternalNode<Long>[] rootNodeChildPointers = safeCastToInternalNodeArray(rootNode.getChildPointers());
@@ -473,17 +482,9 @@ class BPInternalNodeTest {
 
     @Test
     void getKeysIllegalArgumentException() {
-        String[] keys = {"Ubuntu", "Debian", "Fedora", "Arch Linux", "Manjaro", "openSUSE", "RHEL", "centOS", "AlmaLinux",
-                "Rocky Linux", "Kali Linux", "Parrot OS", "Zorin OS"
-        };
         String expected1 = "Order of tree is 100. Key length must be 99, but key is null.";
         Exception actual1 = assertThrows(IllegalArgumentException.class, () -> new BPInternalNode<>(100, null));
         assertEquals(expected1, actual1.getMessage());
-
-        String expected2 = "Order of tree is 15. Key length must be 14, but got 13.";
-        Exception actual2 = assertThrows(IllegalArgumentException.class, () -> new BPInternalNode<>(15, keys));
-        assertEquals(expected2, actual2.getMessage());
-
     }
 
     @Test

@@ -81,10 +81,19 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      */
     private T[] keys;
 
+    private int numKeys;
+
+    private int maxKeys;
+
     /**
      *  Pointers to child nodes. These can be either other internal nodes or leaf nodes.
      */
     private BPNode<T>[] childPointers;
+
+    /**
+     * Establishing sort type, ASC v. DESC. Default is ASC sort order
+     */
+    private final SortOrder sortOrder;
 
     /**
      * Constructs an internal node in a B+Tree with a given order (m).
@@ -105,17 +114,15 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
             throw new IllegalArgumentException(format("Order of tree is %d. Key length must be %d, but key is null.",
                     m, m - 1));
         }
-        if (keys.length != (m - 1)) {
-            LOGGER.error(format("Order of tree is %d. Key length must be %d, but got %d.", m, m - 1, keys.length),
-                    IllegalArgumentException.class.getName());
-            throw new IllegalArgumentException(format("Order of tree is %d. Key length must be %d, but got %d.",
-                    m, m - 1, keys.length));
-        }
         this.maxChildNodes = m;
         this.minChildNodes = (int) Math.ceil(m / 2.0);
         this.childNodes = 0;
         this.keys = keys;
+        this.maxKeys = m - 1;
+        this.numKeys = initKeys();
         this.childPointers = (BPNode<T>[]) new BPNode[this.maxChildNodes + 1];
+        this.sortOrder = SortOrder.ASC;
+
     }
 
     /**
@@ -128,25 +135,32 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      * @param keys The keys stored in the internal node. Acts as separators between child nodes.
      * @param pointers The child node pointers corresponding to the keys.
      */
-    public BPInternalNode(int m, T[] keys, BPNode<T>[] pointers) {
+    public BPInternalNode(int m, T[] keys, BPNode<T>[] pointers, SortOrder sortOrder) {
         if (keys == null) {
             LOGGER.error(format("Order of tree is %d. Key length must be %d, but key is null.", m, m - 1),
                     IllegalArgumentException.class.getName());
             throw new IllegalArgumentException(format("Order of tree is %d. Key length must be %d, but key is null.",
                     m, m - 1));
         }
-        if (keys.length != (m - 1)) {
-            LOGGER.error(format("Order of tree is %d. Key length must be %d, but got %d.", m, m - 1, keys.length),
-                    IllegalArgumentException.class.getName());
-            throw new IllegalArgumentException(format("Order of tree is %d. Key length must be %d, but got %d.",
-                    m, m - 1, keys.length));
-        }
         this.maxChildNodes = m;
         this.minChildNodes = (int) Math.ceil(m / 2.0);
         // determines number of child nodes
         this.childNodes = linearSearch(pointers);
         this.keys = keys;
+        this.maxKeys = m - 1;
+        this.numKeys = initKeys();
         this.childPointers = pointers;
+        this.sortOrder = sortOrder;
+    }
+
+    private int initKeys() {
+        int keysCount = 0;
+        for (T key : this.keys) {
+            if (key != null) {
+                keysCount++;
+            }
+        }
+        return keysCount;
     }
 
     /**
@@ -182,7 +196,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      * @param pointer The added child node reference.
      */
     public boolean insertChildPointerAtIndex(BPNode<T> pointer, int index) {
-        if (isOverfull()) {
+        if (isPointersFull()) {
             return false;
         }
         for (int i = this.childNodes - 1; i >= index; i--) {
@@ -231,7 +245,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      * @return boolean determines if child pointer was inserted or not.
      */
     public boolean appendChildPointer(BPNode<T> pointer) {
-        if (isOverfull()) {
+        if (isPointersFull()) {
             return false;
         }
         this.childPointers[this.childNodes] = pointer;
@@ -248,7 +262,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      * @return boolean determines if child pointer was inserted or not.
      */
     public boolean prependChildPointer(BPNode<T> pointer) {
-        if (isOverfull()) {
+        if (isPointersFull()) {
             return false;
         }
         for (int i = this.childNodes - 1; i >= 0; i--) {
@@ -274,8 +288,33 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         boolean validKeyRemoval = removeKeyAtIndex(index, false);
         boolean validPointerRemoval = removePointerAtIndex(index + 1, false);
         if (validKeyRemoval && validPointerRemoval) {
-            childNodes--;
+            this.childNodes--;
+            this.numKeys--;
         }
+    }
+
+    public boolean forceInsertKey(T key, int index) {
+        if (this.numKeys >= this.maxKeys + 1) {
+            throw new IllegalArgumentException("Cannot force insert key: Node capacity exceeded.");
+        }
+        for (int i = this.numKeys - 1; i >= index; i--) {
+            this.keys[i + 1] = this.keys[i];
+        }
+        this.keys[index] = key;
+        this.numKeys++;
+        return true;
+    }
+
+    public boolean forceInsertChildPointer(BPNode<T> pointer, int index) {
+        if (this.childNodes >= maxChildNodes + 1) {
+            throw new IllegalArgumentException("Cannot force insert pointer: Max capacity exceeded.");
+        }
+        for (int i = this.childNodes - 1; i >= index; i--) {
+            this.childPointers[i + 1] = this.childPointers[i];
+        }
+        this.childPointers[index] = pointer;
+        this.childNodes++;
+        return true;
     }
 
     /**
@@ -297,7 +336,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
     public boolean removeKeyAtIndex(int index, boolean exclusive) {
         boolean valid = keyShiftCloseGap(index);
         if (valid && exclusive) {
-            this.childNodes--;
+            this.numKeys--;
         }
         return valid;
     }
@@ -437,8 +476,20 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      *
      * @return {@code true} if the node is overfull, otherwise {@code false}.
      */
-    public boolean isOverfull() {
-        return this.childNodes == maxChildNodes + 1;
+    public boolean isKeysFull() {
+        return this.numKeys == this.maxKeys;
+    }
+
+    public boolean isPointersFull() {
+        return this.childNodes == this.maxChildNodes;
+    }
+
+    public BPInternalNode<T> getParent() {
+        return this.parent;
+    }
+
+    public void setParent(BPInternalNode<T> parent) {
+        this.parent = parent;
     }
 
     public void setRightSibling(BPInternalNode<T> rightSibling) {
@@ -475,5 +526,17 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
 
     public BPNode<T>[] getChildPointers() {
         return childPointers;
+    }
+
+    public SortOrder getSortOrder() {
+        return sortOrder;
+    }
+
+    public int getNumKeys() {
+        return numKeys;
+    }
+
+    public int getMaxKeys() {
+        return maxKeys;
     }
 }
