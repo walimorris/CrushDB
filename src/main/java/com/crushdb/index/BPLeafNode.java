@@ -101,8 +101,8 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
      * Creates a new leaf node with an initial key-value pair.
      *
      * @param m The order of the Tree (determines maxPairs).
-     * @param sortOrder Sort order for leafNode
      * @param mapping The first key-value pair to insert.
+     * @param sortOrder Sort order for leafNode
      */
     @SuppressWarnings("unchecked")
     public BPLeafNode(int m, BPMapping<T> mapping, SortOrder sortOrder) {
@@ -153,32 +153,46 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
      * Inserts a key-value mapping into the leaf node.
      *
      * @param mapping The key-value mapping to insert.
-     * @return boolean
+     *
+     * @return boolean indicating whether the insert was successful or not.
      */
     public boolean insert(BPMapping<T> mapping) throws IllegalArgumentException {
         if (mapping.key == null || mapping.reference == null) {
-            // added integrity to the structure. Every key should be valid and comparable.
-            // every reference is initialized. Pointing to an empty page could cause damage.
             LOGGER.error("Keys and References cannot be Null. This will collapse the Tree.",
                     IllegalArgumentException.class.getName()
             );
-            throw new IllegalArgumentException("Keys and References cannot be Null. This will collapse the Tree.");
+            throw new IllegalArgumentException("Keys and References cannot be null. This will collapse the Tree.");
         }
-        // can't insert if node is full
         if (this.isFull()) {
             return false;
-        } else {
-            if (this.sortOrder == SortOrder.ASC) {
-                this.bpMappings[numPairs] = mapping;
-                numPairs++;
-                // maintain order of keys
-                Arrays.sort(this.bpMappings, 0, numPairs);
-            } else {
-                sortDescending(this.bpMappings, this.numPairs, mapping);
-                this.numPairs++;
-            }
-            return true;
         }
+        this.bpMappings[this.numPairs] = mapping;
+        numPairs++;
+
+        if (this.sortOrder == SortOrder.ASC) {
+            Arrays.sort(this.bpMappings, 0, numPairs);
+        } else {
+            sortDescending(this.bpMappings, this.numPairs, mapping);
+        }
+        return true;
+    }
+
+    /**
+     * Forces an insert. Used for indicating when a split needs to occur.
+     *
+     * @param mapping {@link BPMapping<T>}
+     *
+     * @return boolean indicates if the force insert was successful
+     *
+     * @throws IllegalArgumentException numPairs becomes greater than node capacity
+     */
+    public boolean forceInsert(BPMapping<T> mapping) throws IllegalArgumentException {
+        if (this.numPairs >= this.bpMappings.length) {
+            throw new IllegalArgumentException("Cannot force insert: Node capacity exceeded.");
+        }
+        sortDescending(this.bpMappings, numPairs, mapping);
+        numPairs++;
+        return true;
     }
 
     /**
@@ -199,18 +213,13 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
             }
             insertIndex++;
         }
-
-        // the insert index is last index, means it's the smallest value, insert here
-        if (insertIndex == numPairs) {
-            arr[insertIndex] = value;
-            // we have the index where n belongs, move values starting at this index to the right
-        } else {
-            for (int i = numPairs; i > insertIndex; i--) {
-                arr[i] = arr[i - 1];
-            }
-            // insert the value at starting index in desc order
-            arr[insertIndex] = value;
+        // shift elements to the right starting from the end
+        for (int i = numPairs - 1; i > insertIndex; i--) {
+            arr[i] = arr[i - 1];
         }
+
+        // insert the value at the correct position
+        arr[insertIndex] = value;
     }
 
     /**
@@ -254,6 +263,10 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
 
     /**
      * Checks if the node is full. should/needs to be split.
+     * {@code NOTE: This method should be called, however if it's true
+     * then another pair (key) can be inserted because there's space
+     * enough for one extra index to handle the split. However, the next
+     * decision after the insert should be a split.}
      *
      * @return boolean
      */
@@ -316,7 +329,19 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         return numPairs;
     }
 
+    public void setNumPairs(int numPairs) {
+        this.numPairs = numPairs;
+    }
+
     public BPMapping<T>[] getBpMappings() {
         return bpMappings;
+    }
+
+    public BPInternalNode<T> getParent() {
+        return this.parent;
+    }
+
+    public void setParent(BPInternalNode<T> parent) {
+        this.parent = parent;
     }
 }

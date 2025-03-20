@@ -57,7 +57,7 @@ class BPLeafNodeTest {
         BPMapping<Long> bpMapping6 = new BPMapping<>(233L, new PageOffsetReference(1L, 66));
         BPMapping<Long> bpMapping7 = new BPMapping<>(255L, new PageOffsetReference(2L, 88));
         BPMapping<Long> bpMapping8 = new BPMapping<>(333L, new PageOffsetReference(45L, 865));
-        BPMapping<Long> bpMapping9 = new BPMapping<>(333L, new PageOffsetReference(10L, 55));
+        BPMapping<Long> bpMapping9 = new BPMapping<>(334L, new PageOffsetReference(10L, 55));
         BPMapping<Long> bpMapping10 = new BPMapping<>(405L, new PageOffsetReference(116L, 34));
 
         BPLeafNode<Long> leafNode = new BPLeafNode<>(11, bpMapping1, SortOrder.DESC);
@@ -131,7 +131,7 @@ class BPLeafNodeTest {
         // we can visualize the key pairs. Notice the last value is null, as the map is initialized
         // as the size of the order, however the maximum keys in the leaf node are m - 1. This extra
         // space is here on for splitting/merging process.
-        String result = "[405,333,333,255,233,156,103,33,25,12,NULL]";
+        String result = "[405,334,333,255,233,156,103,33,25,12,NULL]";
         assertEquals(result, descendingKeyList.toString());
     }
 
@@ -212,6 +212,33 @@ class BPLeafNodeTest {
 
        leafNode.insert(bpMapping2);
        assertTrue(leafNode.isFull());
+    }
+
+
+    @Test
+    void forceInsert() {
+        BPMapping<String> bpMapping1 = new BPMapping<>("United States", new PageOffsetReference(100L, 100));
+        BPMapping<String> bpMapping2 = new BPMapping<>("Columbia", new PageOffsetReference(200L, 200));
+        BPMapping<String> bpMapping3 = new BPMapping<>("Kenya", new PageOffsetReference(300L, 300));
+
+        // max keys = 2 - initially contains 1 key
+        BPLeafNode<String> leafNode = new BPLeafNode<>(3, bpMapping1);
+        assertFalse(leafNode.isFull());
+
+        boolean insert0 = leafNode.insert(bpMapping2);
+        assertTrue(leafNode.isFull());
+        assertTrue(insert0);
+
+        boolean insert1 = leafNode.insert(bpMapping3);
+        assertFalse(insert1);
+
+        if (leafNode.isFull()) {
+            // force an insert
+            boolean forcedInsert = leafNode.forceInsert(bpMapping3);
+            assertTrue(forcedInsert);
+            assertEquals(3, leafNode.getNumPairs());
+            // next step would be force splice in tree
+        }
     }
 
     @Test
