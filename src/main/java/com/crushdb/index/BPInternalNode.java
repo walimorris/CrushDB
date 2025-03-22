@@ -393,6 +393,27 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
     }
 
     /**
+     * Attempts to insert a key into the internal node in sorted order.
+     *
+     * @param key The key to insert.
+     * @return {@code true} if the key was successfully inserted, {@code false} if the node is full.
+     */
+    public boolean insertKey(T key) {
+        // enough space for insert?
+        if (isKeysFull()) {
+            return false;
+        }
+        int insertIndex = this.numKeys;
+        while (insertIndex > 0 && this.keys[insertIndex - 1] != null && this.keys[insertIndex - 1].compareTo(key) > 0) {
+            this.keys[insertIndex] = this.keys[insertIndex - 1]; // shift rught
+            insertIndex--;
+        }
+        this.keys[insertIndex] = key;
+        this.numKeys++;
+        return true;
+    }
+
+    /**
      * Shifts keys to fill a gap left by a removed key.
      * <p>
      * This method ensures that the keys remain in sequential order by shifting
@@ -484,6 +505,10 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         return this.childNodes == this.maxChildNodes;
     }
 
+    public boolean isOverFull() {
+        return this.numKeys == this.maxKeys + 1;
+    }
+
     public BPInternalNode<T> getParent() {
         return this.parent;
     }
@@ -512,6 +537,10 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         return childNodes;
     }
 
+    public void setChildNodes(int childNodes) {
+        this.childNodes = childNodes;
+    }
+
     public BPInternalNode<T> getLeftSibling() {
         return leftSibling;
     }
@@ -534,6 +563,10 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
 
     public int getNumKeys() {
         return numKeys;
+    }
+
+    public void setNumKeys(int numKeys) {
+        this.numKeys = numKeys;
     }
 
     public int getMaxKeys() {

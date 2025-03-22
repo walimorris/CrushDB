@@ -187,11 +187,15 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
      * @throws IllegalArgumentException numPairs becomes greater than node capacity
      */
     public boolean forceInsert(BPMapping<T> mapping) throws IllegalArgumentException {
+        if (mapping == null || mapping.key == null || mapping.reference == null) {
+            throw new IllegalArgumentException("Cannot insert null key or reference.");
+        }
         if (this.numPairs >= this.bpMappings.length) {
             throw new IllegalArgumentException("Cannot force insert: Node capacity exceeded.");
         }
-        sortDescending(this.bpMappings, numPairs, mapping);
+        this.bpMappings[this.numPairs] = mapping;
         numPairs++;
+        Arrays.sort(this.bpMappings, 0, this.numPairs);
         return true;
     }
 
