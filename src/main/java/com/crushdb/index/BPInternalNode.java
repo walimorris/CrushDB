@@ -196,11 +196,11 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      * @param pointer The added child node reference.
      */
     public boolean insertChildPointerAtIndex(BPNode<T> pointer, int index) {
-        if (isPointersFull()) {
+        if (this.childNodes >= this.maxChildNodes + 1) {
             return false;
         }
-        for (int i = this.childNodes - 1; i >= index; i--) {
-            this.childPointers[i+1] = childPointers[i];
+        for (int i = this.childNodes; i > index; i--) {
+            this.childPointers[i] = this.childPointers[i - 1];
         }
         this.childPointers[index] = pointer;
         this.childNodes++;
@@ -250,6 +250,10 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         }
         this.childPointers[this.childNodes] = pointer;
         this.childNodes++;
+        if (pointer != null) {
+            pointer.setParent(this);
+        }
+
         return true;
     }
 
@@ -270,6 +274,9 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         }
         this.childPointers[0] = pointer;
         this.childNodes++;
+        if (pointer != null) {
+            pointer.setParent(this);
+        }
         return true;
     }
 
@@ -399,13 +406,13 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      * @return {@code true} if the key was successfully inserted, {@code false} if the node is full.
      */
     public boolean insertKey(T key) {
-        // enough space for insert?
-        if (isKeysFull()) {
+        if (this.numKeys >= this.maxKeys + 1) {
             return false;
         }
         int insertIndex = this.numKeys;
         while (insertIndex > 0 && this.keys[insertIndex - 1] != null && this.keys[insertIndex - 1].compareTo(key) > 0) {
-            this.keys[insertIndex] = this.keys[insertIndex - 1]; // shift rught
+            // shift right
+            this.keys[insertIndex] = this.keys[insertIndex - 1];
             insertIndex--;
         }
         this.keys[insertIndex] = key;
