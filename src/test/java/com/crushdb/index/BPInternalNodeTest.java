@@ -54,14 +54,12 @@ class BPInternalNodeTest {
 
         assertAll(
                 () -> assertTrue(insert4),
-                () -> assertFalse(insert5),
-                () -> assertTrue(internalNode.isPointersFull()),
+                () -> assertTrue(insert5),
+                () -> assertFalse(internalNode.isPointersFull()),
 
                 // account for zero index with max four nodes
                 () -> assertEquals(childNode4, internalNode.getChildPointers()[3]),
-
-                // the last available node, used for splits, should be available but null
-                () -> assertNull(internalNode.getChildPointers()[internalNode.getMaxChildNodes()])
+                () -> assertEquals(childNode5, internalNode.getChildPointers()[internalNode.getMaxChildNodes()])
         );
     }
 
