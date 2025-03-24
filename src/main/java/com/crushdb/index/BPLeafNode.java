@@ -266,6 +266,19 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
     }
 
     /**
+     * Checks if key already exists in {@link BPLeafNode}.
+     * {@code NOTE: this only works because of our continuous sorted state}
+     *
+     * @param key searched key
+     *
+     * @return boolean
+     */
+    public boolean containsKey(T key) {
+        int index = Arrays.binarySearch(this.bpMappings, 0, this.numPairs, new BPMapping<>(key, null));
+        return index >= 0;
+    }
+
+    /**
      * Checks if the node is full. should/needs to be split.
      * {@code NOTE: This method should be called, however if it's true
      * then another pair (key) can be inserted because there's space

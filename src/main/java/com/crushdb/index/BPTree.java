@@ -39,6 +39,8 @@ public class BPTree<T extends Comparable<T>> {
      */
     private final SortOrder sortOrder;
 
+    private final boolean unique;
+
     /**
      * Constructs a B+Tree with a given order (m).
      * Initially, the tree starts empty.
@@ -47,6 +49,14 @@ public class BPTree<T extends Comparable<T>> {
      */
     public BPTree(int m) {
         this.m = m;
+        this.unique = false;
+        this.sortOrder = SortOrder.ASC;
+        this.root = null;
+    }
+
+    public BPTree(int m, boolean unique) {
+        this.m = m;
+        this.unique = unique;
         this.sortOrder = SortOrder.ASC;
         this.root = null;
     }
@@ -60,18 +70,30 @@ public class BPTree<T extends Comparable<T>> {
      */
     public BPTree(int m, SortOrder sortOrder) {
         this.m = m;
+        this.unique = false;
+        this.sortOrder = sortOrder;
+        this.root = null;
+    }
+
+    public BPTree(int m, boolean unique, SortOrder sortOrder) {
+        this.m = m;
+        this.unique = unique;
         this.sortOrder = sortOrder;
         this.root = null;
     }
 
     @SuppressWarnings("unchecked")
-    public boolean insert(T key, PageOffsetReference reference) {
+    public boolean insert(T key, PageOffsetReference reference) throws DuplicateKeyException {
         if (this.isEmpty()) {
             this.initialLeafNode = new BPLeafNode<>(this.m, new BPMapping<>(key, reference), sortOrder);
             return true;
         }
-
         BPLeafNode<T> leafNode = (this.root == null) ? this.initialLeafNode : findLeafNode(key);
+
+        // check if the key already exists, if so throw duplicate error - handle in caller
+        if (this.unique && leafNode.containsKey(key)) {
+            throw new DuplicateKeyException("Key already exists: " + key);
+        }
         boolean wasInserted = leafNode.insert(new BPMapping<>(key, reference));
         if (wasInserted) {
             return true;
@@ -310,7 +332,6 @@ public class BPTree<T extends Comparable<T>> {
             while (i < internal.getNumKeys() && keys[i] != null && key.compareTo(keys[i]) >= 0) {
                 i++;
             }
-
             // prevent null pointer dereference
             BPNode<T>[] children = internal.getChildPointers();
             if (i >= children.length || children[i] == null) {
