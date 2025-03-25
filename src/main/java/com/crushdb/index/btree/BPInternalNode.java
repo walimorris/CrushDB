@@ -1,4 +1,4 @@
-package com.crushdb.index;
+package com.crushdb.index.btree;
 
 import com.crushdb.logger.CrushDBLogger;
 

@@ -1,5 +1,9 @@
 package com.crushdb.index;
 
+import com.crushdb.index.btree.BPTree;
+import com.crushdb.index.btree.PageOffsetReference;
+import com.crushdb.index.btree.SortOrder;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

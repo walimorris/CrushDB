@@ -1,4 +1,4 @@
-package com.crushdb.index;
+package com.crushdb.index.btree;
 
 public enum SortOrder {
     ASC,

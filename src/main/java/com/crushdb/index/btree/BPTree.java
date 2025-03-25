@@ -1,5 +1,6 @@
-package com.crushdb.index;
+package com.crushdb.index.btree;
 
+import com.crushdb.index.DuplicateKeyException;
 import com.crushdb.logger.CrushDBLogger;
 
 import java.util.Map;

@@ -1,5 +1,8 @@
 package com.crushdb.index;
 
+import com.crushdb.index.btree.BPTree;
+import com.crushdb.index.btree.PageOffsetReference;
+import com.crushdb.index.btree.SortOrder;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
