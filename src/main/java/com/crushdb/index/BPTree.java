@@ -2,7 +2,11 @@ package com.crushdb.index;
 
 import com.crushdb.logger.CrushDBLogger;
 
-import java.util.*;
+import java.util.Map;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * Represents a B+Tree, an ordered tree structure optimized for fast searches, inserts, and deletions.
@@ -39,8 +43,6 @@ public class BPTree<T extends Comparable<T>> {
      */
     private final SortOrder sortOrder;
 
-    private final boolean unique;
-
     /**
      * Constructs a B+Tree with a given order (m).
      * Initially, the tree starts empty.
@@ -49,14 +51,6 @@ public class BPTree<T extends Comparable<T>> {
      */
     public BPTree(int m) {
         this.m = m;
-        this.unique = false;
-        this.sortOrder = SortOrder.ASC;
-        this.root = null;
-    }
-
-    public BPTree(int m, boolean unique) {
-        this.m = m;
-        this.unique = unique;
         this.sortOrder = SortOrder.ASC;
         this.root = null;
     }
@@ -70,20 +64,12 @@ public class BPTree<T extends Comparable<T>> {
      */
     public BPTree(int m, SortOrder sortOrder) {
         this.m = m;
-        this.unique = false;
-        this.sortOrder = sortOrder;
-        this.root = null;
-    }
-
-    public BPTree(int m, boolean unique, SortOrder sortOrder) {
-        this.m = m;
-        this.unique = unique;
         this.sortOrder = sortOrder;
         this.root = null;
     }
 
     @SuppressWarnings("unchecked")
-    public boolean insert(T key, PageOffsetReference reference) throws DuplicateKeyException {
+    public boolean insert(T key, PageOffsetReference reference, boolean unique) throws DuplicateKeyException {
         if (this.isEmpty()) {
             this.initialLeafNode = new BPLeafNode<>(this.m, new BPMapping<>(key, reference), sortOrder);
             return true;
@@ -91,8 +77,26 @@ public class BPTree<T extends Comparable<T>> {
         BPLeafNode<T> leafNode = (this.root == null) ? this.initialLeafNode : findLeafNode(key);
 
         // check if the key already exists, if so throw duplicate error - handle in caller
-        if (this.unique && leafNode.containsKey(key)) {
-            throw new DuplicateKeyException("Key already exists: " + key);
+        if (unique) {
+            if (leafNode.containsKeyASC(key)) {
+                // TODO: pass the index name
+                throw new DuplicateKeyException("Key already exists on unique index: " + key);
+            }
+        }
+
+        // for indexes that aren't unique, check if key exist and append reference
+        if (!unique) {
+            if (this.sortOrder == SortOrder.ASC) {
+                int index = leafNode.getKeyASC(key);
+                // index is not unique, but is the key found?
+                if (index >= 0) {
+                    BPMapping<T> existingMapping = leafNode.getBpMappings()[index];
+                    if (existingMapping != null) {
+                        existingMapping.getReferences().add(reference);
+                        return true;
+                    }
+                }
+            }
         }
         boolean wasInserted = leafNode.insert(new BPMapping<>(key, reference));
         if (wasInserted) {
@@ -239,7 +243,7 @@ public class BPTree<T extends Comparable<T>> {
      *
      * @return The {@link PageOffsetReference} if the key exists, otherwise {@code null}.
      */
-    public PageOffsetReference search(T key) {
+    public List<PageOffsetReference> search(T key) {
         if (isEmpty()) {
             return null;
         }
@@ -250,7 +254,7 @@ public class BPTree<T extends Comparable<T>> {
         if (index < 0) {
             return null;
         } else {
-            return mappings[index].reference;
+            return mappings[index].getReferences();
         }
     }
 
@@ -260,13 +264,14 @@ public class BPTree<T extends Comparable<T>> {
      * @param lowerBound The minimum key value (inclusive).
      * @param upperBound The maximum key value (inclusive).
      *
-     * @return A list of {@link PageOffsetReference} objects within the range, or {@code null} if empty.
+     * @return A Map of {@link T key} and List {@link PageOffsetReference}
+     * objects within the range, or {@code null} if empty.
      */
-    public ArrayList<PageOffsetReference> rangeSearch(T lowerBound, T upperBound) {
+    public Map<T, List<PageOffsetReference>> rangeSearch(T lowerBound, T upperBound) {
         if (isEmpty()) {
             return null;
         }
-        ArrayList<PageOffsetReference> pageOffsetReferences = new ArrayList<>();
+        Map<T, List<PageOffsetReference>> referenceMap = new HashMap<>();
         BPLeafNode<T> currentLeafNode = this.initialLeafNode;
         while (currentLeafNode != null) {
             // get mappings and iterate until null
@@ -278,13 +283,14 @@ public class BPTree<T extends Comparable<T>> {
                 // check that the key is within the bounds, inclusive and add to array
                 if (lowerBound.compareTo(mapping.getKey()) <= 0 &&
                         mapping.getKey().compareTo(upperBound) <= 0) {
-                    pageOffsetReferences.add(mapping.getReference());
+                    // each key in the bounds will contain reference, dump the key and references
+                    referenceMap.put(mapping.getKey(), mapping.getReferences());
                 }
             }
             // go to next leaf - linked
             currentLeafNode = currentLeafNode.getRightSibling();
         }
-        return pageOffsetReferences;
+        return referenceMap;
     }
 
     /**
@@ -297,7 +303,7 @@ public class BPTree<T extends Comparable<T>> {
      * @return The index of the key if found, otherwise a negative value.
      */
     private int binarySearch(BPMapping<T>[] mappings, int numPairs, T key) {
-        Comparator<BPMapping<T>> c = Comparator.comparing(o -> o.key);
+        Comparator<BPMapping<T>> c = Comparator.comparing(BPMapping::getKey);
 
         // wrap the key into a BPMapping so it matches the array
         BPMapping<T> searchKey = new BPMapping<>(key, null);

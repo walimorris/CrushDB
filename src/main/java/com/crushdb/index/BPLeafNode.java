@@ -157,11 +157,20 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
      * @return boolean indicating whether the insert was successful or not.
      */
     public boolean insert(BPMapping<T> mapping) throws IllegalArgumentException {
-        if (mapping.key == null || mapping.reference == null) {
+        if (mapping.getKey() == null || mapping.getReferences() == null) {
             LOGGER.error("Keys and References cannot be Null. This will collapse the Tree.",
                     IllegalArgumentException.class.getName()
             );
             throw new IllegalArgumentException("Keys and References cannot be null. This will collapse the Tree.");
+        }
+        // check if key exist and add reference
+        if (this.sortOrder == SortOrder.ASC) {
+            int index = getKeyASC(mapping.getKey());
+            if (index >= 0 && this.bpMappings[index].getKey() == mapping.getKey()) {
+                BPMapping<T> existingMappings = bpMappings[index];
+                existingMappings.getReferences().addAll(mapping.getReferences());
+                return true;
+            }
         }
         if (this.isFull()) {
             return false;
@@ -187,7 +196,7 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
      * @throws IllegalArgumentException numPairs becomes greater than node capacity
      */
     public boolean forceInsert(BPMapping<T> mapping) throws IllegalArgumentException {
-        if (mapping == null || mapping.key == null || mapping.reference == null) {
+        if (mapping == null || mapping.getKey() == null || mapping.getReferences() == null) {
             throw new IllegalArgumentException("Cannot insert null key or reference.");
         }
         if (this.numPairs >= this.bpMappings.length) {
@@ -265,6 +274,10 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         return -1;
     }
 
+    public int getKeyASC(T key) {
+        return Arrays.binarySearch(this.bpMappings, 0, this.numPairs, new BPMapping<>(key, null));
+    }
+
     /**
      * Checks if key already exists in {@link BPLeafNode}.
      * {@code NOTE: this only works because of our continuous sorted state}
@@ -273,7 +286,7 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
      *
      * @return boolean
      */
-    public boolean containsKey(T key) {
+    public boolean containsKeyASC(T key) {
         int index = Arrays.binarySearch(this.bpMappings, 0, this.numPairs, new BPMapping<>(key, null));
         return index >= 0;
     }

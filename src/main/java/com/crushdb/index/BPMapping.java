@@ -2,6 +2,9 @@ package com.crushdb.index;
 
 import com.crushdb.storageengine.page.Page;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Represents a key-value mapping used within CrushDB's B+Tree structure.
  *
@@ -29,13 +32,17 @@ public class BPMapping<T extends Comparable<T>> implements Comparable<BPMapping<
      * be the DocumentID for naive indexing. Later, we will extend to single
      * field indexes and compound indexes.
      */
-    T key;
+    private T key;
 
     /**
-     * A mapping to the page and offset where the data for this key is stored.
-     * See {@link Page} to understand how offsets are stored in CrushDB pages.
+     * A {@link List} of mappings to the page(s) and offset(s) where the data for this
+     * key is stored.
+     *
+     * TODO: would it make sense to also sort the Pages? This may benefit from contiguous seeks
+     *
+     * @see Page to understand how offsets are stored in CrushDB
      */
-    PageOffsetReference reference;
+    private List<PageOffsetReference> references;
 
     /**
      * Constructs a {@code BPMappings} object with the specified key and page reference.
@@ -45,7 +52,8 @@ public class BPMapping<T extends Comparable<T>> implements Comparable<BPMapping<
      */
     public BPMapping(T key, PageOffsetReference reference) {
         this.key = key;
-        this.reference = reference;
+        this.references = new ArrayList<>();
+        this.references.add(reference);
     }
 
     @Override
@@ -57,7 +65,11 @@ public class BPMapping<T extends Comparable<T>> implements Comparable<BPMapping<
         return key;
     }
 
-    public PageOffsetReference getReference() {
-        return reference;
+    public void addReference(PageOffsetReference reference) {
+        this.references.add(reference);
+    }
+
+    public List<PageOffsetReference> getReferences() {
+        return references;
     }
 }
