@@ -2,6 +2,9 @@ package com.crushdb.index.btree;
 
 import com.crushdb.logger.CrushDBLogger;
 
+import java.util.Arrays;
+import java.util.Comparator;
+
 import static java.lang.String.format;
 
 /**
@@ -96,6 +99,11 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
     private final SortOrder sortOrder;
 
     /**
+     * Comparator for sorting raw keys in descending order.
+     */
+    private final Comparator<T> RAW_DESC_COMPARATOR = (a, b) -> b.compareTo(a);
+
+    /**
      * Constructs an internal node in a B+Tree with a given order (m).
      *
      * <p>Initializes an internal node without any child pointers, setting up the maximum
@@ -178,6 +186,39 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
             }
         }
         return keysCount;
+    }
+
+    /**
+     * Attempts to insert a key into the internal node in sorted order.
+     *
+     * @param key The key to insert.
+     * @return {@code true} if the key was successfully inserted, {@code false} if the node is full.
+     */
+    public boolean insertKey(T key) {
+        if (this.numKeys >= this.maxKeys + 1) {
+            return false;
+        }
+        this.keys[this.numKeys] = key;
+        this.numKeys++;
+
+        if (this.sortOrder == SortOrder.ASC) {
+            Arrays.sort(this.keys, 0, this.numKeys);
+        } else {
+            Arrays.sort(this.keys, 0, this.numKeys, RAW_DESC_COMPARATOR);
+        }
+        return true;
+    }
+
+    public boolean forceInsertKey(T key, int index) {
+        if (this.numKeys >= this.maxKeys + 1) {
+            throw new IllegalArgumentException("Cannot force insert key: Node capacity exceeded.");
+        }
+        for (int i = this.numKeys - 1; i >= index; i--) {
+            this.keys[i + 1] = this.keys[i];
+        }
+        this.keys[index] = key;
+        this.numKeys++;
+        return true;
     }
 
     /**
@@ -316,18 +357,6 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         }
     }
 
-    public boolean forceInsertKey(T key, int index) {
-        if (this.numKeys >= this.maxKeys + 1) {
-            throw new IllegalArgumentException("Cannot force insert key: Node capacity exceeded.");
-        }
-        for (int i = this.numKeys - 1; i >= index; i--) {
-            this.keys[i + 1] = this.keys[i];
-        }
-        this.keys[index] = key;
-        this.numKeys++;
-        return true;
-    }
-
     public boolean forceInsertChildPointer(BPNode<T> pointer, int index) {
         if (this.childNodes >= maxChildNodes + 1) {
             throw new IllegalArgumentException("Cannot force insert pointer: Max capacity exceeded.");
@@ -413,27 +442,6 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         pointerShiftCloseGap(index);
         this.childNodes--;
         return index;
-    }
-
-    /**
-     * Attempts to insert a key into the internal node in sorted order.
-     *
-     * @param key The key to insert.
-     * @return {@code true} if the key was successfully inserted, {@code false} if the node is full.
-     */
-    public boolean insertKey(T key) {
-        if (this.numKeys >= this.maxKeys + 1) {
-            return false;
-        }
-        int insertIndex = this.numKeys;
-        while (insertIndex > 0 && this.keys[insertIndex - 1] != null && this.keys[insertIndex - 1].compareTo(key) > 0) {
-            // shift right
-            this.keys[insertIndex] = this.keys[insertIndex - 1];
-            insertIndex--;
-        }
-        this.keys[insertIndex] = key;
-        this.numKeys++;
-        return true;
     }
 
     /**

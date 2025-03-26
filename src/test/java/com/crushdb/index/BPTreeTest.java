@@ -1,15 +1,10 @@
 package com.crushdb.index;
 
-import com.crushdb.index.btree.BPTree;
-import com.crushdb.index.btree.PageOffsetReference;
-import com.crushdb.index.btree.SortOrder;
+import com.crushdb.index.btree.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -282,34 +277,59 @@ class BPTreeTest {
         );
     }
 
-//    @Test
-//    void searchUniqueDESC() {
-//        BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-//        indexManager.createIndex("fruit_index", true, 3, SortOrder.DESC);
-//        BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
-//
-//        fruitIndex.insert("Apple", new PageOffsetReference(1L, 22));
-//        fruitIndex.insert("Grape", new PageOffsetReference(2L, 23));
-//        fruitIndex.insert("Orange", new PageOffsetReference(3L, 24));
-//        fruitIndex.insert("Banana", new PageOffsetReference(4L, 25));
-//        fruitIndex.insert("Pineapple", new PageOffsetReference(5L, 26));
-//        fruitIndex.insert("BlueBerry", new PageOffsetReference(6L, 27));
-//        fruitIndex.insert("StrawBerry", new PageOffsetReference(7L, 28));
-//        fruitIndex.insert("Pear", new PageOffsetReference(8L, 29));
-//        fruitIndex.insert("Kiwi", new PageOffsetReference(9L, 30));
-//        fruitIndex.insert("Cherry", new PageOffsetReference(10L, 31));
-//
-//        assertAll(
-//                () -> assertEquals(1L, fruitIndex.search("Apple").get(0).getPageId()),
-//                () -> assertEquals(2L, fruitIndex.search("Grape").get(0).getPageId()),
-//                () -> assertEquals(3L, fruitIndex.search("Orange").get(0).getPageId()),
-//                () -> assertEquals(4L, fruitIndex.search("Banana").get(0).getPageId()),
-//                () -> assertEquals(5L, fruitIndex.search("Pineapple").get(0).getPageId()),
-//                () -> assertEquals(6L, fruitIndex.search("BlueBerry").get(0).getPageId()),
-//                () -> assertEquals(7L, fruitIndex.search("StrawBerry").get(0).getPageId()),
-//                () -> assertEquals(8L, fruitIndex.search("Pear").get(0).getPageId()),
-//                () -> assertEquals(9L, fruitIndex.search("Kiwi").get(0).getPageId()),
-//                () -> assertEquals(10L, fruitIndex.search("Cherry").get(0).getPageId())
-//        );
-//    }
+    @Test
+    void searchUniqueDESC() {
+        BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
+        indexManager.createIndex("fruit_index", true, 5, SortOrder.DESC);
+        BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
+
+        fruitIndex.insert("Apple", new PageOffsetReference(1L, 22));
+        fruitIndex.insert("Grape", new PageOffsetReference(2L, 23));
+        fruitIndex.insert("Orange", new PageOffsetReference(3L, 24));
+        fruitIndex.insert("Banana", new PageOffsetReference(4L, 25));
+        fruitIndex.insert("Pineapple", new PageOffsetReference(5L, 26));
+        fruitIndex.insert("BlueBerry", new PageOffsetReference(6L, 27));
+        fruitIndex.insert("StrawBerry", new PageOffsetReference(7L, 28));
+        fruitIndex.insert("Pear", new PageOffsetReference(8L, 29));
+        fruitIndex.insert("Kiwi", new PageOffsetReference(9L, 30));
+        fruitIndex.insert("Cherry", new PageOffsetReference(10L, 31));
+
+        assertAll(
+                () -> assertEquals(1L, fruitIndex.search("Apple").get(0).getPageId()),
+                () -> assertEquals(2L, fruitIndex.search("Grape").get(0).getPageId()),
+                () -> assertEquals(3L, fruitIndex.search("Orange").get(0).getPageId()),
+                () -> assertEquals(4L, fruitIndex.search("Banana").get(0).getPageId()),
+                () -> assertEquals(5L, fruitIndex.search("Pineapple").get(0).getPageId()),
+                () -> assertEquals(6L, fruitIndex.search("BlueBerry").get(0).getPageId()),
+                () -> assertEquals(7L, fruitIndex.search("StrawBerry").get(0).getPageId()),
+                () -> assertEquals(8L, fruitIndex.search("Pear").get(0).getPageId()),
+                () -> assertEquals(9L, fruitIndex.search("Kiwi").get(0).getPageId()),
+                () -> assertEquals(10L, fruitIndex.search("Cherry").get(0).getPageId())
+        );
+
+        BPTree<String> tree = fruitIndex.getTree();
+        BPLeafNode<String> initialLeafNode = tree.getInitialLeafNode();
+
+        // DESC order should be StrawBerry, Pineapple, Peer, Orange, Kiwi, Grape, Cherry, BlueBerry, Banana, Apple
+        String[] expectedLeafValues = {"StrawBerry", "Pineapple", "Pear", "Orange", "Kiwi", "Grape", "Cherry", "BlueBerry", "Banana", "Apple"};
+        String[] actualLeafValues = new String[10];
+
+        // TODO: extract this into a method for other tests
+        BPLeafNode<String> current = initialLeafNode;
+        int i = 0;
+        while (current != null) {
+            BPMapping<String>[] mappings = current.getBpMappings();
+            for (BPMapping<String> stringBPMapping : mappings) {
+                if (stringBPMapping != null) {
+                    String mapping = stringBPMapping.getKey();
+                    actualLeafValues[i] = mapping;
+                    i++;
+                }
+            }
+            current = current.getRightSibling();
+        }
+        for (int j = 0; j < expectedLeafValues.length; j++) {
+            assertEquals(expectedLeafValues[j], actualLeafValues[j]);
+        }
+    }
 }

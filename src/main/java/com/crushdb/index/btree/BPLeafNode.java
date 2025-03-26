@@ -82,9 +82,10 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
      */
     private final SortOrder sortOrder;
 
-    @SuppressWarnings("unchecked")
-    private static final Comparator<BPMapping<?>> DESC_COMPARATOR =
-            (a, b) -> ((Comparable<Object>) b.getKey()).compareTo(a.getKey());
+    /**
+     * Comparator for sorting BPMapping keys in descending order.
+     */
+    private static final Comparator<BPMapping<?>> DESC_COMPARATOR = Comparator.comparing(BPMapping::getKey, Comparator.reverseOrder());
 
     /**
      * Creates a new leaf node with an initial key-value pair.
@@ -183,7 +184,7 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         if (this.sortOrder == SortOrder.ASC) {
             Arrays.sort(this.bpMappings, 0, numPairs);
         } else {
-            sortDescending(this.bpMappings, this.numPairs, mapping);
+            Arrays.sort(this.bpMappings, 0, this.numPairs, DESC_COMPARATOR);
         }
         return true;
     }
@@ -209,35 +210,9 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         if (this.sortOrder == SortOrder.ASC) {
             Arrays.sort(this.bpMappings, 0, this.numPairs);
         } else {
-            sortDescending(this.bpMappings, this.numPairs, mapping);
+            Arrays.sort(this.bpMappings, 0, this.numPairs, DESC_COMPARATOR);
         }
         return true;
-    }
-
-    /**
-     * Leaf nodes are sorted in two ways, ASC which is the default and DESC. In the case of DESC
-     * nodes, this method ensures larger values bubble to the front of the BPMapping array to
-     * keep descending order of the leaf node.
-     *
-     * @param arr the arr to sort
-     * @param numPairs current number of pairs,
-     * @param value {@link BPMapping<T>} to insert
-     */
-    private void sortDescending(BPMapping<T>[] arr, int numPairs, BPMapping<T> value) {
-        // find the first index this value belongs
-        int insertIndex = 0;
-        for (int i = 0; i < numPairs; i++) {
-            if (value.compareTo(arr[i]) >= 0) {
-                break;
-            }
-            insertIndex++;
-        }
-        // shift elements to the right starting from the end
-        for (int i = numPairs - 1; i > insertIndex; i--) {
-            arr[i] = arr[i - 1];
-        }
-        // insert the value at the correct position
-        arr[insertIndex] = value;
     }
 
     /**

@@ -44,9 +44,11 @@ public class BPTree<T extends Comparable<T>> {
      */
     private final SortOrder sortOrder;
 
-    @SuppressWarnings("unchecked")
-    private static final Comparator<BPMapping<?>> DESC_COMPARATOR =
-            (a, b) -> ((Comparable<Object>) b.getKey()).compareTo(a.getKey());
+    /**
+     * Comparator for sorting BPMapping keys in descending order.
+     */
+    private static final Comparator<BPMapping<?>> DESC_COMPARATOR = Comparator.comparing(BPMapping::getKey, Comparator.reverseOrder());
+
 
     /**
      * Constructs a B+Tree with a given order (m).
@@ -432,5 +434,43 @@ public class BPTree<T extends Comparable<T>> {
             System.out.print("] ");
             current = current.getRightSibling();
         }
+    }
+
+    /**
+     * Retrieves the order of the {@link BPTree}, which determines the maximum number of
+     * maximum keys and child nodes an internal node can have.
+     *
+     * @return The order of the {@link BPTree} (m)
+     */
+    public int getOrder() {
+        return m;
+    }
+
+    /**
+     * Retrieves the root node of the {@link BPTree}.
+     *
+     * @return The root node of the {@link BPTree}
+     * represented as a {@link BPInternalNode}
+     */
+    public BPInternalNode<T> getRoot() {
+        return root;
+    }
+
+    /**
+     * Retrieves the initial leaf node of the {@link BPTree}.
+     *
+     * @return The initial {@link BPLeafNode} of the tree
+     */
+    public BPLeafNode<T> getInitialLeafNode() {
+        return initialLeafNode;
+    }
+
+    /**
+     * Retrieves the sorting order used by the {@link BPTree}.
+     *
+     * @return The sorting order of the {@link BPTree}, represented as {@link SortOrder}
+     */
+    public SortOrder getSortOrder() {
+        return sortOrder;
     }
 }
