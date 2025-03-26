@@ -44,6 +44,10 @@ public class BPTree<T extends Comparable<T>> {
      */
     private final SortOrder sortOrder;
 
+    @SuppressWarnings("unchecked")
+    private static final Comparator<BPMapping<?>> DESC_COMPARATOR =
+            (a, b) -> ((Comparable<Object>) b.getKey()).compareTo(a.getKey());
+
     /**
      * Constructs a B+Tree with a given order (m).
      * Initially, the tree starts empty.
@@ -72,14 +76,14 @@ public class BPTree<T extends Comparable<T>> {
     @SuppressWarnings("unchecked")
     public boolean insert(T key, PageOffsetReference reference, boolean unique) throws DuplicateKeyException {
         if (this.isEmpty()) {
-            this.initialLeafNode = new BPLeafNode<>(this.m, new BPMapping<>(key, reference), sortOrder);
+            this.initialLeafNode = new BPLeafNode<>(this.m, new BPMapping<>(key, reference), this.sortOrder);
             return true;
         }
         BPLeafNode<T> leafNode = (this.root == null) ? this.initialLeafNode : findLeafNode(key);
 
         // check if the key already exists, if so throw duplicate error - handle in caller
         if (unique) {
-            if (leafNode.containsKeyASC(key)) {
+            if (leafNode.containsKey(key)) {
                 // TODO: pass the index name
                 throw new DuplicateKeyException("Key already exists on unique index: " + key);
             }
@@ -87,15 +91,13 @@ public class BPTree<T extends Comparable<T>> {
 
         // for indexes that aren't unique, check if key exist and append reference
         if (!unique) {
-            if (this.sortOrder == SortOrder.ASC) {
-                int index = leafNode.getKeyASC(key);
-                // index is not unique, but is the key found?
-                if (index >= 0) {
-                    BPMapping<T> existingMapping = leafNode.getBpMappings()[index];
-                    if (existingMapping != null) {
-                        existingMapping.getReferences().add(reference);
-                        return true;
-                    }
+            int index = leafNode.getKey(key);
+            // index is not unique, but is the key found?
+            if (index >= 0) {
+                BPMapping<T> existingMapping = leafNode.getBpMappings()[index];
+                if (existingMapping != null) {
+                    existingMapping.getReferences().add(reference);
+                    return true;
                 }
             }
         }
@@ -116,7 +118,7 @@ public class BPTree<T extends Comparable<T>> {
 
         // new right leaf
         BPInternalNode<T> parent = leafNode.getParent();
-        BPLeafNode<T> rightLeaf = new BPLeafNode<>(this.m, rightMappings, parent);
+        BPLeafNode<T> rightLeaf = new BPLeafNode<>(this.m, rightMappings, parent, this.sortOrder);
         rightLeaf.setLeftSibling(leafNode);
         rightLeaf.setRightSibling(leafNode.getRightSibling());
         if (rightLeaf.getRightSibling() != null) {
@@ -129,7 +131,7 @@ public class BPTree<T extends Comparable<T>> {
         if (parent == null) {
             T[] keys = (T[]) new Comparable[this.m];
             keys[0] = promoteKey;
-            BPInternalNode<T> newRoot = new BPInternalNode<>(this.m, keys);
+            BPInternalNode<T> newRoot = new BPInternalNode<>(this.m, keys, this.sortOrder);
             newRoot.appendChildPointer(leafNode);
             newRoot.appendChildPointer(rightLeaf);
             leafNode.setParent(newRoot);
@@ -149,92 +151,11 @@ public class BPTree<T extends Comparable<T>> {
             // handle internal node splits recursively
             BPInternalNode<T> internal = parent;
             while (internal != null && internal.isOverFull()) {
-                splitInternalNode(internal);
+                splitInternalNode(internal, this.sortOrder);
                 internal = internal.getParent();
             }
         }
         return true;
-    }
-
-    @SuppressWarnings("unchecked")
-    private void splitInternalNode(BPInternalNode<T> internalNode) {
-        int midIndex = this.mid();
-        T promotedKey = internalNode.getKeys()[midIndex];
-
-        T[] rightKeys = (T[]) new Comparable[this.m];
-        BPNode<T>[] rightPointers = (BPNode<T>[]) new BPNode[this.m + 1];
-
-        int rightKeyCount = this.m - midIndex - 1;
-        int rightPointerCount = this.m - midIndex;
-
-        System.arraycopy(internalNode.getKeys(), midIndex + 1, rightKeys, 0, rightKeyCount);
-        System.arraycopy(internalNode.getChildPointers(), midIndex + 1, rightPointers, 0, rightPointerCount);
-
-        for (int i = midIndex; i < this.m; i++) {
-            internalNode.getKeys()[i] = null;
-        }
-        for (int i = midIndex + 1; i < this.m + 1; i++) {
-            internalNode.getChildPointers()[i] = null;
-        }
-
-        internalNode.setNumKeys(midIndex);
-        internalNode.setChildNodes(midIndex + 1);
-
-        BPInternalNode<T> rightInternalNode = new BPInternalNode<>(this.m, rightKeys, rightPointers, this.sortOrder);
-        rightInternalNode.setNumKeys(rightKeyCount);
-        rightInternalNode.setChildNodes(rightPointerCount);
-
-        for (int i = 0; i < rightPointerCount; i++) {
-            if (rightPointers[i] != null) {
-                rightPointers[i].setParent(rightInternalNode);
-            }
-        }
-
-        BPInternalNode<T> parent = internalNode.getParent();
-
-        if (parent == null) {
-            // new root
-            T[] rootKeys = (T[]) new Comparable[this.m];
-            rootKeys[0] = promotedKey;
-            BPInternalNode<T> newRoot = new BPInternalNode<>(this.m, rootKeys);
-            newRoot.setNumKeys(1);
-            newRoot.setChildNodes(2);
-
-            newRoot.getChildPointers()[0] = internalNode;
-            newRoot.getChildPointers()[1] = rightInternalNode;
-
-            internalNode.setParent(newRoot);
-            rightInternalNode.setParent(newRoot);
-            this.root = newRoot;
-        } else {
-            int insertIndex = parent.findChildPointerIndex(internalNode);
-            boolean inserted = parent.insertKey(promotedKey);
-            parent.insertChildPointerAtIndex(rightInternalNode, insertIndex + 1);
-            rightInternalNode.setParent(parent);
-
-            if (!inserted && parent.isOverFull()) {
-                splitInternalNode(parent);
-            }
-        }
-    }
-
-
-    @SuppressWarnings("unchecked")
-    private BPMapping<T>[] splitBPMappings(BPLeafNode<T> node, int midpoint) {
-        BPMapping<T>[] currentMappings = node.getBpMappings();
-        int totalPairs = node.getNumPairs();
-
-        BPMapping<T>[] splitMappings = (BPMapping<T>[]) new BPMapping[this.m];
-
-        int j = 0;
-        for (int i = midpoint; i < totalPairs; i++) {
-            splitMappings[j++] = currentMappings[i];
-            currentMappings[i] = null;
-        }
-
-        // left node keeps first half
-        node.setNumPairs(midpoint);
-        return splitMappings;
     }
 
     /**
@@ -294,6 +215,86 @@ public class BPTree<T extends Comparable<T>> {
         return referenceMap;
     }
 
+    @SuppressWarnings("unchecked")
+    private void splitInternalNode(BPInternalNode<T> internalNode, SortOrder sortOrder) {
+        int midIndex = this.mid();
+        T promotedKey = internalNode.getKeys()[midIndex];
+
+        T[] rightKeys = (T[]) new Comparable[this.m];
+        BPNode<T>[] rightPointers = (BPNode<T>[]) new BPNode[this.m + 1];
+
+        int rightKeyCount = this.m - midIndex - 1;
+        int rightPointerCount = this.m - midIndex;
+
+        System.arraycopy(internalNode.getKeys(), midIndex + 1, rightKeys, 0, rightKeyCount);
+        System.arraycopy(internalNode.getChildPointers(), midIndex + 1, rightPointers, 0, rightPointerCount);
+
+        for (int i = midIndex; i < this.m; i++) {
+            internalNode.getKeys()[i] = null;
+        }
+        for (int i = midIndex + 1; i < this.m + 1; i++) {
+            internalNode.getChildPointers()[i] = null;
+        }
+
+        internalNode.setNumKeys(midIndex);
+        internalNode.setChildNodes(midIndex + 1);
+
+        BPInternalNode<T> rightInternalNode = new BPInternalNode<>(this.m, rightKeys, rightPointers, sortOrder);
+        rightInternalNode.setNumKeys(rightKeyCount);
+        rightInternalNode.setChildNodes(rightPointerCount);
+
+        for (int i = 0; i < rightPointerCount; i++) {
+            if (rightPointers[i] != null) {
+                rightPointers[i].setParent(rightInternalNode);
+            }
+        }
+
+        BPInternalNode<T> parent = internalNode.getParent();
+
+        if (parent == null) {
+            // new root
+            T[] rootKeys = (T[]) new Comparable[this.m];
+            rootKeys[0] = promotedKey;
+            BPInternalNode<T> newRoot = new BPInternalNode<>(this.m, rootKeys, sortOrder);
+            newRoot.setNumKeys(1);
+            newRoot.setChildNodes(2);
+
+            newRoot.getChildPointers()[0] = internalNode;
+            newRoot.getChildPointers()[1] = rightInternalNode;
+
+            internalNode.setParent(newRoot);
+            rightInternalNode.setParent(newRoot);
+            this.root = newRoot;
+        } else {
+            int insertIndex = parent.findChildPointerIndex(internalNode);
+            boolean inserted = parent.insertKey(promotedKey);
+            parent.insertChildPointerAtIndex(rightInternalNode, insertIndex + 1);
+            rightInternalNode.setParent(parent);
+
+            if (!inserted && parent.isOverFull()) {
+                splitInternalNode(parent, sortOrder);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private BPMapping<T>[] splitBPMappings(BPLeafNode<T> node, int midpoint) {
+        BPMapping<T>[] currentMappings = node.getBpMappings();
+        int totalPairs = node.getNumPairs();
+
+        BPMapping<T>[] splitMappings = (BPMapping<T>[]) new BPMapping[this.m];
+
+        int j = 0;
+        for (int i = midpoint; i < totalPairs; i++) {
+            splitMappings[j++] = currentMappings[i];
+            currentMappings[i] = null;
+        }
+
+        // left node keeps first half
+        node.setNumPairs(midpoint);
+        return splitMappings;
+    }
+
     /**
      * Performs a binary search in a sorted array of key-value mappings.
      *
@@ -308,7 +309,10 @@ public class BPTree<T extends Comparable<T>> {
 
         // wrap the key into a BPMapping so it matches the array
         BPMapping<T> searchKey = new BPMapping<>(key, null);
-        return Arrays.binarySearch(mappings, 0, numPairs, searchKey, c);
+        if (this.sortOrder == SortOrder.ASC) {
+            return Arrays.binarySearch(mappings, 0, numPairs, searchKey, c);
+        }
+        return Arrays.binarySearch(mappings, 0, numPairs, searchKey, DESC_COMPARATOR);
     }
 
     /**
@@ -336,7 +340,9 @@ public class BPTree<T extends Comparable<T>> {
             BPInternalNode<T> internal = (BPInternalNode<T>) node;
             T[] keys = internal.getKeys();
             int i = 0;
-            while (i < internal.getNumKeys() && keys[i] != null && key.compareTo(keys[i]) >= 0) {
+            while (i < internal.getNumKeys() && keys[i] != null &&
+                    // support ASC and DESC searching
+                    (this.sortOrder == SortOrder.ASC ? key.compareTo(keys[i]) >= 0 : key.compareTo(keys[i]) <= 0)) {
                 i++;
             }
             // prevent null pointer dereference

@@ -1,6 +1,7 @@
 package com.crushdb.index.btree;
 
 import java.util.Arrays;
+import java.util.Comparator;
 
 import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.storageengine.page.Page;
@@ -81,6 +82,10 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
      */
     private final SortOrder sortOrder;
 
+    @SuppressWarnings("unchecked")
+    private static final Comparator<BPMapping<?>> DESC_COMPARATOR =
+            (a, b) -> ((Comparable<Object>) b.getKey()).compareTo(a.getKey());
+
     /**
      * Creates a new leaf node with an initial key-value pair.
      *
@@ -140,7 +145,7 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
      * @param sortOrder Sort order for leaf node
      * @param parent The internal node that references this leaf.
      */
-    public BPLeafNode(int m, BPMapping<T>[] mappings, SortOrder sortOrder, BPInternalNode<T> parent) {
+    public BPLeafNode(int m, BPMapping<T>[] mappings, BPInternalNode<T> parent, SortOrder sortOrder) {
         this.maxPairs = m - 1;
         this.minPairs = (int) (Math.ceil(m / 2.0 ) - 1);
         this.bpMappings = mappings;
@@ -164,20 +169,17 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
             throw new IllegalArgumentException("Keys and References cannot be null. This will collapse the Tree.");
         }
         // check if key exist and add reference
-        if (this.sortOrder == SortOrder.ASC) {
-            int index = getKeyASC(mapping.getKey());
-            if (index >= 0 && this.bpMappings[index].getKey() == mapping.getKey()) {
-                BPMapping<T> existingMappings = bpMappings[index];
-                existingMappings.getReferences().addAll(mapping.getReferences());
-                return true;
-            }
+        int index = getKey(mapping.getKey());
+        if (index >= 0 && this.bpMappings[index].getKey() == mapping.getKey()) {
+            BPMapping<T> existingMappings = bpMappings[index];
+            existingMappings.getReferences().addAll(mapping.getReferences());
+            return true;
         }
         if (this.isFull()) {
             return false;
         }
         this.bpMappings[this.numPairs] = mapping;
         numPairs++;
-
         if (this.sortOrder == SortOrder.ASC) {
             Arrays.sort(this.bpMappings, 0, numPairs);
         } else {
@@ -204,7 +206,11 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         }
         this.bpMappings[this.numPairs] = mapping;
         numPairs++;
-        Arrays.sort(this.bpMappings, 0, this.numPairs);
+        if (this.sortOrder == SortOrder.ASC) {
+            Arrays.sort(this.bpMappings, 0, this.numPairs);
+        } else {
+            sortDescending(this.bpMappings, this.numPairs, mapping);
+        }
         return true;
     }
 
@@ -230,7 +236,6 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         for (int i = numPairs - 1; i > insertIndex; i--) {
             arr[i] = arr[i - 1];
         }
-
         // insert the value at the correct position
         arr[insertIndex] = value;
     }
@@ -274,8 +279,11 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         return -1;
     }
 
-    public int getKeyASC(T key) {
-        return Arrays.binarySearch(this.bpMappings, 0, this.numPairs, new BPMapping<>(key, null));
+    public int getKey(T key) {
+        if (this.sortOrder == SortOrder.ASC) {
+            return Arrays.binarySearch(this.bpMappings, 0, this.numPairs, new BPMapping<>(key, null));
+        }
+        return Arrays.binarySearch(this.bpMappings, 0, this.numPairs, new BPMapping<>(key, null), DESC_COMPARATOR);
     }
 
     /**
@@ -286,8 +294,13 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
      *
      * @return boolean
      */
-    public boolean containsKeyASC(T key) {
-        int index = Arrays.binarySearch(this.bpMappings, 0, this.numPairs, new BPMapping<>(key, null));
+    public boolean containsKey(T key) {
+        int index;
+        if (this.sortOrder == SortOrder.ASC) {
+            index = Arrays.binarySearch(this.bpMappings, 0, this.numPairs, new BPMapping<>(key, null));
+            return index >= 0;
+        }
+        index = Arrays.binarySearch(bpMappings, 0, numPairs, new BPMapping<>(key, null), DESC_COMPARATOR);
         return index >= 0;
     }
 

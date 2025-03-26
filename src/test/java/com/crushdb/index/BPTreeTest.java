@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class BPTreeTest {
 
     @Test
-    void insertUnique() {
+    void insertUniqueASC() {
         BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
         indexManager.createIndex("fruit_index", true, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
@@ -36,7 +36,7 @@ class BPTreeTest {
     }
 
     @Test
-    void searchUnique() {
+    void searchUniqueASC() {
         BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
         indexManager.createIndex("fruit_index", true, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
@@ -67,7 +67,7 @@ class BPTreeTest {
     }
 
     @Test
-    void deepSearchUnique() {
+    void deepSearchUniqueASC() {
         BPTree<Long> tree = new BPTree<>(55, SortOrder.ASC);
 
         List<Long> numbers = new ArrayList<>();
@@ -96,7 +96,7 @@ class BPTreeTest {
     }
 
     @Test
-    void searchUniqueWithDuplicate() {
+    void searchUniqueWithDuplicateASC() {
         BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
         indexManager.createIndex("fruit_index", true, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
@@ -145,7 +145,7 @@ class BPTreeTest {
     }
 
     @Test
-    void searchNonUnique() {
+    void searchNonUniqueASC() {
         // non-unique indexes can have multiple references with the same indexed key, in this case the
         // return is a list of references that point to the actual documents
         BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
@@ -213,7 +213,7 @@ class BPTreeTest {
     }
 
     @Test
-    void rangeSearch() {
+    void rangeSearchASC() {
         BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
         indexManager.createIndex("country_index", false, 3, SortOrder.ASC);
         BPTreeIndex<String> countryIndex = indexManager.getIndex("country_index");
@@ -261,4 +261,55 @@ class BPTreeTest {
         assertEquals(2, references.get("Barbados").size());
         assertEquals(2, references.get("Denmark").size());
     }
+
+    @Test
+    void insertUniqueDESC() {
+        BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
+        indexManager.createIndex("fruit_index", true, 3, SortOrder.DESC);
+        BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
+
+        assertAll(
+                () -> assertTrue(fruitIndex.insert("Apple", new PageOffsetReference(1L, 22))),
+                () -> assertTrue(fruitIndex.insert("Grape", new PageOffsetReference(2L, 23))),
+                () -> assertTrue(fruitIndex.insert("Orange", new PageOffsetReference(3L, 24))),
+                () -> assertTrue(fruitIndex.insert("Banana", new PageOffsetReference(4L, 25))),
+                () -> assertTrue(fruitIndex.insert("Pineapple", new PageOffsetReference(5L, 26))),
+                () -> assertTrue(fruitIndex.insert("BlueBerry", new PageOffsetReference(6L, 27))),
+                () -> assertTrue(fruitIndex.insert("StrawBerry", new PageOffsetReference(7L, 28))),
+                () -> assertTrue(fruitIndex.insert("Pear", new PageOffsetReference(8L, 29))),
+                () -> assertTrue(fruitIndex.insert("Kiwi", new PageOffsetReference(9L, 30))),
+                () -> assertTrue(fruitIndex.insert("Cherry", new PageOffsetReference(10L, 31)))
+        );
+    }
+
+//    @Test
+//    void searchUniqueDESC() {
+//        BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
+//        indexManager.createIndex("fruit_index", true, 3, SortOrder.DESC);
+//        BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
+//
+//        fruitIndex.insert("Apple", new PageOffsetReference(1L, 22));
+//        fruitIndex.insert("Grape", new PageOffsetReference(2L, 23));
+//        fruitIndex.insert("Orange", new PageOffsetReference(3L, 24));
+//        fruitIndex.insert("Banana", new PageOffsetReference(4L, 25));
+//        fruitIndex.insert("Pineapple", new PageOffsetReference(5L, 26));
+//        fruitIndex.insert("BlueBerry", new PageOffsetReference(6L, 27));
+//        fruitIndex.insert("StrawBerry", new PageOffsetReference(7L, 28));
+//        fruitIndex.insert("Pear", new PageOffsetReference(8L, 29));
+//        fruitIndex.insert("Kiwi", new PageOffsetReference(9L, 30));
+//        fruitIndex.insert("Cherry", new PageOffsetReference(10L, 31));
+//
+//        assertAll(
+//                () -> assertEquals(1L, fruitIndex.search("Apple").get(0).getPageId()),
+//                () -> assertEquals(2L, fruitIndex.search("Grape").get(0).getPageId()),
+//                () -> assertEquals(3L, fruitIndex.search("Orange").get(0).getPageId()),
+//                () -> assertEquals(4L, fruitIndex.search("Banana").get(0).getPageId()),
+//                () -> assertEquals(5L, fruitIndex.search("Pineapple").get(0).getPageId()),
+//                () -> assertEquals(6L, fruitIndex.search("BlueBerry").get(0).getPageId()),
+//                () -> assertEquals(7L, fruitIndex.search("StrawBerry").get(0).getPageId()),
+//                () -> assertEquals(8L, fruitIndex.search("Pear").get(0).getPageId()),
+//                () -> assertEquals(9L, fruitIndex.search("Kiwi").get(0).getPageId()),
+//                () -> assertEquals(10L, fruitIndex.search("Cherry").get(0).getPageId())
+//        );
+//    }
 }

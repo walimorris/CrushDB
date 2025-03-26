@@ -122,7 +122,24 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         this.numKeys = initKeys();
         this.childPointers = (BPNode<T>[]) new BPNode[this.maxChildNodes + 1];
         this.sortOrder = SortOrder.ASC;
+    }
 
+    @SuppressWarnings("unchecked")
+    public BPInternalNode(int m, T[] keys, SortOrder sortOrder) throws IllegalArgumentException {
+        if (keys == null) {
+            LOGGER.error(format("Order of tree is %d. Key length must be %d, but key is null.", m, m - 1),
+                    IllegalArgumentException.class.getName());
+            throw new IllegalArgumentException(format("Order of tree is %d. Key length must be %d, but key is null.",
+                    m, m - 1));
+        }
+        this.maxChildNodes = m;
+        this.minChildNodes = (int) Math.ceil(m / 2.0);
+        this.childNodes = 0;
+        this.keys = keys;
+        this.maxKeys = m - 1;
+        this.numKeys = initKeys();
+        this.childPointers = (BPNode<T>[]) new BPNode[this.maxChildNodes + 1];
+        this.sortOrder = sortOrder;
     }
 
     /**
@@ -253,7 +270,6 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         if (pointer != null) {
             pointer.setParent(this);
         }
-
         return true;
     }
 
