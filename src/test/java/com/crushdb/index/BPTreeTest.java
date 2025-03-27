@@ -87,6 +87,7 @@ class BPTreeTest {
             });
         }
         assertAll(assertions);
+        System.out.println("ASC Deep Insert & Search: ");
         tree.printLeafNodes();
     }
 
@@ -331,5 +332,35 @@ class BPTreeTest {
         for (int j = 0; j < expectedLeafValues.length; j++) {
             assertEquals(expectedLeafValues[j], actualLeafValues[j]);
         }
+    }
+
+    @Test
+    void deepSearchUniqueDESC() {
+        BPTree<Long> tree = new BPTree<>(55, SortOrder.DESC);
+
+        List<Long> numbers = new ArrayList<>();
+        for (long i = 1; i <= 10000; i++) {
+            numbers.add(i);
+        }
+
+        // reverse qupid shuffle!
+        Collections.shuffle(numbers);
+
+        for (long number : numbers) {
+            boolean inserted = tree.insert(number, new PageOffsetReference(number, (int) number + 10000), true);
+            assertTrue(inserted, "Insert failed at: " + number);
+        }
+        List<Executable> assertions = new ArrayList<>();
+        for (long i = 1; i <= 10000; i++) {
+            long finalI = i;
+            assertions.add(() -> {
+                PageOffsetReference ref = tree.search(finalI).get(0);
+                assertNotNull(ref, "search returned null for: " + finalI);
+                assertEquals(finalI, ref.getPageId(), "PageId mismatch at: " + finalI);
+            });
+        }
+        assertAll(assertions);
+        System.out.println("DESC Deep Insert & Search: ");
+        tree.printLeafNodes();
     }
 }
