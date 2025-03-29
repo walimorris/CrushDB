@@ -1,5 +1,6 @@
 package com.crushdb.storageengine.page;
 
+import com.crushdb.model.BsonValue;
 import com.crushdb.model.Document;
 import org.junit.jupiter.api.Test;
 
@@ -24,13 +25,13 @@ public class PageTest {
         Document doc2 = new Document(2);
         Document doc3 = new Document(3);
 
-        doc1.put("name", "Jim");
-        doc1.put("age", "62");
-        doc1.put("profession", "Basketball");
+        doc1.put("name", BsonValue.ofString("Jim"));
+        doc1.put("age", BsonValue.ofInteger(62));
+        doc1.put("profession", BsonValue.ofString("Basketball"));
 
-        doc2.put("programming_language", "Java");
+        doc2.put("programming_language", BsonValue.ofString("Java"));
 
-        doc3.put("favorite_food", "Spaghetti");
+        doc3.put("favorite_food", BsonValue.ofString("Spaghetti"));
 
         Document retrievedDocument1 = page.insertDocument(doc1);
         Document retrievedDocument2 = page.insertDocument(doc2);
@@ -57,13 +58,13 @@ public class PageTest {
         Page page = new Page(2L, true);
 
         Document document1 = new Document(1);
-        document1.put("Database", "MongoDB");
-        document1.put("DatabaseType", "Document");
-        document1.put("DataType", "Bson");
+        document1.put("Database", BsonValue.ofString("MongoDB"));
+        document1.put("DatabaseType", BsonValue.ofString("Document"));
+        document1.put("DataType", BsonValue.ofString("Bson"));
 
         Document document2 = new Document(2);
-        document2.put("company_name", "Apple");
-        document2.put("company_industry", "Information Technology");
+        document2.put("company_name", BsonValue.ofString("Apple"));
+        document2.put("company_industry", BsonValue.ofString("Information Technology"));
 
         page.insertDocument(document1);
         page.insertDocument(document2);
@@ -86,7 +87,7 @@ public class PageTest {
         Page page = new Page(4L, false);
 
         Document document = new Document(12L);
-        document.put("Cassandra", "Tombstone");
+        document.put("Cassandra", BsonValue.ofString("Tombstone"));
         page.insertDocument(document);
 
         Document retrieveDocument = page.retrieveDocument(document.getDocumentId());
@@ -102,8 +103,8 @@ public class PageTest {
         // are still being positioned and pulled correctly. At some point the page will be defragmented.
         Document document2 = new Document(15L);
         Document document3 = new Document(789L);
-        document2.put("studentId", "01234567");
-        document3.put("employeeId", "76543210");
+        document2.put("studentId", BsonValue.ofInteger(1234567));
+        document3.put("employeeId", BsonValue.ofInteger(76543210));
         page.insertDocument(document2);
         page.insertDocument(document3);
 
@@ -113,8 +114,8 @@ public class PageTest {
         assertAll(
                 () -> assertNotNull(retrieveDocument2),
                 () -> assertNotNull(retrieveDocument3),
-                () -> assertEquals("01234567", retrieveDocument2.get("studentId")),
-                () -> assertEquals("76543210", retrieveDocument3.get("employeeId"))
+                () -> assertEquals(1234567, retrieveDocument2.get("studentId")),
+                () -> assertEquals(76543210, retrieveDocument3.get("employeeId"))
         );
     }
 

@@ -99,7 +99,7 @@ public class Document {
      * Stores the key-value pairs representing the document fields.
      * <p>Keys and values are stored as {@code String} objects, allowing flexible data storage.</p>
      */
-    private final Map<String, String> fields;
+    private final Map<String, BsonValue> fields;
 
     /**
      * The size of metadata stored with each document.
@@ -122,7 +122,7 @@ public class Document {
         this.decompressedSize = -1;
         this.compressedSize = -1;
         this.fields = new HashMap<>();
-        this.fields.put("_id", String.valueOf(this.documentId));
+        this.fields.put("_id", BsonValue.ofLong(documentId));
     }
 
     /**
@@ -170,7 +170,7 @@ public class Document {
      *
      * @return A {@link Map} containing all key-value pairs in the document.
      */
-    public Map<String, String> getFields() {
+    public Map<String, BsonValue> getFields() {
         return this.fields;
     }
 
@@ -183,7 +183,7 @@ public class Document {
      * @param value The field value (cannot be {@code null}).
      * @throws IllegalArgumentException if either key or value is null.
      */
-    public void put(String key, String value) {
+    public void put(String key, BsonValue value) {
         this.fields.put(key, value);
     }
 
@@ -193,7 +193,7 @@ public class Document {
      * @param key The field name to look up.
      * @return The field value, or {@code null} if the key does not exist.
      */
-    public String get(String key) {
+    public BsonValue get(String key) {
         return this.fields.get(key);
     }
 
@@ -244,7 +244,7 @@ public class Document {
      */
     public byte[] toBytes() {
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : fields.entrySet()) {
+        for (Map.Entry<String, BsonValue> entry : fields.entrySet()) {
             sb.append(entry.getKey()).append(":").append(entry.getValue()).append(";");
         }
         return sb.toString().getBytes(StandardCharsets.UTF_8);
@@ -344,7 +344,7 @@ public class Document {
             int colonIndex = pair.indexOf(':');
             if (colonIndex > 0) {
                 String key = pair.substring(0, colonIndex).trim();
-                String value = pair.substring(colonIndex + 1).trim();
+                BsonValue value = BsonValue.ofString(pair.substring(colonIndex + 1).trim());
                 doc.put(key, value);
             }
         }
@@ -367,7 +367,7 @@ public class Document {
             return String.format("{%s:%s}", "_id", this.fields.get("_id"));
         }
         StringBuilder fieldsStr = new StringBuilder();
-        for (Map.Entry<String, String> fields : this.fields.entrySet()) {
+        for (Map.Entry<String, BsonValue> fields : this.fields.entrySet()) {
             fieldsStr.append(fields.getKey()).append(":").append(fields.getValue()).append(";");
         }
         String content = fieldsStr.toString();
