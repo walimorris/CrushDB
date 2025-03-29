@@ -129,16 +129,16 @@ public class PageTest {
         Document document4 = new Document(4L);
         Document document5 = new Document(5L);
 
-        document1.put("name", "jim");
-        document1.put("age", "45");
-        document2.put("name", "amber");
-        document2.put("age", "32");
-        document3.put("name", "kimberly");
-        document3.put("age", "23");
-        document4.put("name", "mike");
-        document4.put("age", "26");
-        document5.put("name", "sam");
-        document5.put("age", "62");
+        document1.put("name", BsonValue.ofString("jim"));
+        document1.put("age", BsonValue.ofInteger(45));
+        document2.put("name", BsonValue.ofString("amber"));
+        document2.put("age", BsonValue.ofInteger(32));
+        document3.put("name", BsonValue.ofString("kimberly"));
+        document3.put("age", BsonValue.ofInteger(23));
+        document4.put("name", BsonValue.ofString("mike"));
+        document4.put("age", BsonValue.ofInteger(26));
+        document5.put("name", BsonValue.ofString("sam"));
+        document5.put("age", BsonValue.ofInteger(62));
 
         page.insertDocument(document1);
         page.insertDocument(document2);
@@ -216,14 +216,14 @@ public class PageTest {
         Document document2 = new Document(2);
         Document document3 = new Document(3);
 
-        document1.put("name", "jim");
-        document1.put("compressed", "true");
+        document1.put("name", BsonValue.ofString("jim"));
+        document1.put("compressed", BsonValue.ofBoolean(true));
 
-        document2.put("autoCompressOnInsert", "true");
-        document2.put("maxPageSize", "4096");
+        document2.put("autoCompressOnInsert", BsonValue.ofBoolean(true));
+        document2.put("maxPageSize", BsonValue.ofInteger(4096));
 
-        document3.put("maxHeaderSize", "32");
-        document3.put("documentSize", "variable");
+        document3.put("maxHeaderSize", BsonValue.ofInteger(32));
+        document3.put("documentSize", BsonValue.ofString("variable"));
 
         page.insertDocument(document1);
         page.insertDocument(document2);
@@ -286,14 +286,14 @@ public class PageTest {
         Document document2 = new Document(2);
         Document document3 = new Document(3);
 
-        document1.put("name", "jim");
-        document1.put("compressed", "true");
+        document1.put("name", BsonValue.ofString("jim"));
+        document1.put("compressed", BsonValue.ofBoolean(true));
 
-        document2.put("autoCompressOnInsert", "true");
-        document2.put("maxPageSize", "4096");
+        document2.put("autoCompressOnInsert", BsonValue.ofBoolean(true));
+        document2.put("maxPageSize", BsonValue.ofInteger(4096));
 
-        document3.put("maxHeaderSize", "32");
-        document3.put("documentSize", "variable");
+        document3.put("maxHeaderSize", BsonValue.ofInteger(32));
+        document3.put("documentSize", BsonValue.ofString("variable"));
 
         page.insertDocument(document1);
         page.insertDocument(document2);
@@ -362,23 +362,23 @@ public class PageTest {
         Document doc6 = new Document(6L);
 
 
-        doc1.put("name", "james");
-        doc1.put("hobby", "skating");
+        doc1.put("name", BsonValue.ofString("james"));
+        doc1.put("hobby", BsonValue.ofString("skating"));
 
-        doc2.put("name", "amber");
-        doc2.put("hobby", "tennis");
+        doc2.put("name", BsonValue.ofString("amber"));
+        doc2.put("hobby", BsonValue.ofString("tennis"));
 
-        doc3.put("name", "sam");
-        doc3.put("hobby", "piano");
+        doc3.put("name", BsonValue.ofString("sam"));
+        doc3.put("hobby", BsonValue.ofString("piano"));
 
-        doc4.put("name", "viki");
-        doc4.put("hobby", "art");
+        doc4.put("name", BsonValue.ofString("viki"));
+        doc4.put("hobby", BsonValue.ofString("art"));
 
-        doc5.put("name", "lee");
-        doc5.put("hobby", "soccer");
+        doc5.put("name", BsonValue.ofString("lee"));
+        doc5.put("hobby", BsonValue.ofString("soccer"));
 
-        doc6.put("name", "mohan");
-        doc6.put("hobby", "swimming");
+        doc6.put("name", BsonValue.ofString("mohan"));
+        doc6.put("hobby", BsonValue.ofString("swimming"));
 
         page.insertDocument(doc1);
         page.insertDocument(doc2);
