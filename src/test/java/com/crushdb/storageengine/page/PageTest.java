@@ -37,16 +37,18 @@ public class PageTest {
         Document retrievedDocument2 = page.insertDocument(doc2);
         Document retrievedDocument3 = page.insertDocument(doc3);
 
+        System.out.println(doc1);
+
         assertNotNull(retrievedDocument1);
         assertNotNull(retrievedDocument2);
         assertNotNull(retrievedDocument3);
 
         assertAll(
-                () -> assertEquals("Jim", retrievedDocument1.get("name")),
-                () ->  assertEquals("62", retrievedDocument1.get("age")),
-                () -> assertEquals("Basketball", retrievedDocument1.get("profession")),
-                () -> assertEquals("Java", retrievedDocument2.get("programming_language")),
-                () -> assertEquals("Spaghetti", retrievedDocument3.get("favorite_food")),
+                () -> assertEquals("Jim", retrievedDocument1.getString("name")),
+                () ->  assertEquals(62, retrievedDocument1.getInt("age")),
+                () -> assertEquals("Basketball", retrievedDocument1.getString("profession")),
+                () -> assertEquals("Java", retrievedDocument2.getString("programming_language")),
+                () -> assertEquals("Spaghetti", retrievedDocument3.getString("favorite_food")),
                 () -> assertEquals(1, retrievedDocument1.getPageId()),
                 () -> assertEquals(1, retrievedDocument2.getPageId()),
                 () -> assertEquals(1, retrievedDocument3.getPageId())
@@ -75,8 +77,8 @@ public class PageTest {
         assertNotNull(retrievedDoc2);
 
         assertAll(
-                () -> assertEquals("MongoDB", retrievedDoc1.get("Database")),
-                () ->  assertEquals("Bson", retrievedDoc1.get("DataType"))
+                () -> assertEquals("MongoDB", retrievedDoc1.getString("Database")),
+                () ->  assertEquals("Bson", retrievedDoc1.getString("DataType"))
         );
 
     }
@@ -92,7 +94,7 @@ public class PageTest {
 
         Document retrieveDocument = page.retrieveDocument(document.getDocumentId());
         assertNotNull(retrieveDocument);
-        assertEquals("Tombstone", document.get("Cassandra"));
+        assertEquals("Tombstone", document.getString("Cassandra"));
 
         page.deleteDocument(document.getDocumentId());
         Document retrieveDeletedDocument = page.retrieveDocument(document.getDocumentId());
@@ -114,8 +116,8 @@ public class PageTest {
         assertAll(
                 () -> assertNotNull(retrieveDocument2),
                 () -> assertNotNull(retrieveDocument3),
-                () -> assertEquals(1234567, retrieveDocument2.get("studentId")),
-                () -> assertEquals(76543210, retrieveDocument3.get("employeeId"))
+                () -> assertEquals(1234567, retrieveDocument2.getInt("studentId")),
+                () -> assertEquals(76543210, retrieveDocument3.getInt("employeeId"))
         );
     }
 
@@ -158,11 +160,11 @@ public class PageTest {
                 () -> assertNotNull(retrievedDocument3),
                 () -> assertNotNull(retrievedDocument4),
                 () -> assertNotNull(retrievedDocument5),
-                () -> assertEquals("jim", retrievedDocument1.get("name")),
-                () -> assertEquals("amber", retrievedDocument2.get("name")),
-                () -> assertEquals("kimberly", retrievedDocument3.get("name")),
-                () -> assertEquals("mike", retrievedDocument4.get("name")),
-                () -> assertEquals("sam", retrievedDocument5.get("name"))
+                () -> assertEquals("jim", retrievedDocument1.getString("name")),
+                () -> assertEquals("amber", retrievedDocument2.getString("name")),
+                () -> assertEquals("kimberly", retrievedDocument3.getString("name")),
+                () -> assertEquals("mike", retrievedDocument4.getString("name")),
+                () -> assertEquals("sam", retrievedDocument5.getString("name"))
         );
 
         // now for deletes
@@ -197,9 +199,9 @@ public class PageTest {
                 () -> assertNotNull(compactedDocument3),
                 () -> assertNotNull(compactedDocument4),
                 () -> assertNotNull(compactedDocument5),
-                () -> assertEquals("kimberly", compactedDocument3.get("name")),
-                () -> assertEquals("mike", compactedDocument4.get("name")),
-                () -> assertEquals("sam", compactedDocument5.get("name"))
+                () -> assertEquals("kimberly", compactedDocument3.getString("name")),
+                () -> assertEquals("mike", compactedDocument4.getString("name")),
+                () -> assertEquals("sam", compactedDocument5.getString("name"))
         );
     }
 
@@ -234,12 +236,12 @@ public class PageTest {
         Document retrieveDocument3 = page.retrieveDocument(document3.getDocumentId());
 
         assertAll(
-                () -> assertEquals("jim", retrieveDocument1.get("name")),
-                () -> assertEquals("true", retrieveDocument1.get("compressed")),
-                () -> assertEquals("true", retrieveDocument2.get("autoCompressOnInsert")),
-                () -> assertEquals("4096", retrieveDocument2.get("maxPageSize")),
-                () -> assertEquals("32", retrieveDocument3.get("maxHeaderSize")),
-                () -> assertEquals("variable", retrieveDocument3.get("documentSize"))
+                () -> assertEquals("jim", retrieveDocument1.getString("name")),
+                () -> assertTrue(retrieveDocument1.getBoolean("compressed")),
+                () -> assertTrue(retrieveDocument2.getBoolean("autoCompressOnInsert")),
+                () -> assertEquals(4096, retrieveDocument2.getInt("maxPageSize")),
+                () -> assertEquals(32, retrieveDocument3.getInt("maxHeaderSize")),
+                () -> assertEquals("variable", retrieveDocument3.getString("documentSize"))
         );
 
         // page is compressed with autoCompressOnInsert, now for decompressing the whole page
@@ -259,9 +261,9 @@ public class PageTest {
         Document retrievedResult3 = page.retrieveDocument(retrieveDocument3.getDocumentId());
 
         assertAll(
-                () -> assertEquals("jim", retrievedResult1.get("name")),
-                () -> assertEquals("true", retrievedResult2.get("autoCompressOnInsert")),
-                () -> assertEquals("32", retrievedResult3.get("maxHeaderSize"))
+                () -> assertEquals("jim", retrievedResult1.getString("name")),
+                () -> assertTrue( retrievedResult2.getBoolean("autoCompressOnInsert")),
+                () -> assertEquals(32, retrievedResult3.getInt("maxHeaderSize"))
         );
 
         // assert all documents are decompressed
@@ -304,12 +306,12 @@ public class PageTest {
         Document retrieveDocument3 = page.retrieveDocument(document3.getDocumentId());
 
         assertAll(
-                () -> assertEquals("jim", retrieveDocument1.get("name")),
-                () -> assertEquals("true", retrieveDocument1.get("compressed")),
-                () -> assertEquals("true", retrieveDocument2.get("autoCompressOnInsert")),
-                () -> assertEquals("4096", retrieveDocument2.get("maxPageSize")),
-                () -> assertEquals("32", retrieveDocument3.get("maxHeaderSize")),
-                () -> assertEquals("variable", retrieveDocument3.get("documentSize"))
+                () -> assertEquals("jim", retrieveDocument1.getString("name")),
+                () -> assertTrue(retrieveDocument1.getBoolean("compressed")),
+                () -> assertTrue( retrieveDocument2.getBoolean("autoCompressOnInsert")),
+                () -> assertEquals(4096, retrieveDocument2.getInt("maxPageSize")),
+                () -> assertEquals(32, retrieveDocument3.getInt("maxHeaderSize")),
+                () -> assertEquals("variable", retrieveDocument3.getString("documentSize"))
         );
         int calculatedDecompressedSizePre = (page.getHeaderSize() +
                 retrieveDocument1.getDecompressedSize() +
@@ -329,9 +331,9 @@ public class PageTest {
         Document retrievedResult3 = page.retrieveDocument(retrieveDocument3.getDocumentId());
 
         assertAll(
-                () -> assertEquals("jim", retrievedResult1.get("name")),
-                () -> assertEquals("true", retrievedResult2.get("autoCompressOnInsert")),
-                () -> assertEquals("32", retrievedResult3.get("maxHeaderSize"))
+                () -> assertEquals("jim", retrievedResult1.getString("name")),
+                () -> assertTrue(retrievedResult2.getBoolean("autoCompressOnInsert")),
+                () -> assertEquals(32, retrievedResult3.getInt("maxHeaderSize"))
         );
 
         // assert all documents are decompressed and correct size
@@ -395,12 +397,12 @@ public class PageTest {
         Document result6 = page.retrieveDocument(doc6.getDocumentId());
 
         assertAll(
-                () -> assertEquals("james", result1.get("name")),
-                () -> assertEquals("amber", result2.get("name")),
-                () -> assertEquals("sam", result3.get("name")),
-                () -> assertEquals("viki", result4.get("name")),
-                () -> assertEquals("lee", result5.get("name")),
-                () -> assertEquals("mohan", result6.get("name")),
+                () -> assertEquals("james", result1.getString("name")),
+                () -> assertEquals("amber", result2.getString("name")),
+                () -> assertEquals("sam", result3.getString("name")),
+                () -> assertEquals("viki", result4.getString("name")),
+                () -> assertEquals("lee", result5.getString("name")),
+                () -> assertEquals("mohan", result6.getString("name")),
                 () -> assertEquals(6, page.getNumberOfDocuments())
         );
         // delete document to create tombstone
