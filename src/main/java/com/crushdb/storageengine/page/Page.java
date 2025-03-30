@@ -371,7 +371,6 @@ public class Page {
 
         int totalSize = DOCUMENT_METADATA_SIZE + (this.autoCompressOnInsert ? cs : dcs);
         int insertionPosition = this.pageSize;
-
         if (insertionPosition + totalSize > MAX_PAGE_SIZE) {
             LOGGER.error(String.format("Not enough space in page with ID: '%d'", this.pageId),
                     IllegalStateException.class.getName());
@@ -393,6 +392,9 @@ public class Page {
         this.offsets.put(document.getDocumentId(), insertionPosition);
         this.availableSpace -= (short) totalSize;
         this.pageSize = insertionPosition + totalSize;
+        document.setOffset(insertionPosition);
+        document.setPageId(this.pageId);
+        // TODO: add decompressed and compressed size
 
         updateHeader();
         this.markDirty();
@@ -1011,6 +1013,42 @@ public class Page {
 
         // Ensure header does not overwrite document data
         buffer.position(this.headerSize);
+    }
+
+    /**
+     * Reads a document from the internal page data at a specified offset position.
+     * The method parses the document metadata and content from the byte buffer located
+     * at the given offset and constructs a Document object.
+     *
+     * @param offset the position in the byte array where the document starts
+     *
+     * @return the reconstructed Document object based on the parsed data at the given offset
+     */
+    public Document readDocumentAtOffset(int offset) {
+        ByteBuffer buffer = ByteBuffer.wrap(this.page);
+        buffer.position(offset);
+
+        long docId = buffer.getLong();
+        long pageId = buffer.getLong();
+        int dcs = buffer.getInt();
+        int cs = buffer.getInt();
+        byte deleted = buffer.get();
+
+        byte[] content = new byte[dcs];
+        buffer.get(content);
+
+        Document doc = Document.fromBytes(ByteBuffer.allocate(DOCUMENT_METADATA_SIZE + dcs)
+                .putLong(docId)
+                .putLong(pageId)
+                .putInt(dcs)
+                .putInt(cs)
+                .put(deleted)
+                .put(content)
+                .array()
+        );
+
+        doc.setOffset(offset);
+        return doc;
     }
 
     /**

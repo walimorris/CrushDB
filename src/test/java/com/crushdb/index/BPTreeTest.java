@@ -1,6 +1,8 @@
 package com.crushdb.index;
 
 import com.crushdb.index.btree.*;
+import com.crushdb.model.Document;
+import com.crushdb.storageengine.page.Page;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -13,7 +15,7 @@ class BPTreeTest {
     @Test
     void insertUniqueASC() {
         BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        indexManager.createIndex("fruit_index", true, 3, SortOrder.ASC);
+        indexManager.createIndex("fruit_index", "fruit_name", true, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
 
         assertAll(
@@ -33,7 +35,7 @@ class BPTreeTest {
     @Test
     void searchUniqueASC() {
         BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        indexManager.createIndex("fruit_index", true, 3, SortOrder.ASC);
+        indexManager.createIndex("fruit_index", "fruit_name",true, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
 
         fruitIndex.insert("Apple", new PageOffsetReference(1L, 22));
@@ -94,7 +96,7 @@ class BPTreeTest {
     @Test
     void searchUniqueWithDuplicateASC() {
         BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        indexManager.createIndex("fruit_index", true, 3, SortOrder.ASC);
+        indexManager.createIndex("fruit_index", "fruit_name",true, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
 
         boolean insert0 = fruitIndex.insert("Apple", new PageOffsetReference(1L, 22));
@@ -145,7 +147,7 @@ class BPTreeTest {
         // non-unique indexes can have multiple references with the same indexed key, in this case the
         // return is a list of references that point to the actual documents
         BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        indexManager.createIndex("fruit_index", false, 3, SortOrder.ASC);
+        indexManager.createIndex("fruit_index", "fruit_name", false, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
 
         // in the case of documents, they will have an indexed field(s) and can contain different fields
@@ -211,7 +213,7 @@ class BPTreeTest {
     @Test
     void rangeSearchASC() {
         BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        indexManager.createIndex("country_index", false, 3, SortOrder.ASC);
+        indexManager.createIndex("country_index", "country", false, 3, SortOrder.ASC);
         BPTreeIndex<String> countryIndex = indexManager.getIndex("country_index");
 
         boolean insert0 = countryIndex.insert("United States", new PageOffsetReference(1L, 22));
@@ -261,7 +263,7 @@ class BPTreeTest {
     @Test
     void insertUniqueDESC() {
         BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        indexManager.createIndex("fruit_index", true, 3, SortOrder.DESC);
+        indexManager.createIndex("fruit_index", "fruit_name",  true, 3, SortOrder.DESC);
         BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
 
         assertAll(
@@ -281,7 +283,7 @@ class BPTreeTest {
     @Test
     void searchUniqueDESC() {
         BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        indexManager.createIndex("fruit_index", true, 5, SortOrder.DESC);
+        indexManager.createIndex("fruit_index", "fruit_name", true, 5, SortOrder.DESC);
         BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
 
         fruitIndex.insert("Apple", new PageOffsetReference(1L, 22));
@@ -361,6 +363,111 @@ class BPTreeTest {
         }
         assertAll(assertions);
         System.out.println("DESC Deep Insert & Search: ");
+        tree.printLeafNodes();
+    }
+
+    @Test
+    void searchNonUniqueASCDocuments() {
+        // in the index manager we should probable have some schema parsing tool that can parse the
+        // values to inject the index data type on creation
+        BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
+        BPTreeIndex<String> vehicleMakeIndex = indexManager.createIndex("vehicle_make_index", "vehicle_make", false, 3, SortOrder.ASC);
+
+        Page page = new Page(1L);
+
+        Document document1 = new Document(1234567L);
+        document1.put("vehicle_make", "Subaru");
+        document1.put("vehicle_model", "Forester");
+        document1.put("vehicle_year", 2019);
+        document1.put("vehicle_type", "automobile");
+        document1.put("vehicle_body_style", "SUV");
+        document1.put("vehicle_price", 28500.99);
+        document1.put("hasHeating", true);
+
+        Document document2 = new Document(12345678L);
+        document2.put("vehicle_make", "Subaru");
+        document2.put("vehicle_model", "Impreza");
+        document2.put("vehicle_year", 2018);
+        document2.put("vehicle_type", "automobile");
+        document2.put("vehicle_body_style", "Sedan");
+        document2.put("vehicle_price", 22500.99);
+        document2.put("hasHeating", true);
+
+        Document document3 = new Document(123456789L);
+        document3.put("vehicle_make", "Tesla");
+        document3.put("vehicle_model", "Model 3");
+        document3.put("vehicle_year", 2017);
+        document3.put("vehicle_type", "automobile");
+        document3.put("vehicle_body_style", "Sedan");
+        document3.put("vehicle_price", 40200.99);
+        document3.put("hasHeating", true);
+
+        Document document4 = new Document(12345678910L);
+        document4.put("vehicle_make", "BMW");
+        document4.put("vehicle_model", "X3");
+        document4.put("vehicle_year", 2014);
+        document4.put("vehicle_type", "automobile");
+        document4.put("vehicle_body_style", "SUV");
+        document4.put("vehicle_price", 18000.00);
+        document4.put("hasHeating", true);
+
+        page.insertDocument(document1);
+        page.insertDocument(document2);
+        page.insertDocument(document3);
+        page.insertDocument(document4);
+
+        System.out.println(document1.getOffset());
+        System.out.println(document2.getOffset());
+        System.out.println(document3.getOffset());
+        System.out.println(document4.getOffset());
+
+        // Documents need to be added to page to get pageId and offset
+        IndexEntry<String> indexEntry1 = IndexEntryBuilder.fromDocument(document1, vehicleMakeIndex);
+        IndexEntry<String> indexEntry2 = IndexEntryBuilder.fromDocument(document2, vehicleMakeIndex);
+        IndexEntry<String> indexEntry3 = IndexEntryBuilder.fromDocument(document3, vehicleMakeIndex);
+        IndexEntry<String> indexEntry4 = IndexEntryBuilder.fromDocument(document4, vehicleMakeIndex);
+
+        boolean insert0 = vehicleMakeIndex.insert(indexEntry1);
+        boolean insert1 = vehicleMakeIndex.insert(indexEntry2);
+        boolean insert2 = vehicleMakeIndex.insert(indexEntry3);
+        boolean insert3 = vehicleMakeIndex.insert(indexEntry4);
+
+        assertAll(
+                () -> assertTrue(insert0),
+                () -> assertTrue(insert1),
+                () -> assertTrue(insert2),
+                () -> assertTrue(insert3)
+        );
+
+        List<PageOffsetReference> result1 = vehicleMakeIndex.search(indexEntry1.key());
+        List<PageOffsetReference> result2 = vehicleMakeIndex.search(indexEntry2.key());
+        List<PageOffsetReference> result3 = vehicleMakeIndex.search(indexEntry3.key());
+        List<PageOffsetReference> result4 = vehicleMakeIndex.search(indexEntry4.key());
+
+        assertAll(
+                // we can search the keys in the IndexEntry, ofcourse "Subaru" will return 2 values
+                // because behicle_make was indexed. In the query layer, we can introduce filters
+                () -> assertEquals(2, result1.size()),
+                () -> assertEquals(2, result2.size()),
+                () -> assertEquals(1, result3.size()),
+                () -> assertEquals(1, result4.size())
+        );
+
+        // this is raw page manipulation: generally the PageManager will handle this, however the PageManager
+        // has yet to be implemented. PageManager can retrieve Page, from page we can retrieve the Document.
+        // For testing purposes we just want to ensure correctness at this stage
+        assertEquals(page.getPageId(), result1.get(0).getPageId());
+        assertEquals(page.getPageId(), result1.get(1).getPageId());
+        assertEquals(page.getPageId(), result2.get(0).getPageId());
+        assertEquals(page.getPageId(), result3.get(0).getPageId());
+
+        Document finalDocument3 = page.readDocumentAtOffset(result3.get(0).getOffset());
+        Document finalDocument4 = page.readDocumentAtOffset(result4.get(0).getOffset());
+
+        assertEquals(document3.getFields(), finalDocument3.getFields());
+        assertEquals(document4.getFields(), finalDocument4.getFields());
+
+        BPTree<?> tree = vehicleMakeIndex.getTree();
         tree.printLeafNodes();
     }
 }

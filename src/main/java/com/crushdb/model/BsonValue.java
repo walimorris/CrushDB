@@ -159,4 +159,22 @@ public record BsonValue(BsonType bsonType, Object value) {
     public double asDouble() throws ClassCastException {
         return (Double) this.value;
     }
+
+    /**
+     * Get the Java Data Type Value from the Bson Type.
+     *
+     * @return {@link Comparable}
+     *
+     * @throws UnsupportedOperationException if the type is not yet supported
+     */
+    public Comparable<?> toJavaValue() throws UnsupportedOperationException {
+        return switch (this.bsonType()) {
+            case STRING -> asString();
+            case INT -> asInteger();
+            case LONG -> asLong();
+            case FLOAT -> asFloat();
+            case DOUBLE -> asDouble();
+            default -> throw new UnsupportedOperationException("Not Supported.");
+        };
+    }
 }

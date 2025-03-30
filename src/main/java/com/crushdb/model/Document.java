@@ -90,7 +90,14 @@ public class Document {
      * A unique identifier for a specific page. This value is immutable and
      * is used to distinctly reference a page.
      */
-    private final long pageId;
+    private long pageId;
+
+    /**
+     * Represents the offset position of the {@code Document} within a {@code Page}.
+     * This field is used to specify the starting position of the document's data
+     * within the page structure.
+     */
+    private int offset;
 
     /**
      * Represents the size of a Document after decompression in bytes.
@@ -351,6 +358,17 @@ public class Document {
     }
 
     /**
+     * Get the {@link BsonValue} associated with the specified field name from the document.
+     *
+     * @param fieldName the document field name
+     *
+     * @return {@link BsonValue}
+     */
+    public BsonValue get(String fieldName) {
+        return this.fields.get(fieldName);
+    }
+
+    /**
      * Inserts or updates a field in the document.
      *
      * <p>If the key already exists, the value will be updated.</p>
@@ -462,6 +480,10 @@ public class Document {
         return this.pageId;
     }
 
+    public void setPageId(long pageId) {
+        this.pageId = pageId;
+    }
+
     /**
      * Get {@link Document} decompressed size.
      *
@@ -478,5 +500,23 @@ public class Document {
      */
     public int getCompressedSize() {
         return this.compressedSize;
+    }
+
+    /**
+     * Get Document offset in {@link Page}.
+     *
+     * @return int
+     */
+    public int getOffset() {
+        return offset;
+    }
+
+    /**
+     * Set {@code Document} offset.
+     *
+     * @param offset int - offset in {@link Page}
+     */
+    public void setOffset(int offset) {
+        this.offset = offset;
     }
 }

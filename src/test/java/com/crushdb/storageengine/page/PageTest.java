@@ -4,6 +4,9 @@ import com.crushdb.model.BsonValue;
 import com.crushdb.model.Document;
 import org.junit.jupiter.api.Test;
 
+import javax.print.Doc;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -435,5 +438,86 @@ public class PageTest {
 
         System.out.println("Current Page: " + result.currentPage().getPageSize());
         System.out.println("New Page: " + result.newPage().getPageSize());
+    }
+
+    @Test
+    public void readDocumentAtOffset() {
+        Page page = new Page(1L);
+
+        Document document1 = new Document(1234567L);
+        document1.put("vehicle_make", "Subaru");
+        document1.put("vehicle_model", "Forester");
+        document1.put("vehicle_year", 2019);
+        document1.put("vehicle_type", "automobile");
+        document1.put("vehicle_body_style", "SUV");
+        document1.put("vehicle_price", 28500.99);
+        document1.put("hasHeating", true);
+
+        Document document2 = new Document(12345678L);
+        document2.put("vehicle_make", "Subaru");
+        document2.put("vehicle_model", "Impreza");
+        document2.put("vehicle_year", 2018);
+        document2.put("vehicle_type", "automobile");
+        document2.put("vehicle_body_style", "Sedan");
+        document2.put("vehicle_price", 22500.99);
+        document2.put("hasHeating", true);
+
+        Document document3 = new Document(123456789L);
+        document3.put("vehicle_make", "Tesla");
+        document3.put("vehicle_model", "Model 3");
+        document3.put("vehicle_year", 2017);
+        document3.put("vehicle_type", "automobile");
+        document3.put("vehicle_body_style", "Sedan");
+        document3.put("vehicle_price", 40200.99);
+        document3.put("hasHeating", true);
+
+        Document document4 = new Document(12345678910L);
+        document4.put("vehicle_make", "BMW");
+        document4.put("vehicle_model", "X3");
+        document4.put("vehicle_year", 2014);
+        document4.put("vehicle_type", "automobile");
+        document4.put("vehicle_body_style", "SUV");
+        document4.put("vehicle_price", 18000.00);
+        document4.put("hasHeating", true);
+
+        page.insertDocument(document1);
+        page.insertDocument(document2);
+        page.insertDocument(document3);
+        page.insertDocument(document4);
+
+        assertAll(
+                () -> assertEquals(32, document1.getOffset()),
+                () -> assertEquals(230, document2.getOffset()),
+                () -> assertEquals(429, document3.getOffset()),
+                () -> assertEquals(627, document4.getOffset())
+        );
+
+        Document documentResult1 = page.readDocumentAtOffset(document1.getOffset());
+        Document documentResult2 = page.readDocumentAtOffset(document2.getOffset());
+        Document documentResult3 = page.readDocumentAtOffset(document3.getOffset());
+        Document documentResult4 = page.readDocumentAtOffset(document4.getOffset());
+
+        documentResult1.prettyPrint();
+        documentResult2.prettyPrint();
+        documentResult3.prettyPrint();
+        documentResult4.prettyPrint();
+
+        ArrayList<Document> initialList = new ArrayList<>();
+        initialList.add(document1);
+        initialList.add(document2);
+        initialList.add(document3);
+        initialList.add(document4);
+
+        ArrayList<Document> resultList = new ArrayList<>();
+        resultList.add(documentResult1);
+        resultList.add(documentResult2);
+        resultList.add(documentResult3);
+        resultList.add(documentResult4);
+
+        for (int i = 0; i < initialList.size(); i++) {
+            Document initial = initialList.get(i);
+            Document result = resultList.get(i);
+            assertEquals(initial.getFields(), result.getFields());
+        }
     }
 }
