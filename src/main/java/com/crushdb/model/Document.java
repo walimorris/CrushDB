@@ -3,6 +3,7 @@ package com.crushdb.model;
 import com.crushdb.storageengine.page.Page;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -105,7 +106,13 @@ public class Document {
 
     /**
      * Stores the key-value pairs representing the document fields.
-     * <p>Keys and values are stored as {@code String} objects, allowing flexible data storage.</p>
+     * <p>Keys are stored as {@code String} objects, allowing flexible data storage. Value are stored as
+     * {@code BsonValue} types. Allowing easy manipulations and type safety.</p>
+     * {@code utilizing a {@link LinkedHashMap} will allow CrushDB Documents to preserve order, this means
+     * schema definitions, field declarations, insertions, ect., are more intuitive and predictible when
+     * working with data. There's no performance hit or exhaustive resource utilization hit versus using
+     * a {@link HashMap}. However, there's a very slight trade-off to the the usage, but the benefits outweigh
+     * those metrics.}
      */
     private final Map<String, BsonValue> fields;
 
@@ -129,7 +136,7 @@ public class Document {
         this.pageId = -1;
         this.decompressedSize = -1;
         this.compressedSize = -1;
-        this.fields = new HashMap<>();
+        this.fields = new LinkedHashMap<>();
         this.fields.put("_id", BsonValue.ofLong(documentId));
     }
 
@@ -144,7 +151,7 @@ public class Document {
         this.pageId = pageId;
         this.decompressedSize = DOCUMENT_METADATA_SIZE + decompressedSize;
         this.compressedSize = DOCUMENT_METADATA_SIZE + compressedSize;
-        this.fields = new HashMap<>();
+        this.fields = new LinkedHashMap<>();
     }
 
     /**
@@ -164,7 +171,7 @@ public class Document {
             return "{}";
         }
         if (this.fields.size() == 1) { // only id exist
-            return String.format("{%s:%d}", "_id", this.fields.get("_id").asLong());
+            return String.format("{\"%s\": %d}", "_id", this.fields.get("_id").asLong());
         }
 
         // get all the field pairs before building the string result
@@ -178,7 +185,7 @@ public class Document {
                 case FLOAT -> fieldsStr.append(value.asFloat()).append(";");
                 case DOUBLE -> fieldsStr.append(value.asDouble()).append(";");
                 case BOOLEAN -> fieldsStr.append(value.asBoolean()).append(";");
-                default -> fieldsStr.append(value.asString()).append(";");
+                default -> fieldsStr.append(String.format("\"%s\"", value.asString())).append(";");
             }
         }
 
@@ -192,25 +199,52 @@ public class Document {
         StringBuilder result = new StringBuilder();
 
         result.append("{");
-        result.append("_id")
-                .append(":")
+        result.append("\"_id\"")
+                .append(": ")
                 .append(this.fields.get("_id").asLong())
-                .append(",");
+                .append(", ");
 
         String[] pairs = content.split(";");
-        for (String pair : pairs) {
-            if (pair.isEmpty() || pair.contains("_id")) {
+        for (int i = 0; i < pairs.length; i++) {
+            if (pairs[i].isEmpty() || pairs[i].contains("_id")) {
                 continue;
             }
-            String[] fieldPairs = pair.split(":");
-            result.append(fieldPairs[0])
-                    .append(":")
-                    .append(fieldPairs[1])
-                    .append(",");
+            String[] fieldPairs = pairs[i].split(":");
+            result.append(String.format("\"%s\"", fieldPairs[0]))
+                    .append(": ")
+                    .append(fieldPairs[1]);
+            if (i != pairs.length - 1) {
+                result.append(", ");
+            }
         }
-        result = new StringBuilder(result.substring(0, result.toString().length() - 1));
         result.append("}");
         return result.toString();
+    }
+
+    /**
+     * Utilizes the {@code Document} toString method to parse and pretty print
+     * into a standard JSON format.
+     */
+    public void prettyPrint() {
+        // removes the brackets in document toString
+        String str = this.toString().substring(1, this.toString().length() - 1);
+        Object[] strParts = str.split(",");
+        StringBuilder result = new StringBuilder();
+        result.append("{\n");
+        for (int i = 0; i < strParts.length; i++) {
+            // special case for _id fields - the id field doesn't have a space between the bracket and itself
+            // we should apply this space. However all other value have a space before it's first character
+            if (strParts[i].toString().contains("_id")) {
+                result.append("    ").append(strParts[i]);
+            } else {
+                result.append("   ").append(strParts[i]);
+            }
+            if (i != strParts.length - 1) {
+                result.append(",\n");
+            }
+        }
+        result.append("\n}");
+        System.out.println(result);
     }
 
     /**
@@ -252,12 +286,96 @@ public class Document {
      * <p>If the key already exists, the value will be updated.</p>
      *
      * @param key   The field name (cannot be {@code null})
-     * @param value The field value (cannot be {@code null})
+     * @param value {@link BsonValue} The field value (cannot be {@code null})
      *
      * @throws IllegalArgumentException if either key or value is null
      */
-    public void put(String key, BsonValue value) {
+    public void put(String key, BsonValue value) throws IllegalArgumentException {
         this.fields.put(key, value);
+    }
+
+    /**
+     * Inserts or updates a field in the document.
+     *
+     * <p>If the key already exists, the value will be updated.</p>
+     *
+     * @param key   The field name (cannot be {@code null})
+     * @param value {@link String} The field value (cannot be {@code null})
+     *
+     * @throws IllegalArgumentException if either key or value is null
+     */
+    public void put(String key, String value) throws IllegalArgumentException {
+        this.fields.put(key, BsonValue.ofString(value));
+    }
+
+    /**
+     * Inserts or updates a field in the document.
+     *
+     * <p>If the key already exists, the value will be updated.</p>
+     *
+     * @param key   The field name (cannot be {@code null})
+     * @param value int - The field value (cannot be {@code null})
+     *
+     * @throws IllegalArgumentException if either key or value is null
+     */
+    public void put(String key, int value) throws IllegalArgumentException {
+        this.fields.put(key, BsonValue.ofInteger(value));
+    }
+
+    /**
+     * Inserts or updates a field in the document.
+     *
+     * <p>If the key already exists, the value will be updated.</p>
+     *
+     * @param key   The field name (cannot be {@code null})
+     * @param value long - The field value (cannot be {@code null})
+     *
+     * @throws IllegalArgumentException if either key or value is null
+     */
+    public void put(String key, long value) throws IllegalArgumentException {
+        this.fields.put(key, BsonValue.ofLong(value));
+    }
+
+    /**
+     * Inserts or updates a field in the document.
+     *
+     * <p>If the key already exists, the value will be updated.</p>
+     *
+     * @param key   The field name (cannot be {@code null})
+     * @param value - float The field value (cannot be {@code null})
+     *
+     * @throws IllegalArgumentException if either key or value is null
+     */
+    public void put(String key, float value) throws IllegalArgumentException {
+        this.fields.put(key, BsonValue.ofFloat(value));
+    }
+
+    /**
+     * Inserts or updates a field in the document.
+     *
+     * <p>If the key already exists, the value will be updated.</p>
+     *
+     * @param key   The field name (cannot be {@code null})
+     * @param value double - The field value (cannot be {@code null})
+     *
+     * @throws IllegalArgumentException if either key or value is null
+     */
+    public void put(String key, double value) throws IllegalArgumentException {
+        this.fields.put(key, BsonValue.ofDouble(value));
+    }
+
+    /**
+     * Inserts or updates a field in the document.
+     *
+     * <p>If the key already exists, the value will be updated.</p>
+     *
+     * @param key   The field name (cannot be {@code null})
+     * @param value boolean - The field value (cannot be {@code null})
+     *
+     * @throws IllegalArgumentException if either key or value is null
+     */
+    public void put(String key, boolean value) throws IllegalArgumentException {
+        this.fields.put(key, BsonValue.ofBoolean(value));
     }
 
     /**
