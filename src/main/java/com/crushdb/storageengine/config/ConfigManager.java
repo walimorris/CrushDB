@@ -1,5 +1,7 @@
 package com.crushdb.storageengine.config;
 
+import com.crushdb.storageengine.page.PageManager;
+
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -14,6 +16,8 @@ import java.util.Properties;
  * This class loads settings from the file into memory and provides access methods.
  *
  * @author Wali Morris
+ *
+ * @see PageManager
  */
 public class ConfigManager {
 
@@ -29,6 +33,9 @@ public class ConfigManager {
      */
     public static final String CONFIGURATION_FILE = BASE_DIR + "crushdb.conf";
 
+    /**
+     * Path to CrushDB configuration file. This file contains most database configuration properties.
+     */
     public static final String DEFAULT_CONFIGURATION_FILE = "conf/crushdb.conf";
 
     /**
@@ -50,6 +57,14 @@ public class ConfigManager {
     public static final String WAL_DIR = BASE_DIR + "wal/";
 
     /**
+     * The file path for the data file used by CrushDB. This constant combines
+     * the base data directory with the specific data file name "crushdb.db".
+     * It defines the location of the primary data file where the persistent
+     * data is stored.
+     */
+    public static final String DATABASE_FILE = DATA_DIR + "/crushdb.db";
+
+    /**
      * Path to the directory where CrushDB stores custom user-supplied certificates.
      * This directory allows users to override the default system CA certificate if needed.
      * If a custom CA certificate is placed in this directory, CrushDB will use it for
@@ -57,6 +72,20 @@ public class ConfigManager {
      * Default location: {@code ~/.crushdb/certs}
      */
     public static final String CU_CA_CERT_PATH = BASE_DIR + "certs/";
+
+    /**
+     * Max memory allowed to for caching pages - if there's a preference to utilize an explicit
+     * page unit this property should be commented out and cache_maxPages will be used. It can
+     * be noted that the page_size should be utilized for any calculations for best performance.
+     */
+    public static final String CACHE_MEMORY_LIMIT_MB_FIELD = "cache_memory_limit_mb";
+
+    /**
+     * Number of pages to keep in memory - if there's a preference to utilize memory unit size
+     * this property should be commented out and cache_memoryLimitMB will be used. It can
+     * be noted that the page_size should be utilized for any calculations for best performance.
+     */
+    public static final String CACHE_MAX_PAGES_FIELD = "cache_max_pages";
 
     /**
      * Configuration file field representing the database page size.
@@ -167,15 +196,15 @@ public class ConfigManager {
         }
     }
 
-    public String get(String key, String defaultValue) {
+    public static String get(String key, String defaultValue) {
         return properties.getProperty(key, defaultValue);
     }
 
-    public int getInt(String key, int defaultValue) {
+    public static int getInt(String key, int defaultValue) {
         return Integer.parseInt(properties.getProperty(key, String.valueOf(defaultValue)));
     }
 
-    public boolean getBoolean(String key, boolean defaultValue) {
+    public static boolean getBoolean(String key, boolean defaultValue) {
         return Boolean.parseBoolean(properties.getProperty(key, String.valueOf(defaultValue)));
     }
 }
