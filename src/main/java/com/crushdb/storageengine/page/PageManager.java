@@ -1,7 +1,10 @@
 package com.crushdb.storageengine.page;
 
+import com.crushdb.index.btree.PageOffsetReference;
 import com.crushdb.model.Document;
 import com.crushdb.storageengine.config.ConfigManager;
+import com.crushdb.storageengine.StorageEngine;
+import com.crushdb.index.BPTreeIndexManager;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -138,6 +141,33 @@ public class PageManager {
     }
 
     /**
+     * Get document by using the Page Offset Reference information passed to this method.
+     * Retrieve the Page from cache by PageId, read the page at the given offset from the
+     * reference to retrieve the document. Reset the PageId and Offset on the retrieved
+     * document.
+     *
+     * @param reference {@link PageOffsetReference} retrieved in the StorageEngine
+     *        from the IndexManager
+     *
+     * @return {@link Document}
+     *
+     * @see PageOffsetReference
+     * @see BPTreeIndexManager
+     * @see StorageEngine
+     */
+    public Document retrieveDocument(PageOffsetReference reference) {
+        Page page = this.cache.get(reference.getPageId());
+        if (page == null) {
+            // TODO: try loading from disk?
+            throw new IllegalArgumentException("Page not found in cache: " + reference.getPageId());
+        }
+        Document document = page.readDocumentAtOffset(reference.getOffset());
+        document.setPageId(reference.getPageId());
+        document.setOffset(reference.getOffset());
+        return document;
+    }
+
+    /**
      * Get a writable page that has enough space to accommodate the given document.
      * If no such page exists in the writable page list, a new page is created, added to
      * the page cache and writable list, then returned.
@@ -147,7 +177,7 @@ public class PageManager {
      *
      * @return a writable {@code Page} instance with enough space for the document
      */
-    public Page  getWritablePage(Document document) {
+    private Page getWritablePage(Document document) {
         // get writable page and ensure there's enough space for document
         // if so, return the page and if not remove it from the writable
         // list
