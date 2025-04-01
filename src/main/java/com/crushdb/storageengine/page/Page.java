@@ -656,7 +656,7 @@ public class Page {
      *
      * @return boolean
      */
-    private boolean hasSpaceFor(int documentSize) {
+    public boolean hasSpaceFor(int documentSize) {
         return this.availableSpace >= documentSize;
     }
 
@@ -1051,13 +1051,18 @@ public class Page {
         return doc;
     }
 
+    public boolean isDirty() {
+        return this.isDirty;
+    }
+
     /**
      * Marks the page as dirty, indicating that it has been modified
      * since the last write to storage. This flag is used to determine
      * whether the page needs to be persisted to disk.
      */
-    private void markDirty() {
+    public boolean markDirty() {
         this.isDirty = true;
+        return true;
     }
 
     public long getPageId() {
