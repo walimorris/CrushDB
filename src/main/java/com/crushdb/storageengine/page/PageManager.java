@@ -22,6 +22,14 @@ public class PageManager {
     private final Path dataFile = Paths.get(ConfigManager.get(ConfigManager.DATABASE_FILE, null));
 
     /**
+     * Represents the file path to the metadata file used by the PageManager.
+     *
+     * This file is used for storing or managing metadata essential to the PageManager's
+     * operations, such as page tracking, cache management, or other data.
+     */
+    private final Path metaFile = Paths.get(ConfigManager.get(ConfigManager.META_FILE, null));
+
+    /**
      * Defines the size of each page in bytes within the system.
      * The value for this variable is retrieved from the application's configuration file,
      * This value is crucial for determining the memory management behavior of the system,

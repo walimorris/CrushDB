@@ -65,6 +65,12 @@ public class ConfigManager {
     public static final String DATABASE_FILE = DATA_DIR + "/crushdb.db";
 
     /**
+     * Defines the path to the metadata file used by CrushDB. The metadata file
+     * stores essential configuration and state information.
+     */
+    public static final String META_FILE = DATA_DIR + "/meta.dat";
+
+    /**
      * Path to the directory where CrushDB stores custom user-supplied certificates.
      * This directory allows users to override the default system CA certificate if needed.
      * If a custom CA certificate is placed in this directory, CrushDB will use it for
