@@ -493,6 +493,10 @@ public class Document {
         return this.decompressedSize;
     }
 
+    public void setDecompressedSize(int size) {
+        this.decompressedSize = size;
+    }
+
     /**
      * Get {@link Document} compressed size.
      *
@@ -500,6 +504,10 @@ public class Document {
      */
     public int getCompressedSize() {
         return this.compressedSize;
+    }
+
+    public void setCompressedSize(int size) {
+        this.compressedSize = size;
     }
 
     /**

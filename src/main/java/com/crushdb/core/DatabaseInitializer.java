@@ -3,14 +3,10 @@ package com.crushdb.core;
 import com.crushdb.storageengine.config.ConfigManager;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Properties;
 
-import static com.crushdb.storageengine.config.ConfigManager.BASE_DIR;
-import static com.crushdb.storageengine.config.ConfigManager.LOG_DIR;
-import static com.crushdb.storageengine.config.ConfigManager.DATA_DIR;
-import static com.crushdb.storageengine.config.ConfigManager.WAL_DIR;
-import static com.crushdb.storageengine.config.ConfigManager.CU_CA_CERT_PATH;
-import static com.crushdb.storageengine.config.ConfigManager.CONFIGURATION_FILE;
+import static com.crushdb.storageengine.config.ConfigManager.*;
 
 public class DatabaseInitializer {
 
@@ -23,6 +19,9 @@ public class DatabaseInitializer {
         boolean certs = createDirectory(CU_CA_CERT_PATH);
 
         if (base && log && data && wal && certs) {
+            createFileIfMissing(DATABASE_FILE);
+            createFileIfMissing(META_FILE);
+
             if (new File(CONFIGURATION_FILE).exists()) {
                 System.out.println("Configuration already alive: " + CONFIGURATION_FILE);
             }
@@ -44,5 +43,23 @@ public class DatabaseInitializer {
             System.out.println("LOG: failed to spawn directory: " + path);
         }
         return created;
+    }
+
+    private static void createFileIfMissing(String path) {
+        File file = new File(path);
+        try {
+            if (!file.exists()) {
+                boolean created = file.createNewFile();
+                if (created) {
+                    System.out.println("Created file: " + path);
+                } else {
+                    System.out.println("Failed to create file: " + path);
+                }
+            } else {
+                System.out.println("File already exists: " + path);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to create file: " + path, e);
+        }
     }
 }

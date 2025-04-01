@@ -16,18 +16,29 @@ import java.util.LinkedHashMap;
 
 public class PageManager {
 
+    private static PageManager instance;
+
     /**
      * Represents the file path to the data file used by the crushdb.
      */
-    private final Path dataFile = Paths.get(ConfigManager.get(ConfigManager.DATABASE_FILE, null));
+    private final Path dataFile = Paths.get(ConfigManager.get(ConfigManager.DATABASE_FILED_FIELD, null));
 
     /**
-     * Represents the file path to the metadata file used by the PageManager.
+     * Holds metadata information that is read from the metadata file.
      *
-     * This file is used for storing or managing metadata essential to the PageManager's
-     * operations, such as page tracking, cache management, or other data.
+     * The metadata is critical for managing and maintaining state within the
+     * PageManager, such as providing versioning details, the magic number for
+     * validation, and the last page ID for tracking.
+     *
+     * @see MetaFileManager#readMetadata()
      */
-    private final Path metaFile = Paths.get(ConfigManager.get(ConfigManager.META_FILE, null));
+    private Metadata metadata;
+
+    /**
+     * Represents the ID of the last page that was accessed, modified, or created
+     * within the page management system.
+     */
+    private long lastPageId;
 
     /**
      * Defines the size of each page in bytes within the system.
@@ -112,6 +123,22 @@ public class PageManager {
         }
     };
 
+    private PageManager() {
+        init();
+    }
+
+    public static synchronized PageManager getInstance() {
+        if (instance == null) {
+            instance = new PageManager();
+        }
+        return instance;
+    }
+
+    private void init() {
+        this.metadata = MetaFileManager.readMetadata();
+        this.lastPageId = (metadata != null) ? metadata.lastPageId() : 0L;
+    }
+
     /**
      * Calculates the maximum number of pages that can be cached based on the memory limit
      * or default maximum pages configuration.
@@ -145,7 +172,10 @@ public class PageManager {
      */
     public Document insertDocument(Document document) {
         Page page = getWritablePage(document);
-        return page.insertDocument(document);
+        if (page != null) {
+            return page.insertDocument(document);
+        }
+        return null;
     }
 
     /**
@@ -202,12 +232,18 @@ public class PageManager {
 
         // LRU eviction will occur automatically when inserting into the cache
         // however, we need to add the page to cache and writeable list
-        // TODO: persist latest pageId in a meta.dat file or something
-        // TODO: to get latest pageId on startup
-        Page page = new Page(1L);
+        // TODO: this will fail in high concurrent env - update
+        this.lastPageId += 1L;
+        Page page = new Page(this.lastPageId);
         this.cache.put(page.getPageId(), page);
-        this.writablePageIds.add(page.getPageId());
-        return page;
+        boolean isWritable = this.writablePageIds.add(page.getPageId());
+
+        if (isWritable) {
+            Metadata writeableMetadata = new Metadata(metadata.magicNumber(), metadata.version(), page.getPageId());
+            MetaFileManager.writeMetadata(writeableMetadata);
+            return page;
+        }
+        return null;
     }
 
     /**
@@ -219,7 +255,7 @@ public class PageManager {
      * @return {@code true} if the page was successfully marked as dirty,
      *         {@code false} otherwise
      */
-    public boolean markDirty(Page page) {
+    private boolean markDirty(Page page) {
         return page.markDirty();
     }
 

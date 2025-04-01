@@ -62,13 +62,17 @@ public class ConfigManager {
      * It defines the location of the primary data file where the persistent
      * data is stored.
      */
-    public static final String DATABASE_FILE = DATA_DIR + "/crushdb.db";
+    public static final String DATABASE_FILE = DATA_DIR + "crushdb.db";
+
+    public static final String DATABASE_FILED_FIELD = "data_path";
 
     /**
      * Defines the path to the metadata file used by CrushDB. The metadata file
      * stores essential configuration and state information.
      */
-    public static final String META_FILE = DATA_DIR + "/meta.dat";
+    public static final String META_FILE = DATA_DIR + "meta.dat";
+
+    public static final String META_FILE_FIELD = "meta_file_path";
 
     /**
      * Path to the directory where CrushDB stores custom user-supplied certificates.
@@ -180,6 +184,10 @@ public class ConfigManager {
 
     private static final Properties properties = new Properties();
 
+    static {
+        loadConfig();
+    }
+
     public static Properties loadConfig() {
         if (!Files.exists(Path.of(CONFIGURATION_FILE))) {
             writeDefaultConfig();
@@ -203,7 +211,11 @@ public class ConfigManager {
     }
 
     public static String get(String key, String defaultValue) {
-        return properties.getProperty(key, defaultValue);
+        String value = properties.getProperty(key, defaultValue);
+        if (value != null && value.startsWith("~")) {
+            value = value.replaceFirst("~", System.getProperty("user.home"));
+        }
+        return value;
     }
 
     public static int getInt(String key, int defaultValue) {

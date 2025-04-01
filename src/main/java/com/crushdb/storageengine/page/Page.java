@@ -153,6 +153,8 @@ public class Page {
 
     private int compressedPageSize;
 
+    private int decompressedPageSize;
+
     /**
      * Reference to the next page in a sequence (if applicable).
      * Used for linked-page traversal.
@@ -394,7 +396,8 @@ public class Page {
         this.pageSize = insertionPosition + totalSize;
         document.setOffset(insertionPosition);
         document.setPageId(this.pageId);
-        // TODO: add decompressed and compressed size
+        document.setCompressedSize(cs);
+        document.setDecompressedSize(dcs);
 
         updateHeader();
         this.markDirty();

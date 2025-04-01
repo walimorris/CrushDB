@@ -4,9 +4,7 @@ import com.crushdb.model.BsonValue;
 import com.crushdb.model.Document;
 import org.junit.jupiter.api.Test;
 
-import javax.print.Doc;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
