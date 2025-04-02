@@ -173,6 +173,11 @@ public class Page {
     private Set<Long> deletedDocuments;
 
     /**
+     * A collection of documents stored on this page.
+     */
+    private Set<Document> documents;
+
+    /**
      * Maps document IDs to their position within the page.
      * Enables fast lookups of document locations without scanning the entire page.
      */
@@ -279,6 +284,7 @@ public class Page {
         this.next = -1L;
         this.previous = -1L;
         this.deletedDocuments = new HashSet<>();
+        this.documents = new HashSet<>();
         this.offsets = new HashMap<>();
         this.isFull = false;
         this.isDirty = false;
@@ -302,6 +308,7 @@ public class Page {
         this.next = next;
         this.previous = previous;
         this.deletedDocuments = new HashSet<>();
+        this.documents = new HashSet<>();
         this.isFull = false;
         this.isDirty = false;
         this.offsets = new HashMap<>(offsets);
@@ -402,6 +409,7 @@ public class Page {
         updateHeader();
         this.markDirty(true);
         this.numberOfDocuments += 1;
+        this.documents.add(document);
         return retrieveDocument(document.getDocumentId());
     }
 
@@ -1126,5 +1134,13 @@ public class Page {
 
     public long getPrevious() {
         return this.previous;
+    }
+
+    public Set<Document> getDocuments() {
+        return documents;
+    }
+
+    public void setDocuments(Set<Document> documents) {
+        this.documents = documents;
     }
 }

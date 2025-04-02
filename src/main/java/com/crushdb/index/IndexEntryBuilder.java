@@ -9,7 +9,7 @@ import java.util.Optional;
 /**
  * A builder class for creating instances of {@code IndexEntry} from a {@code Document}.
  */
-class IndexEntryBuilder {
+public class IndexEntryBuilder {
 
     /**
      * Builds an {@link Optional} containing an {@link IndexEntry} from the specified {@link Document}.

@@ -15,9 +15,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.HashSet;
 
 public class PageManager {
     private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(PageManager.class);
@@ -203,12 +205,22 @@ public class PageManager {
         Page page = this.cache.get(reference.getPageId());
         if (page == null) {
             // TODO: try loading from disk?
+            // TODO: add all document to page when loading from disk (Set<Documents) on page
             throw new IllegalArgumentException("Page not found in cache: " + reference.getPageId());
         }
         Document document = page.readDocumentAtOffset(reference.getOffset());
         document.setPageId(reference.getPageId());
         document.setOffset(reference.getOffset());
         return document;
+    }
+
+    /**
+     * Retrieves a list of all pages currently stored in memory within this page cache.
+     *
+     * @return a list of {@code Page} objects representing the in-memory pages.
+     */
+    public List<Page> getAllInMemoryPages() {
+        return new ArrayList<>(this.cache.values());
     }
 
     /**

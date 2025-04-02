@@ -14,6 +14,12 @@ import java.util.Map;
  * @param <T> The type of key used for indexing (must be Comparable).
  */
 public class BPTreeIndexManager<T extends Comparable<T>> {
+
+    /**
+     * A map that stores named tree indexes managed by the BPTreeIndexManager.
+     * The keys in the map represent index names, and the values are corresponding
+     * instances of {@link BPTreeIndex}.
+     */
     private final Map<String, BPTreeIndex<T>> indexes = new HashMap<>();
 
     /**
@@ -122,6 +128,16 @@ public class BPTreeIndexManager<T extends Comparable<T>> {
             throw new IllegalArgumentException("Index not found: " + indexName);
         }
         return index.rangeSearch(lowerBound, upperBound);
+    }
+
+    /**
+     * Get the map of all indexes managed by the BPTreeIndexManager.
+     *
+     * @return a map where the keys are index names (as Strings) and the values are
+     *         {@link BPTreeIndex} instances associated with those names.
+     */
+    public Map<String, BPTreeIndex<T>> getIndexes() {
+        return indexes;
     }
 
     /**
