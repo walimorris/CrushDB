@@ -267,7 +267,7 @@ public class Page {
 
     public Page(long pageId, boolean autoCompressOnInsert) {
         // TODO: external PageManager will generate ids
-
+        // TODO: need to add update method (updates require marking pages as dirty)
         this.pageId = pageId;
         this.page = new byte[MAX_PAGE_SIZE];
         this.headerSize = 32;
@@ -400,7 +400,7 @@ public class Page {
         document.setDecompressedSize(dcs);
 
         updateHeader();
-        this.markDirty();
+        this.markDirty(true);
         this.numberOfDocuments += 1;
         return retrieveDocument(document.getDocumentId());
     }
@@ -414,7 +414,20 @@ public class Page {
      */
     public Document retrieveDocument(long documentId) throws IllegalStateException {
         byte[] data = retrieveDocumentBytes(documentId);
-        return (data != null) ? Document.fromBytes(data) : null;
+
+        if (data == null) {
+            return null;
+        }
+        // get the info need for the document
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+        long docId = buffer.getLong();
+        long pageId = buffer.getLong();
+        int dcs = buffer.getInt();
+        int cs = buffer.getInt();
+        buffer.get();
+        int offset = this.offsets.get(documentId);
+
+        return Document.fromBytes(data, pageId, offset, dcs, cs);
     }
 
     /**
@@ -549,7 +562,7 @@ public class Page {
             }
             this.deletedDocuments.add(documentId);
             this.numberOfDocuments -= 1;
-            markDirty();
+            this.markDirty(true);
         }
     }
 
@@ -837,6 +850,7 @@ public class Page {
             this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
             this.isCompressed = this.autoCompressOnInsert;
             this.numberOfDocuments = numDocsLeft;
+            this.markDirty(true);
             this.next = newPageId;
             Page nextPage = new Page(newPageId, newPageBytes, newPageBuffer.position(), newPageOffsets, this.pageId, -1L, this.autoCompressOnInsert, numDocsRight);
             return new PageSplitResult(this, nextPage);
@@ -961,6 +975,7 @@ public class Page {
             this.availableSpace = (short) (MAX_PAGE_SIZE - this.pageSize);
             this.offsets = newOffsetMap;
             this.deletedDocuments.clear();
+            this.markDirty(true);
             return Map.of("page", this, "state", true);
         } finally {
             if (locked) {
@@ -1040,18 +1055,19 @@ public class Page {
         byte[] content = new byte[dcs];
         buffer.get(content);
 
-        Document doc = Document.fromBytes(ByteBuffer.allocate(DOCUMENT_METADATA_SIZE + dcs)
+        return Document.fromBytes(ByteBuffer.allocate(DOCUMENT_METADATA_SIZE + dcs)
                 .putLong(docId)
                 .putLong(pageId)
                 .putInt(dcs)
                 .putInt(cs)
                 .put(deleted)
                 .put(content)
-                .array()
+                .array(), pageId, offset, dcs, cs
         );
+    }
 
-        doc.setOffset(offset);
-        return doc;
+    public byte[] getPage() {
+        return this.page;
     }
 
     public boolean isDirty() {
@@ -1063,9 +1079,9 @@ public class Page {
      * since the last write to storage. This flag is used to determine
      * whether the page needs to be persisted to disk.
      */
-    public boolean markDirty() {
-        this.isDirty = true;
-        return true;
+    public boolean markDirty(boolean isDirty) {
+        this.isDirty = isDirty;
+        return this.isDirty;
     }
 
     public long getPageId() {

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.Map;
 
+import static com.crushdb.storageengine.page.Page.DOCUMENT_METADATA_SIZE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -248,10 +249,10 @@ public class PageTest {
         // page is compressed with autoCompressOnInsert, now for decompressing the whole page
         // this means, rather than decompressing individual pages, we decompress all documents
         // in the page in one go
-        int calculatedCompressedSizePre = (page.getHeaderSize() +
-                retrieveDocument1.getCompressedSize() +
-                retrieveDocument2.getCompressedSize() +
-                retrieveDocument3.getCompressedSize()
+        int calculatedCompressedSizePre = (page.getHeaderSize()
+                + (DOCUMENT_METADATA_SIZE + retrieveDocument1.getCompressedSize())
+                + (DOCUMENT_METADATA_SIZE + retrieveDocument2.getCompressedSize())
+                + (DOCUMENT_METADATA_SIZE + retrieveDocument3.getCompressedSize())
         );
 
         assertEquals(page.getPageSize(), calculatedCompressedSizePre);
@@ -268,15 +269,15 @@ public class PageTest {
         );
 
         // assert all documents are decompressed
-        int calculatedDecompressedSizePost = (page.getHeaderSize() +
-                retrievedResult1.getDecompressedSize() +
-                retrievedResult2.getDecompressedSize() +
-                retrievedResult3.getDecompressedSize()
+        int calculatedDecompressedSizePost = (page.getHeaderSize()
+                + (DOCUMENT_METADATA_SIZE + retrievedResult1.getDecompressedSize())
+                + (DOCUMENT_METADATA_SIZE + retrievedResult2.getDecompressedSize())
+                + (DOCUMENT_METADATA_SIZE + retrievedResult3.getDecompressedSize())
         );
         assertAll(
-                () -> assertEquals(0, retrievedResult1.getCompressedSize() - 25),
-                () -> assertEquals(0, retrievedResult2.getCompressedSize() - 25),
-                () -> assertEquals(0, retrievedResult3.getCompressedSize() - 25),
+                () -> assertEquals(0, retrievedResult1.getCompressedSize()),
+                () -> assertEquals(0, retrievedResult2.getCompressedSize()),
+                () -> assertEquals(0, retrievedResult3.getCompressedSize()),
                 () -> assertEquals(4096, page.getAvailableSpace() + page.getPageSize()),
                 () -> assertEquals(page.getPageSize(), calculatedDecompressedSizePost)
         );
@@ -314,10 +315,10 @@ public class PageTest {
                 () -> assertEquals(32, retrieveDocument3.getInt("maxHeaderSize")),
                 () -> assertEquals("variable", retrieveDocument3.getString("documentSize"))
         );
-        int calculatedDecompressedSizePre = (page.getHeaderSize() +
-                retrieveDocument1.getDecompressedSize() +
-                retrieveDocument2.getDecompressedSize() +
-                retrieveDocument3.getDecompressedSize()
+        int calculatedDecompressedSizePre = (page.getHeaderSize()
+                + (DOCUMENT_METADATA_SIZE + retrieveDocument1.getDecompressedSize())
+                + (DOCUMENT_METADATA_SIZE + retrieveDocument2.getDecompressedSize())
+                + (DOCUMENT_METADATA_SIZE + retrieveDocument3.getDecompressedSize())
         );
         assertEquals(page.getPageSize(), calculatedDecompressedSizePre);
 
@@ -338,15 +339,15 @@ public class PageTest {
         );
 
         // assert all documents are decompressed and correct size
-        int calculatedDecompressedSizePost = (page.getHeaderSize() +
-                retrievedResult1.getDecompressedSize() +
-                retrievedResult2.getDecompressedSize() +
-                retrievedResult3.getDecompressedSize()
+        int calculatedDecompressedSizePost = (page.getHeaderSize()
+                + (DOCUMENT_METADATA_SIZE + retrievedResult1.getDecompressedSize())
+                + (DOCUMENT_METADATA_SIZE + retrievedResult2.getDecompressedSize())
+                + (DOCUMENT_METADATA_SIZE + retrievedResult3.getDecompressedSize())
         );
         assertAll(
-                () -> assertEquals(0, retrievedResult1.getCompressedSize() - 25),
-                () -> assertEquals(0, retrievedResult2.getCompressedSize() - 25),
-                () -> assertEquals(0, retrievedResult3.getCompressedSize() - 25),
+                () -> assertEquals(0, retrievedResult1.getCompressedSize()),
+                () -> assertEquals(0, retrievedResult2.getCompressedSize()),
+                () -> assertEquals(0, retrievedResult3.getCompressedSize()),
                 () -> assertEquals(4096, page.getAvailableSpace() + page.getPageSize()),
                 () -> assertEquals(page.getPageSize(), calculatedDecompressedSizePost)
         );

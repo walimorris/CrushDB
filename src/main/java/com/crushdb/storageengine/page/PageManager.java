@@ -1,11 +1,16 @@
 package com.crushdb.storageengine.page;
 
 import com.crushdb.index.btree.PageOffsetReference;
+import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.model.Document;
 import com.crushdb.storageengine.config.ConfigManager;
 import com.crushdb.storageengine.StorageEngine;
 import com.crushdb.index.BPTreeIndexManager;
 
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -15,6 +20,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 
 public class PageManager {
+    private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(PageManager.class);
 
     private static PageManager instance;
 
@@ -256,7 +262,7 @@ public class PageManager {
      *         {@code false} otherwise
      */
     private boolean markDirty(Page page) {
-        return page.markDirty();
+        return page.markDirty(true);
     }
 
     /**
@@ -281,7 +287,24 @@ public class PageManager {
      *
      * @param page {@code Page}  to be flushed
      */
-    public void flush(Page page) {
-        System.out.println("flushing");
+    private void flush(Page page) {
+        if (page == null || !page.isDirty()) {
+            return;
+        }
+        try (RandomAccessFile raf = new RandomAccessFile(dataFile.toFile(), "rw");
+             FileChannel fileChannel = raf.getChannel()) {
+            long offset = page.getPageId() * ConfigManager.getInt(ConfigManager.PAGE_SIZE_FIELD, 4096);
+            byte[] pageData = page.getPage();
+
+            ByteBuffer buffer = ByteBuffer.wrap(pageData);
+            fileChannel.position(offset);
+            fileChannel.write(buffer);
+
+            page.markDirty(false);
+            LOGGER.info(String.format("Page %d flushed to disk at offset %d", page.getPageId(), offset), null);
+        } catch (IOException e) {
+            LOGGER.error("Failed to flush page " + page.getPageId() + " " + e.getMessage(),
+                    IOException.class.getName());
+        }
     }
 }

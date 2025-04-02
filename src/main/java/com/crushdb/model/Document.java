@@ -5,6 +5,7 @@ import com.crushdb.storageengine.page.Page;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Represents a single Document within the CrushDB database.
@@ -278,6 +279,15 @@ public class Document {
         return BsonDecoder.decode(data);
     }
 
+    public static Document fromBytes(byte[] data, long pageId, int offset, int dcs, int cs) {
+        Document document = fromBytes(data);
+        document.setPageId(pageId);
+        document.setOffset(offset);
+        document.setCompressedSize(cs);
+        document.setDecompressedSize(dcs);
+        return document;
+    }
+
     /**
      * Retrieves the internal map of fields for this document.
      *
@@ -526,5 +536,22 @@ public class Document {
      */
     public void setOffset(int offset) {
         this.offset = offset;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Document document = (Document) o;
+        return documentId == document.documentId
+                && pageId == document.pageId
+                && offset == document.offset
+                && decompressedSize == document.decompressedSize
+                && compressedSize == document.compressedSize
+                && Objects.equals(fields, document.fields);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(documentId, pageId, offset, decompressedSize, compressedSize, fields);
     }
 }
