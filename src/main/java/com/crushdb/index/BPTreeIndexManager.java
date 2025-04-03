@@ -10,6 +10,7 @@ import java.util.Map;
 
 /**
  * Manages multiple named {@link BPTree } indexes, providing an interface for creation, insertion, and search.
+ * TODO: Add crate name for logical grouping
  *
  * @param <T> The type of key used for indexing (must be Comparable).
  */
