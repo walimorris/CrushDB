@@ -11,6 +11,8 @@ import java.util.Optional;
  */
 public class IndexEntryBuilder {
 
+    private IndexEntryBuilder() {}
+
     /**
      * Builds an {@link Optional} containing an {@link IndexEntry} from the specified {@link Document}.
      *

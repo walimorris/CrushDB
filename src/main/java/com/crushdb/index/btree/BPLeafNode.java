@@ -354,12 +354,4 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
     public BPMapping<T>[] getBpMappings() {
         return bpMappings;
     }
-
-    public BPInternalNode<T> getParent() {
-        return this.parent;
-    }
-
-    public void setParent(BPInternalNode<T> parent) {
-        this.parent = parent;
-    }
 }

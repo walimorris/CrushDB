@@ -103,6 +103,8 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      */
     private final Comparator<T> RAW_DESC_COMPARATOR = (a, b) -> b.compareTo(a);
 
+    private static final String KEY_IS_NULL = "Order of tree is %d. Key length must be %d, but key is null.";
+
     /**
      * Constructs an internal node in a B+Tree with a given order (m).
      *
@@ -117,9 +119,9 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
     @SuppressWarnings("unchecked")
     public BPInternalNode(int m, T[] keys) throws IllegalArgumentException {
         if (keys == null) {
-            LOGGER.error(format("Order of tree is %d. Key length must be %d, but key is null.", m, m - 1),
+            LOGGER.error(format(KEY_IS_NULL, m, m - 1),
                     IllegalArgumentException.class.getName());
-            throw new IllegalArgumentException(format("Order of tree is %d. Key length must be %d, but key is null.",
+            throw new IllegalArgumentException(format(KEY_IS_NULL,
                     m, m - 1));
         }
         this.maxChildNodes = m;
@@ -135,9 +137,9 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
     @SuppressWarnings("unchecked")
     public BPInternalNode(int m, T[] keys, SortOrder sortOrder) throws IllegalArgumentException {
         if (keys == null) {
-            LOGGER.error(format("Order of tree is %d. Key length must be %d, but key is null.", m, m - 1),
+            LOGGER.error(format(KEY_IS_NULL, m, m - 1),
                     IllegalArgumentException.class.getName());
-            throw new IllegalArgumentException(format("Order of tree is %d. Key length must be %d, but key is null.",
+            throw new IllegalArgumentException(format(KEY_IS_NULL,
                     m, m - 1));
         }
         this.maxChildNodes = m;
@@ -162,9 +164,9 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      */
     public BPInternalNode(int m, T[] keys, BPNode<T>[] pointers, SortOrder sortOrder) {
         if (keys == null) {
-            LOGGER.error(format("Order of tree is %d. Key length must be %d, but key is null.", m, m - 1),
+            LOGGER.error(format(KEY_IS_NULL, m, m - 1),
                     IllegalArgumentException.class.getName());
-            throw new IllegalArgumentException(format("Order of tree is %d. Key length must be %d, but key is null.",
+            throw new IllegalArgumentException(format(KEY_IS_NULL,
                     m, m - 1));
         }
         this.maxChildNodes = m;
@@ -538,14 +540,6 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
 
     public boolean isOverFull() {
         return this.numKeys == this.maxKeys + 1;
-    }
-
-    public BPInternalNode<T> getParent() {
-        return this.parent;
-    }
-
-    public void setParent(BPInternalNode<T> parent) {
-        this.parent = parent;
     }
 
     public void setRightSibling(BPInternalNode<T> rightSibling) {

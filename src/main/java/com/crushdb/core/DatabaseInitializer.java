@@ -1,5 +1,6 @@
 package com.crushdb.core;
 
+import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.storageengine.config.ConfigManager;
 
 import java.io.File;
@@ -9,6 +10,9 @@ import java.util.Properties;
 import static com.crushdb.storageengine.config.ConfigManager.*;
 
 public class DatabaseInitializer {
+    private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(DatabaseInitializer.class);
+
+    private DatabaseInitializer() {}
 
     public static Properties init() {
         Properties properties = null;
@@ -23,7 +27,7 @@ public class DatabaseInitializer {
             createFileIfMissing(META_FILE);
 
             if (new File(CONFIGURATION_FILE).exists()) {
-                System.out.println("Configuration already alive: " + CONFIGURATION_FILE);
+                LOGGER.info("Configuration already alive: " + CONFIGURATION_FILE, null);
             }
             properties = ConfigManager.loadConfig();
         }
@@ -33,14 +37,14 @@ public class DatabaseInitializer {
     private static boolean createDirectory(String path) {
         File directory = new File(path);
         if (directory.exists() && directory.isDirectory()) {
-            System.out.println("Directory already alive: " + path);
+            LOGGER.info("Directory already alive: " + path, null);
             return true;
         }
         boolean created = directory.mkdirs();
         if (created) {
-            System.out.println("LOG: spawned directory: " + path);
+            LOGGER.info("LOG: spawned directory: " + path, null);
         } else {
-            System.out.println("LOG: failed to spawn directory: " + path);
+            LOGGER.info("LOG: failed to spawn directory: " + path, null);
         }
         return created;
     }
@@ -51,15 +55,16 @@ public class DatabaseInitializer {
             if (!file.exists()) {
                 boolean created = file.createNewFile();
                 if (created) {
-                    System.out.println("Created file: " + path);
+                    LOGGER.info("Created file: " + path, null);
                 } else {
-                    System.out.println("Failed to create file: " + path);
+                    LOGGER.info("Failed to create file: " + path, null);
                 }
             } else {
-                System.out.println("File already exists: " + path);
+                LOGGER.info("File already exists: " + path, null);
             }
         } catch (IOException e) {
-            throw new RuntimeException("Unable to create file: " + path, e);
+            LOGGER.error("Unable to create file on path " + path + ": " + e, RuntimeException.class.getName());
+            throw new RuntimeException(e);
         }
     }
 }

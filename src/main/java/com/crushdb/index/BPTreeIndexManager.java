@@ -23,6 +23,8 @@ public class BPTreeIndexManager<T extends Comparable<T>> {
      */
     private final Map<String, BPTreeIndex<T>> indexes = new HashMap<>();
 
+    private static final String INDEX_NOT_FOUND = "Index not found: ";
+
     /**
      * Creates a new index and stores it by name.
      *
@@ -52,7 +54,7 @@ public class BPTreeIndexManager<T extends Comparable<T>> {
     public boolean insert(String indexName, T key, PageOffsetReference reference) throws DuplicateKeyException {
         BPTreeIndex<T> index = indexes.get(indexName);
         if (index == null) {
-            throw new IllegalArgumentException("Index not found: " + indexName);
+            throw new IllegalArgumentException(INDEX_NOT_FOUND + indexName);
         }
         return index.insert(key, reference);
     }
@@ -71,7 +73,7 @@ public class BPTreeIndexManager<T extends Comparable<T>> {
     public boolean insert(String indexName, IndexEntry<T> indexEntry) throws DuplicateKeyException {
         BPTreeIndex<T> index = indexes.get(indexName);
         if (index == null) {
-            throw new IllegalArgumentException("Index not found: " + indexName);
+            throw new IllegalArgumentException(INDEX_NOT_FOUND + indexName);
         }
         return index.insert(indexEntry.key(), indexEntry.reference());
     }
@@ -89,7 +91,7 @@ public class BPTreeIndexManager<T extends Comparable<T>> {
     public List<PageOffsetReference> search(String indexName, T key) {
         BPTreeIndex<T> index = indexes.get(indexName);
         if (index == null) {
-            throw new IllegalArgumentException("Index not found: " + indexName);
+            throw new IllegalArgumentException(INDEX_NOT_FOUND + indexName);
         }
         return index.search(key);
     }
@@ -107,7 +109,7 @@ public class BPTreeIndexManager<T extends Comparable<T>> {
     public List<PageOffsetReference> search(String indexName, IndexEntry<T> indexEntry) {
         BPTreeIndex<T> index = indexes.get(indexName);
         if (index == null) {
-            throw new IllegalArgumentException("Index not found: " + indexName);
+            throw new IllegalArgumentException(INDEX_NOT_FOUND + indexName);
         }
         return index.search(indexEntry.key());
     }
@@ -126,7 +128,7 @@ public class BPTreeIndexManager<T extends Comparable<T>> {
     public Map<T, List<PageOffsetReference>> rangeSearch(String indexName, T lowerBound, T upperBound) {
         BPTreeIndex<T> index = indexes.get(indexName);
         if (index == null) {
-            throw new IllegalArgumentException("Index not found: " + indexName);
+            throw new IllegalArgumentException(INDEX_NOT_FOUND + indexName);
         }
         return index.rangeSearch(lowerBound, upperBound);
     }
