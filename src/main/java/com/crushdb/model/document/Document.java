@@ -1,4 +1,4 @@
-package com.crushdb.model;
+package com.crushdb.model.document;
 
 import com.crushdb.storageengine.page.Page;
 

@@ -1,7 +1,7 @@
 package com.crushdb.index;
 
 import com.crushdb.index.btree.*;
-import com.crushdb.model.Document;
+import com.crushdb.model.document.Document;
 import com.crushdb.storageengine.page.Page;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;

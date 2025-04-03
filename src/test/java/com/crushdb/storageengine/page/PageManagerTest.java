@@ -1,7 +1,7 @@
 package com.crushdb.storageengine.page;
 
 import com.crushdb.index.btree.PageOffsetReference;
-import com.crushdb.model.Document;
+import com.crushdb.model.document.Document;
 import org.junit.jupiter.api.*;
 
 import static org.junit.jupiter.api.Assertions.*;

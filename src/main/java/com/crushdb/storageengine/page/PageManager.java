@@ -2,7 +2,7 @@ package com.crushdb.storageengine.page;
 
 import com.crushdb.index.btree.PageOffsetReference;
 import com.crushdb.logger.CrushDBLogger;
-import com.crushdb.model.Document;
+import com.crushdb.model.document.Document;
 import com.crushdb.storageengine.config.ConfigManager;
 import com.crushdb.storageengine.StorageEngine;
 import com.crushdb.index.BPTreeIndexManager;

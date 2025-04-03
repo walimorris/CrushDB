@@ -1,7 +1,7 @@
 package com.crushdb.storageengine.page;
 
-import com.crushdb.model.BsonValue;
-import com.crushdb.model.Document;
+import com.crushdb.model.document.BsonValue;
+import com.crushdb.model.document.Document;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;

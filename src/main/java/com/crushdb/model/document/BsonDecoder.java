@@ -1,4 +1,4 @@
-package com.crushdb.model;
+package com.crushdb.model.document;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

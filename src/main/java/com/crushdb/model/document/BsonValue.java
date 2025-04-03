@@ -1,4 +1,4 @@
-package com.crushdb.model;
+package com.crushdb.model.document;
 
 /**
  * Represents a BSON value that consists of a {@link BsonType} indicating the type of the value
