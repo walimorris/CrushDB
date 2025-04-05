@@ -1,6 +1,7 @@
 package com.crushdb.index;
 
 import com.crushdb.index.btree.*;
+import com.crushdb.model.document.BsonType;
 import com.crushdb.model.document.Document;
 import com.crushdb.storageengine.page.Page;
 import org.junit.jupiter.api.Test;
@@ -14,9 +15,9 @@ class BPTreeTest {
 
     @Test
     void insertUniqueASC() {
-        BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        indexManager.createIndex("fruit_index", "fruit_name", true, 3, SortOrder.ASC);
-        BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
+        BPTreeIndexManager indexManager = new BPTreeIndexManager();
+        indexManager.createIndex(BsonType.STRING, "Food","fruit_index", "fruit_name", true, 3, SortOrder.ASC);
+        BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
         assertAll(
                 () -> assertTrue(fruitIndex.insert("Apple", new PageOffsetReference(1L, 22))),
@@ -34,9 +35,9 @@ class BPTreeTest {
 
     @Test
     void searchUniqueASC() {
-        BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        indexManager.createIndex("fruit_index", "fruit_name",true, 3, SortOrder.ASC);
-        BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
+        BPTreeIndexManager indexManager = new BPTreeIndexManager();
+        indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name",true, 3, SortOrder.ASC);
+        BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
         fruitIndex.insert("Apple", new PageOffsetReference(1L, 22));
         fruitIndex.insert("Grape", new PageOffsetReference(2L, 23));
@@ -95,9 +96,9 @@ class BPTreeTest {
 
     @Test
     void searchUniqueWithDuplicateASC() {
-        BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        indexManager.createIndex("fruit_index", "fruit_name",true, 3, SortOrder.ASC);
-        BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
+        BPTreeIndexManager indexManager = new BPTreeIndexManager();
+        indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name",true, 3, SortOrder.ASC);
+        BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
         boolean insert0 = fruitIndex.insert("Apple", new PageOffsetReference(1L, 22));
         boolean insert1 = fruitIndex.insert("Grape", new PageOffsetReference(2L, 23));
@@ -146,9 +147,9 @@ class BPTreeTest {
     void searchNonUniqueASC() {
         // non-unique indexes can have multiple references with the same indexed key, in this case the
         // return is a list of references that point to the actual documents
-        BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        indexManager.createIndex("fruit_index", "fruit_name", false, 3, SortOrder.ASC);
-        BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
+        BPTreeIndexManager indexManager = new BPTreeIndexManager();
+        indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name", false, 3, SortOrder.ASC);
+        BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
         // in the case of documents, they will have an indexed field(s) and can contain different fields
         // this test case simply tests for records with the same indexed key, however different references
@@ -212,9 +213,9 @@ class BPTreeTest {
 
     @Test
     void rangeSearchASC() {
-        BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        indexManager.createIndex("country_index", "country", false, 3, SortOrder.ASC);
-        BPTreeIndex<String> countryIndex = indexManager.getIndex("country_index");
+        BPTreeIndexManager indexManager = new BPTreeIndexManager();
+        indexManager.createIndex(BsonType.STRING, "Travel", "country_index", "country", false, 3, SortOrder.ASC);
+        BPTreeIndex<String> countryIndex = (BPTreeIndex<String>) indexManager.getIndex("Travel", "country_index");
 
         boolean insert0 = countryIndex.insert("United States", new PageOffsetReference(1L, 22));
         boolean insert1 = countryIndex.insert("United Kingdom", new PageOffsetReference(2L, 23));
@@ -262,9 +263,9 @@ class BPTreeTest {
 
     @Test
     void insertUniqueDESC() {
-        BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        indexManager.createIndex("fruit_index", "fruit_name",  true, 3, SortOrder.DESC);
-        BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
+        BPTreeIndexManager indexManager = new BPTreeIndexManager();
+        indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name",  true, 3, SortOrder.DESC);
+        BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
         assertAll(
                 () -> assertTrue(fruitIndex.insert("Apple", new PageOffsetReference(1L, 22))),
@@ -282,9 +283,9 @@ class BPTreeTest {
 
     @Test
     void searchUniqueDESC() {
-        BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        indexManager.createIndex("fruit_index", "fruit_name", true, 5, SortOrder.DESC);
-        BPTreeIndex<String> fruitIndex = indexManager.getIndex("fruit_index");
+        BPTreeIndexManager indexManager = new BPTreeIndexManager();
+        indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name", true, 5, SortOrder.DESC);
+        BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
         fruitIndex.insert("Apple", new PageOffsetReference(1L, 22));
         fruitIndex.insert("Grape", new PageOffsetReference(2L, 23));
@@ -370,8 +371,8 @@ class BPTreeTest {
     void searchNonUniqueASCDocuments() {
         // in the index manager we should probable have some schema parsing tool that can parse the
         // values to inject the index data type on creation
-        BPTreeIndexManager<String> indexManager = new BPTreeIndexManager<>();
-        BPTreeIndex<String> vehicleMakeIndex = indexManager.createIndex("vehicle_make_index", "vehicle_make", false, 3, SortOrder.ASC);
+        BPTreeIndexManager indexManager = new BPTreeIndexManager();
+        BPTreeIndex<String> vehicleMakeIndex = indexManager.createIndex(BsonType.STRING, "Cars", "vehicle_make_index", "vehicle_make", false, 3, SortOrder.ASC);
 
         Page page = new Page(1L);
 

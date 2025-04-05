@@ -3,6 +3,7 @@ package com.crushdb.index;
 import com.crushdb.index.btree.BPTree;
 import com.crushdb.index.btree.PageOffsetReference;
 import com.crushdb.index.btree.SortOrder;
+import com.crushdb.model.document.BsonType;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,11 @@ public class BPTreeIndex<T extends Comparable<T>> {
     private final BPTree<T> tree;
 
     /**
+     * The name of the Crate the index belongs to.
+     */
+    private final String crateName;
+
+    /**
      * The name of the tree-based index.
      */
     private final String indexName;
@@ -33,6 +39,8 @@ public class BPTreeIndex<T extends Comparable<T>> {
      */
     private final String fieldName;
 
+    private final BsonType bsonType;
+
     /**
      * Indicates whether the tree index enforces uniqueness for its keys.
      */
@@ -41,13 +49,16 @@ public class BPTreeIndex<T extends Comparable<T>> {
     /**
      * Constructs a {@link BPTreeIndex} with the given configuration.
      *
+     * @param bsonType the index bson type
      * @param indexName name of the tree index
      * @param fieldName name of the field being indexed
      * @param unique does the index enforces uniqueness for keys
      * @param order the order of the tree
      * @param sortOrder the sort order
      */
-    public BPTreeIndex(String indexName, String fieldName, boolean unique, int order, SortOrder sortOrder) {
+    public BPTreeIndex(BsonType bsonType, String crateName, String indexName, String fieldName, boolean unique, int order, SortOrder sortOrder) {
+        this.bsonType = bsonType;
+        this.crateName = crateName;
         this.indexName = indexName;
         this.fieldName = fieldName;
         this.tree = new BPTree<>(order, sortOrder);
@@ -64,8 +75,10 @@ public class BPTreeIndex<T extends Comparable<T>> {
      *
      * @throws DuplicateKeyException if the key already exists in a unique index
      */
-    public boolean insert(T key, PageOffsetReference ref) throws DuplicateKeyException {
-        return tree.insert(key, ref, this.unique);
+    @SuppressWarnings("unchecked")
+    public boolean insert(Comparable<?> key, PageOffsetReference ref) throws DuplicateKeyException {
+        T typedKey = (T) key;
+        return tree.insert(typedKey, ref, this.unique);
     }
 
     /**
@@ -88,8 +101,10 @@ public class BPTreeIndex<T extends Comparable<T>> {
      *
      * @return a list of {@link PageOffsetReference} of page-offset references associated with the key
      */
-    public List<PageOffsetReference> search(T key) {
-        return tree.search(key);
+    @SuppressWarnings("unchecked")
+    public List<PageOffsetReference> search(Comparable<?> key) {
+        T typedKey = (T) key;
+        return tree.search(typedKey);
     }
 
     /**
@@ -114,8 +129,20 @@ public class BPTreeIndex<T extends Comparable<T>> {
      * @return a map where each key within the range is associated with a list of {@link PageOffsetReference},
      *         or {@code null} if no keys fall within the specified range
      */
-    public Map<T, List<PageOffsetReference>> rangeSearch(T lowerBound, T upperBound) {
-        return tree.rangeSearch(lowerBound, upperBound);
+    @SuppressWarnings("unchecked")
+    public Map<T, List<PageOffsetReference>> rangeSearch(Comparable<?> lowerBound, Comparable<?> upperBound) {
+        T lowerBoundKey = (T) lowerBound;
+        T upperBoundKey = (T) upperBound;
+        return tree.rangeSearch(lowerBoundKey, upperBoundKey);
+    }
+
+    /**
+     * Get the name of the crate associated with this instance of the tree index.
+     *
+     * @return the crate name as a {@code String}.
+     */
+    public String getCrateName() {
+        return this.crateName;
     }
 
     /**
@@ -145,8 +172,12 @@ public class BPTreeIndex<T extends Comparable<T>> {
         return this.unique;
     }
 
+    public BsonType bsonType() {
+        return this.bsonType;
+    }
+
     /**
-     * Returns the underlying tree object.
+     * Get the underlying tree object.
      *
      * @return the {@link BPTree} instance backing this index
      */

@@ -28,12 +28,12 @@ package com.crushdb.model.document;
  * </ul>
  */
 public enum BsonType {
-    STRING((byte) 0x01),
-    INT((byte) 0x02),
-    LONG((byte) 0x03),
-    BOOLEAN((byte) 0x08),
-    FLOAT((byte) 0x09),
-    DOUBLE((byte) 0x0A);
+    STRING((byte) 0x01, String.class),
+    INT((byte) 0x02, Integer.class),
+    LONG((byte) 0x03, Long.class),
+    BOOLEAN((byte) 0x08, Boolean.class),
+    FLOAT((byte) 0x09, Float.class),
+    DOUBLE((byte) 0x0A, Double.class);
 
     /**
      * Represents the unique byte code associated with a specific BSON type. Each BSON type is
@@ -45,14 +45,17 @@ public enum BsonType {
      */
     private final byte code;
 
+    private final Class<? extends Comparable<?>> javaType;
+
     /**
      * Constructs a {@code BsonType} with the specified byte code.
      *
      * @param code the unique byte code representing the BSON type. This byte code is used
      *             to identify the type during serialization and deserialization processes
      */
-    BsonType(byte code) {
+    BsonType(byte code, Class<? extends Comparable<?>> javaType) {
         this.code = code;
+        this.javaType = javaType;
     }
 
     /**
@@ -62,6 +65,10 @@ public enum BsonType {
      */
     public byte getCode() {
         return this.code;
+    }
+
+    public Class<? extends Comparable<?>> getJavaType() {
+        return javaType;
     }
 
     /**

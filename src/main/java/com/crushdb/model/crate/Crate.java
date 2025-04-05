@@ -2,6 +2,7 @@ package com.crushdb.model.crate;
 
 import com.crushdb.index.BPTreeIndex;
 import com.crushdb.index.btree.SortOrder;
+import com.crushdb.model.document.BsonType;
 import com.crushdb.model.document.BsonValue;
 import com.crushdb.model.document.Document;
 import com.crushdb.storageengine.StorageEngine;
@@ -64,7 +65,7 @@ public class Crate {
         int hit = 0;
         for (BPTreeIndex<?> index : this.crateIndexes) {
             if (index.getFieldName().contains(field)) {
-                documents.addAll(storageEngine.find(field, index, value));
+                documents.addAll(storageEngine.find(index.getCrateName(), field, index, value));
                 hit++;
             }
         }
@@ -79,13 +80,25 @@ public class Crate {
      * Creates an index for a specified field in the storage engine.
      * This method delegates the index creation to the underlying storage engine.
      *
+     * @param bsonType the index bson type
      * @param indexName the name of the index to be created, used for identification
      * @param fieldName the name of the field on which the index will be created
      * @param unique a flag indicating whether the index should enforce uniqueness for the indexed field
      * @param order the order of the underlying tree
      * @param sortOrder the sort order for the index, either ascending or descending, represented by {@link SortOrder}
      */
-    public void createIndex(String indexName, String fieldName, boolean unique, int order, SortOrder sortOrder) {
-        storageEngine.createIndex(indexName, fieldName, unique, order, sortOrder);
+    public <T extends Comparable<T>> void createIndex(BsonType bsonType, String indexName, String fieldName, boolean unique, int order, SortOrder sortOrder) {
+        Class<? extends Comparable<?>> clazz = bsonType.getJavaType();
+        BPTreeIndex<T> index = storageEngine.createIndex(bsonType, this.name, indexName, fieldName, unique, order, sortOrder);
+        this.crateIndexes.add(index);
+    }
+
+    /**
+     * Get Crate name.
+     *
+     * @return {@link String}
+     */
+    public String getName() {
+        return this.name;
     }
 }
