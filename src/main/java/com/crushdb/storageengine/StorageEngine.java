@@ -66,6 +66,9 @@ public class StorageEngine {
      * @return a list of documents that match the specified criteria, or null if no index is provided
      *
      * @throws IllegalArgumentException if the value is null
+     *
+     * TODO: validate that order is kept (sort order - descending/ascending) we do not want to conduct another
+     * TODO: sort on the results
      */
     public List<Document> find(String crateName, BPTreeIndex<?> index, BsonValue value) throws IllegalArgumentException {
         if (value == null) {
