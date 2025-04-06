@@ -15,7 +15,6 @@ import java.util.Collections;
 
 /**
  * Manages multiple named {@link BPTree } indexes, providing an interface for creation, insertion, and search.
- * TODO: Add crate name for logical grouping
  */
 public class BPTreeIndexManager {
     private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(BPTreeIndexManager.class);
@@ -89,10 +88,15 @@ public class BPTreeIndexManager {
     public <T extends Comparable<T>> boolean insert(String crateName, String indexName, T key, PageOffsetReference reference) throws DuplicateKeyException {
         BPTreeIndex<?> rawIndex = getIndex(crateName, indexName);
         if (rawIndex == null) {
+            LOGGER.error(String.format("'%s' index not found for inserting key: '%s'", indexName, key), IllegalArgumentException.class.getName());
             throw new IllegalArgumentException(INDEX_NOT_FOUND + indexName);
         }
 
         if (!rawIndex.bsonType().equals(key)) {
+            LOGGER.error(String.format("Mismatched key type. Expected: " +
+                    rawIndex.bsonType() + ", Provided: " + key.getClass().getSimpleName()),
+                    IllegalArgumentException.class.getName());
+
             throw new IllegalArgumentException("Mismatched key type. Expected: " +
                     rawIndex.bsonType() + ", Provided: " + key.getClass().getSimpleName());
         }
@@ -116,6 +120,8 @@ public class BPTreeIndexManager {
     public boolean insert(String crateName, String indexName, IndexEntry<?> indexEntry) throws DuplicateKeyException {
         BPTreeIndex<?> index = getIndex(crateName, indexName);
         if (index == null) {
+            LOGGER.error(String.format("'%s' index not found for inserting key: '%s'", indexName, indexEntry.key()),
+                    IllegalArgumentException.class.getName());
             throw new IllegalArgumentException(INDEX_NOT_FOUND + indexName);
         }
         return index.insert(indexEntry.key(), indexEntry.reference());
@@ -135,6 +141,8 @@ public class BPTreeIndexManager {
     public List<PageOffsetReference> search(String crateName, String indexName, Comparable<?> key) {
         BPTreeIndex<?> index = getIndex(crateName, indexName);
         if (index == null) {
+            LOGGER.error(String.format("'%s' index not found for inserting key: '%s'", indexName, key),
+                    IllegalArgumentException.class.getName());
             throw new IllegalArgumentException(INDEX_NOT_FOUND + indexName);
         }
         return index.search(key); // This needs to accept Comparable<?> in BPTreeIndex
@@ -155,6 +163,8 @@ public class BPTreeIndexManager {
     public <T extends Comparable<T>> List<PageOffsetReference> search(String crateName, String indexName, IndexEntry<T> indexEntry) {
         BPTreeIndex<T> index = (BPTreeIndex<T>) getIndex(crateName, indexName);
         if (index == null) {
+            LOGGER.error(String.format("'%s' index not found for inserting key: '%s'", indexName, indexEntry.key()),
+                    IllegalArgumentException.class.getName());
             throw new IllegalArgumentException(INDEX_NOT_FOUND + indexName);
         }
         return index.search(indexEntry.key());
@@ -176,6 +186,8 @@ public class BPTreeIndexManager {
     public Map<?, List<PageOffsetReference>> rangeSearch(String crateName, String indexName, Comparable<?> lowerBound, Comparable<?> upperBound) {
         BPTreeIndex<?> index = getIndex(crateName, indexName);
         if (index == null) {
+            LOGGER.error(String.format("'%s' index not found for inserting keys: '%s' and '%s'", indexName, lowerBound, upperBound),
+                    IllegalArgumentException.class.getName());
             throw new IllegalArgumentException(INDEX_NOT_FOUND + indexName);
         }
         return index.rangeSearch(lowerBound, upperBound);

@@ -63,8 +63,8 @@ public class DatabaseInitializer {
                 LOGGER.info("File already exists: " + path, null);
             }
         } catch (IOException e) {
-            LOGGER.error("Unable to create file on path " + path + ": " + e, RuntimeException.class.getName());
-            throw new RuntimeException(e);
+            LOGGER.error("Unable to create file on path " + path + ": " + e, IllegalArgumentException.class.getName());
+            throw new IllegalArgumentException(e);
         }
     }
 }
