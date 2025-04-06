@@ -44,7 +44,7 @@ public class Crate {
         // the storage engine handles adding documents to the respective index, however
         // crates store the indexes relevant to each crate
         if (!indexes.isEmpty()) {
-            return storageEngine.insert(document, indexes);
+            return storageEngine.insert(document, this.name);
         }
         return null;
     }
@@ -57,6 +57,8 @@ public class Crate {
      * @param field the name of the field to search for
      * @param value the value of the field to match
      * @return a list of documents that match the specified field and value
+     * // TODO: we may need to hold single indexes and compound indexes in separate sets
+     * // TODO: single indexes are only supported right now
      */
     public List<Document> find(String field, BsonValue value) {
         // we can delegate which documents to return to the QueryHandler based on the query.
@@ -64,10 +66,30 @@ public class Crate {
         List<Document> documents = new ArrayList<>();
         int hit = 0;
         for (BPTreeIndex<?> index : this.crateIndexes) {
-            if (index.getFieldName().contains(field)) {
-                documents.addAll(storageEngine.find(index.getCrateName(), field, index, value));
-                hit++;
+            // there can be different options here:
+            // single index (i.e. make_index)
+            // compound index (i.e. make_model_index or model_make_index)
+            // in either case, if we're just searching on the field, the
+            // index will be found, but we want the most optimal index to use
+            // in this case, it's a single field index and we want that, if it
+            // is the second field in a compound index, it'll be expensive.
+            // however, if it was the left most field, that's okay.
+            // "make_index" -> [make], [index], "make_model_index" -> [make], [model], [index]
+            String[] parts = index.getIndexName().split("_");
+            if (parts.length == 2) { // single indexed field, includes "index"
+                if (index.getFieldName().contains(field) && parts[0].equals(field)) {
+                    documents.addAll(storageEngine.find(index.getCrateName(), index, value));
+                    hit++;
+                    break;
+                }
             }
+//            if (parts.length == 3) { // compound indexed fields, includes "index"
+//                if (index.getFieldName().startsWith(field)) {
+//                    documents.addAll(storageEngine.find(index.getCrateName(), index, field, value));
+//                    hit++;
+//                    break;
+//                }
+//            }
         }
         // no index hits - run a scan!
         if (hit == 0) {

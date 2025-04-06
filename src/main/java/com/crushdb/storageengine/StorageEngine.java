@@ -17,6 +17,7 @@ import java.util.Map;
 
 public class StorageEngine {
     private final PageManager pageManager;
+
     private final BPTreeIndexManager indexManager;
 
     public StorageEngine(PageManager pageManager, BPTreeIndexManager indexManager) {
@@ -33,19 +34,18 @@ public class StorageEngine {
      * that match the corresponding index name.
      *
      * @param document the document to be inserted; must not be null
-     * @param indexes a list of BPTreeIndex objects to index the document; must not be null
      *
      * @return the inserted document if the operation is successful, or null if the insertion fails
      *
      * @see PageManager
      * @see BPTreeIndexManager
      */
-    public Document insert(Document document, List<BPTreeIndex<?>> indexes) {
+    public Document insert(Document document, String crateName) {
         Document insertedDocument = pageManager.insertDocument(document);
         if (insertedDocument != null) {
             // index the document - any fields that matches an index name will be indexed
             // so even _id will be indexed on the _id_index
-            for (BPTreeIndex<?> index : indexes) {
+            for (BPTreeIndex<?> index : indexManager.getAllIndexesFromCrate(crateName)) {
                 IndexEntry<?> entry = IndexEntryBuilder.fromDocument(document, index);
                 indexManager.insert(index.getCrateName(), index.getIndexName(), entry);
             }
@@ -60,7 +60,6 @@ public class StorageEngine {
      * efficiently. If the value is null, an exception is thrown.
      *
      * @param crateName the name of the crate
-     * @param field the name of the field to search on; must not be null or empty
      * @param index the BPTreeIndex object to use for searching; can be null if no index is available
      * @param value the value to search for within the specified field; must not be null
      *
@@ -68,9 +67,9 @@ public class StorageEngine {
      *
      * @throws IllegalArgumentException if the value is null
      */
-    public List<Document> find(String crateName, String field, BPTreeIndex<?> index, BsonValue value) throws IllegalArgumentException {
+    public List<Document> find(String crateName, BPTreeIndex<?> index, BsonValue value) throws IllegalArgumentException {
         if (value == null) {
-            throw new IllegalArgumentException("Value is empty for search on crate: " + crateName + ", on field: " + field);
+            throw new IllegalArgumentException("Value is empty for search on crate: " + crateName + ", on value: " + value);
         }
         // use the index if it exists
         if (index != null) {
@@ -85,7 +84,6 @@ public class StorageEngine {
      * the specified lower and upper bounds. Both bounds are inclusive.
      *
      * @param crateName the name of the crate to search within; must not be null or empty
-     * @param field the name of the field to search on; must not be null or empty
      * @param index the BPTreeIndex object to use for searching; can be null if no index is available
      * @param lowerBound the lower bound of the range; must not be null
      * @param upperBound the upper bound of the range; must not be null
@@ -94,9 +92,9 @@ public class StorageEngine {
      *
      * @throws IllegalArgumentException if either lowerBound or upperBound is null
      */
-    public List<Document> rangeFind(String crateName, String field, BPTreeIndex<?> index, BsonValue lowerBound, BsonValue upperBound) throws IllegalArgumentException {
+    public List<Document> rangeFind(String crateName, BPTreeIndex<?> index, BsonValue lowerBound, BsonValue upperBound) throws IllegalArgumentException {
         if (lowerBound == null || upperBound == null) {
-            throw new IllegalArgumentException("Value is empty for search on crate: " + crateName + ", on field: " + field);
+            throw new IllegalArgumentException("Value is empty for search on crate: " + crateName + ", on field: " + index.getFieldName());
         }
         if (index != null) {
             return rangeFindWithTypedKey(index, lowerBound, upperBound);
@@ -177,5 +175,13 @@ public class StorageEngine {
             results.addAll(documents);
         }
         return results;
+    }
+
+    public PageManager getPageManager() {
+        return pageManager;
+    }
+
+    public BPTreeIndexManager getIndexManager() {
+        return indexManager;
     }
 }

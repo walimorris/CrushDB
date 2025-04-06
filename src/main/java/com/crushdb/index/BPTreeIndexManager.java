@@ -3,6 +3,7 @@ package com.crushdb.index;
 import com.crushdb.index.btree.BPTree;
 import com.crushdb.index.btree.PageOffsetReference;
 import com.crushdb.index.btree.SortOrder;
+import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.model.crate.Crate;
 import com.crushdb.model.document.BsonType;
 
@@ -17,6 +18,9 @@ import java.util.Collections;
  * TODO: Add crate name for logical grouping
  */
 public class BPTreeIndexManager {
+    private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(BPTreeIndexManager.class);
+
+    private static BPTreeIndexManager instance;
 
     /**
      * A map that stores all indexes managed by the BPTreeIndexManager, organized by Crate names
@@ -31,9 +35,24 @@ public class BPTreeIndexManager {
      *
      * @see Crate
      */
-    private final Map<String, Map<String, BPTreeIndex<?>>> crateIndexes = new HashMap<>();
+    private Map<String, Map<String, BPTreeIndex<?>>> crateIndexes;
 
     private static final String INDEX_NOT_FOUND = "Index not found: ";
+
+    private BPTreeIndexManager() {
+        init();
+    }
+
+    public static synchronized BPTreeIndexManager getInstance() {
+        if (instance == null) {
+            instance = new BPTreeIndexManager();
+        }
+        return instance;
+    }
+
+    private void init() {
+        this.crateIndexes = new HashMap<>();
+    }
 
     /**
      * Creates a new index and stores it by name inside the respective Crate.
@@ -173,6 +192,17 @@ public class BPTreeIndexManager {
             allIndexes.addAll(this.crateIndexes.get(crate).values());
         }
         return allIndexes;
+    }
+
+    public List<BPTreeIndex<?>> getAllIndexesFromCrate(String crateName) {
+        List<BPTreeIndex<?>> allIndexesFromCrate = new ArrayList<>();
+        for (String crate : this.crateIndexes.keySet()) {
+            if (crate.equals(crateName)) {
+                allIndexesFromCrate.addAll(this.crateIndexes.get(crate).values());
+                break;
+            }
+        }
+        return allIndexesFromCrate;
     }
 
     /**
