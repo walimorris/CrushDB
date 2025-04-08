@@ -15,28 +15,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class StorageEngine {
-    private final PageManager pageManager;
-
-    private final BPTreeIndexManager indexManager;
-
-    public StorageEngine(PageManager pageManager, BPTreeIndexManager indexManager) {
-        this.pageManager = pageManager;
-        this.indexManager = indexManager;
-    }
+public record StorageEngine(PageManager pageManager, BPTreeIndexManager indexManager) {
 
     /**
      * Inserts a document into the storage engine and indexes it using the specified indexes.
-     *
+     * <p>
      * The method attempts to insert the document into the underlying storage through the page
      * manager. If the insertion is successful, it proceeds to index the document using the list
      * of available indexes. Each index is updated with the fields of the inserted document
      * that match the corresponding index name.
      *
      * @param document the document to be inserted; must not be null
-     *
      * @return the inserted document if the operation is successful, or null if the insertion fails
-     *
      * @see PageManager
      * @see BPTreeIndexManager
      */
@@ -60,15 +50,13 @@ public class StorageEngine {
      * efficiently. If the value is null, an exception is thrown.
      *
      * @param crateName the name of the crate
-     * @param index the BPTreeIndex object to use for searching; can be null if no index is available
-     * @param value the value to search for within the specified field; must not be null
-     *
+     * @param index     the BPTreeIndex object to use for searching; can be null if no index is available
+     * @param value     the value to search for within the specified field; must not be null
      * @return a list of documents that match the specified criteria, or null if no index is provided
-     *
      * @throws IllegalArgumentException if the value is null
-     *
-     * TODO: validate that order is kept (sort order - descending/ascending) we do not want to conduct another
-     * TODO: sort on the results
+     *                                  <p>
+     *                                  TODO: validate that order is kept (sort order - descending/ascending) we do not want to conduct another
+     *                                  TODO: sort on the results
      */
     public List<Document> find(String crateName, BPTreeIndex<?> index, BsonValue value) throws IllegalArgumentException {
         if (value == null) {
@@ -86,13 +74,11 @@ public class StorageEngine {
      * If a valid index is provided, this method retrieves all documents where the field's value is within
      * the specified lower and upper bounds. Both bounds are inclusive.
      *
-     * @param crateName the name of the crate to search within; must not be null or empty
-     * @param index the BPTreeIndex object to use for searching; can be null if no index is available
+     * @param crateName  the name of the crate to search within; must not be null or empty
+     * @param index      the BPTreeIndex object to use for searching; can be null if no index is available
      * @param lowerBound the lower bound of the range; must not be null
      * @param upperBound the upper bound of the range; must not be null
-     *
      * @return a list of documents that match the specified range criteria, or null if no index is provided
-     *
      * @throws IllegalArgumentException if either lowerBound or upperBound is null
      */
     public List<Document> rangeFind(String crateName, BPTreeIndex<?> index, BsonValue lowerBound, BsonValue upperBound) throws IllegalArgumentException {
@@ -110,8 +96,7 @@ public class StorageEngine {
      * This method filters documents based on the specified field name and value.
      *
      * @param fieldName the name of the field to filter documents by
-     * @param value the value to match against the specified field; must not be null
-     *
+     * @param value     the value to match against the specified field; must not be null
      * @return a list of documents that match the specified field and value, or an empty list if no matches are found
      */
     public List<Document> scan(String fieldName, BsonValue value) {

@@ -70,7 +70,7 @@ class StorageEngineTest {
     void createIndex() {
         storageEngine.createIndex(BsonType.STRING, "Vehicle", "make_index", "vehicle_make", false, 3, SortOrder.ASC);
         storageEngine.createIndex(BsonType.LONG, "Vehicle", "id_index", "_id", false, 3, SortOrder.ASC);
-        BPTreeIndexManager storageEngineIndexManager = storageEngine.getIndexManager();
+        BPTreeIndexManager storageEngineIndexManager = storageEngine.indexManager();
         assertEquals(2, storageEngineIndexManager.getAllIndexesFromCrate("Vehicle").size());
         assertNotNull(storageEngineIndexManager.getIndex("Vehicle", "make_index"));
         assertNotNull(storageEngineIndexManager.getIndex("Vehicle", "id_index"));
@@ -103,7 +103,7 @@ class StorageEngineTest {
         // the index corresponding index(es) will be found in the crate's find method before passing to
         // the storage engine
         BPTreeIndex<?> index = null;
-        List<BPTreeIndex<?>> indexes = storageEngine.getIndexManager().getAllIndexesFromCrate("Vehicle");
+        List<BPTreeIndex<?>> indexes = storageEngine.indexManager().getAllIndexesFromCrate("Vehicle");
         for (BPTreeIndex<?> i : indexes) {
             if (i.getIndexName().equals("make_index")) {
                 index = i;
@@ -112,8 +112,8 @@ class StorageEngineTest {
         }
 
         BPTreeIndex<?> id_index = null;
-        List<BPTreeIndex<?>> moreIndexes = storageEngine.getIndexManager().getAllIndexesFromCrate("Vehicle");
-        for (BPTreeIndex<?> i : indexes) {
+        List<BPTreeIndex<?>> moreIndexes = storageEngine.indexManager().getAllIndexesFromCrate("Vehicle");
+        for (BPTreeIndex<?> i : moreIndexes) {
             if (i.getIndexName().equals("id_index")) {
                 id_index = i;
                 break;
@@ -137,7 +137,7 @@ class StorageEngineTest {
     @Test
     void rangeFind() {
         BPTreeIndex<?> index = null;
-        List<BPTreeIndex<?>> indexes = storageEngine.getIndexManager().getAllIndexesFromCrate("Vehicle");
+        List<BPTreeIndex<?>> indexes = storageEngine.indexManager().getAllIndexesFromCrate("Vehicle");
         for (BPTreeIndex<?> i : indexes) {
             if (i.getIndexName().equals("make_index")) {
                 index = i;
