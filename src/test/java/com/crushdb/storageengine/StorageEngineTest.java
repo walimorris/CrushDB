@@ -3,6 +3,7 @@ package com.crushdb.storageengine;
 import com.crushdb.index.BPTreeIndex;
 import com.crushdb.index.BPTreeIndexManager;
 import com.crushdb.index.btree.SortOrder;
+import com.crushdb.model.crate.Crate;
 import com.crushdb.model.document.BsonType;
 import com.crushdb.model.document.BsonValue;
 import com.crushdb.model.document.Document;
@@ -23,6 +24,7 @@ class StorageEngineTest {
     private static Document document2;
     private static Document document3;
     private static Document document4;
+    private static Document document5;
 
     @BeforeAll
     public static void setUp() {
@@ -63,6 +65,11 @@ class StorageEngineTest {
         document4.put("vehicle_body_style", "SUV");
         document4.put("vehicle_price", 18000.00);
         document4.put("hasHeating", true);
+
+        document5 = new Document(987654321L);
+        document5.put("device_model", "Raspberry Pi");
+        document5.put("device_name", "Locust");
+        document5.put("device_serial_number", 232345455L);
     }
 
     @Test
@@ -135,6 +142,7 @@ class StorageEngineTest {
     }
 
     @Test
+    @Order(4)
     void rangeFind() {
         BPTreeIndex<?> index = null;
         List<BPTreeIndex<?>> indexes = storageEngine.indexManager().getAllIndexesFromCrate("Vehicle");
@@ -155,5 +163,14 @@ class StorageEngineTest {
 
     @Test
     void scan() {
+        Crate crate = new Crate("Devices", storageEngine);
+        Document resultDocument = storageEngine.insert(document5, crate.getName());
+        List<Document> scanResult = storageEngine.scan(crate.getName(), "device_model", BsonValue.ofString("Raspberry Pi"));
+        // at this point the document is in memory because it has been recently inserted, but what about when it gets flushed?
+        // the storage engine will need to, not only search memory, but then search db file on disk. Which makes the scan very
+        // expensive. In any case, the data will be found.
+        assertEquals(1, scanResult.size());
+        assertEquals(scanResult.get(0), document5);
+        scanResult.get(0).prettyPrint();
     }
 }

@@ -93,7 +93,7 @@ public class Crate {
         }
         // no index hits - run a scan!
         if (hit == 0) {
-            documents.addAll(storageEngine.scan(field, value));
+            documents.addAll(storageEngine.scan(this.name, field, value));
         }
         return documents;
     }

@@ -6,6 +6,7 @@ import com.crushdb.index.IndexEntry;
 import com.crushdb.index.IndexEntryBuilder;
 import com.crushdb.index.btree.PageOffsetReference;
 import com.crushdb.index.btree.SortOrder;
+import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.model.document.BsonType;
 import com.crushdb.model.document.BsonValue;
 import com.crushdb.model.document.Document;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 public record StorageEngine(PageManager pageManager, BPTreeIndexManager indexManager) {
+    private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(StorageEngine.class);
 
     /**
      * Inserts a document into the storage engine and indexes it using the specified indexes.
@@ -35,6 +37,7 @@ public record StorageEngine(PageManager pageManager, BPTreeIndexManager indexMan
         if (insertedDocument != null) {
             // index the document - any fields that matches an index name will be indexed
             // so even _id will be indexed on the _id_index
+            // none indexed document are only added to the page - accessible during expensive scans
             for (BPTreeIndex<?> index : indexManager.getAllIndexesFromCrate(crateName)) {
                 IndexEntry<?> entry = IndexEntryBuilder.fromDocument(document, index);
                 indexManager.insert(index.getCrateName(), index.getIndexName(), entry);
@@ -99,7 +102,9 @@ public record StorageEngine(PageManager pageManager, BPTreeIndexManager indexMan
      * @param value     the value to match against the specified field; must not be null
      * @return a list of documents that match the specified field and value, or an empty list if no matches are found
      */
-    public List<Document> scan(String fieldName, BsonValue value) {
+    public List<Document> scan(String crateName, String fieldName, BsonValue value) {
+        LOGGER.info(String.format("An expensive scan is being conducted on field '%s' in crate: '%s', recommend creating index",
+                fieldName, crateName), null);
         return this.pageManager.getAllInMemoryPages()
                 .stream()
                 .flatMap(page -> page.getDocuments().stream())
@@ -107,6 +112,7 @@ public record StorageEngine(PageManager pageManager, BPTreeIndexManager indexMan
                 .toList();
         // TODO: add persisted documents too. This is SO EXPENSIVE >>> How can i make this
         // TODO: more proficient?
+        // TODO: add some metadata in results - was it a scan, indexed search, etc. for query engine/planner
     }
 
     public <T extends Comparable<T>> BPTreeIndex<T> createIndex(BsonType bsonType, String crateName, String indexName, String fieldName, boolean unique, int order, SortOrder sortOrder) {
