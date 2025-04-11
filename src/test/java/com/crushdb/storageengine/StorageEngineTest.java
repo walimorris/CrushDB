@@ -86,10 +86,10 @@ class StorageEngineTest {
     @Test
     @Order(2)
     void insert() {
-        Document result1 = storageEngine.insert(document1, "Vehicle");
-        Document result2 = storageEngine.insert(document2, "Vehicle");
-        Document result3 = storageEngine.insert(document3, "Vehicle");
-        Document result4 = storageEngine.insert(document4, "Vehicle");
+        Document result1 = storageEngine.insert("Vehicle", document1);
+        Document result2 = storageEngine.insert("Vehicle", document2);
+        Document result3 = storageEngine.insert("Vehicle", document3);
+        Document result4 = storageEngine.insert("Vehicle", document4);
 
         assertAll(
                 () -> assertNotNull(result1),
@@ -164,11 +164,12 @@ class StorageEngineTest {
     @Test
     void scan() {
         Crate crate = new Crate("Devices", storageEngine);
-        Document resultDocument = storageEngine.insert(document5, crate.getName());
+        Document resultDocument = storageEngine.insert(crate.getName(), document5);
         List<Document> scanResult = storageEngine.scan(crate.getName(), "device_model", BsonValue.ofString("Raspberry Pi"));
         // at this point the document is in memory because it has been recently inserted, but what about when it gets flushed?
         // the storage engine will need to, not only search memory, but then search db file on disk. Which makes the scan very
         // expensive. In any case, the data will be found.
+        assertEquals(document5, resultDocument);
         assertEquals(1, scanResult.size());
         assertEquals(scanResult.get(0), document5);
         scanResult.get(0).prettyPrint();

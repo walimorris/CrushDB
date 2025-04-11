@@ -44,9 +44,9 @@ public class Crate {
         // the storage engine handles adding documents to the respective index, however
         // crates store the indexes relevant to each crate
         if (!indexes.isEmpty()) {
-            return storageEngine.insert(document, this.name);
+            return storageEngine.insert(this.name, document, indexes);
         }
-        return null;
+        return storageEngine.insert(this.name, document);
     }
 
     /**

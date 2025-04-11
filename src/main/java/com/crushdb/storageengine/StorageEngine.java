@@ -32,7 +32,7 @@ public record StorageEngine(PageManager pageManager, BPTreeIndexManager indexMan
      * @see PageManager
      * @see BPTreeIndexManager
      */
-    public Document insert(Document document, String crateName) {
+    public Document insert(String crateName, Document document) {
         Document insertedDocument = pageManager.insertDocument(document);
         if (insertedDocument != null) {
             // index the document - any fields that matches an index name will be indexed
@@ -45,6 +45,15 @@ public record StorageEngine(PageManager pageManager, BPTreeIndexManager indexMan
             return insertedDocument;
         }
         return null;
+    }
+
+    public Document insert(String crateName, Document document, List<BPTreeIndex<?>> indexes) {
+        Document insertedDocument = pageManager.insertDocument(document);
+        for (BPTreeIndex<?> index: indexes) {
+            IndexEntry<?> entry = IndexEntryBuilder.fromDocument(document, index);
+            indexManager.insert(crateName, index.getIndexName(), entry);
+        }
+        return insertedDocument;
     }
 
     /**
