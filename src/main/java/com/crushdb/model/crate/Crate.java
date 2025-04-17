@@ -7,10 +7,7 @@ import com.crushdb.model.document.BsonValue;
 import com.crushdb.model.document.Document;
 import com.crushdb.storageengine.StorageEngine;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class Crate {
     private final String name;
@@ -113,6 +110,24 @@ public class Crate {
         Class<? extends Comparable<?>> clazz = bsonType.getJavaType();
         BPTreeIndex<T> index = storageEngine.createIndex(bsonType, this.name, indexName, fieldName, unique, order, sortOrder);
         this.crateIndexes.add(index);
+    }
+
+    /**
+     * Retrieves the index corresponding to the specified field name, if one exists.
+     * The method searches through the crate's indexes and returns an {@link Optional}
+     * containing the index if a match is found, or an empty {@code Optional} otherwise.
+     *
+     * @param fieldName the name of the field for which the index is being retrieved
+     * @return an {@link Optional} containing the {@link BPTreeIndex} if it exists,
+     *         or an empty {@code Optional} if no matching index is found
+     */
+    public Optional<BPTreeIndex<?>> getIndex(String fieldName) {
+        for (BPTreeIndex<?> index : this.crateIndexes) {
+            if (index.getFieldName().equals(fieldName)) {
+                return Optional.of(index);
+            }
+        }
+        return Optional.empty();
     }
 
     /**

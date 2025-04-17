@@ -177,4 +177,28 @@ public record BsonValue(BsonType bsonType, Object value) {
             default -> throw new UnsupportedOperationException("Not Supported.");
         };
     }
+
+    /**
+     * Converts a provided Java object into a corresponding {@link BsonValue}.
+     *
+     * @param o the object to be converted into a {@link BsonValue}
+     *
+     * @return a {@link BsonValue} representation of the provided object
+     * @throws IllegalArgumentException if the provided object is of an unsupported type
+     */
+    public static BsonValue fromObject(Object o) throws IllegalArgumentException {
+        if (o instanceof Integer) {
+            return BsonValue.ofInteger((Integer) o);
+        } else if (o instanceof Long) {
+            return BsonValue.ofLong((Long) o);
+        } else if (o instanceof Double) {
+            return BsonValue.ofDouble((Double) o);
+        } else if (o instanceof String) {
+            return BsonValue.ofString((String) o);
+        } else if (o instanceof Boolean) {
+            return BsonValue.ofBoolean((Boolean) o);
+        } else {
+            throw new IllegalArgumentException("Unsupported type: " + o.getClass());
+        }
+    }
 }
