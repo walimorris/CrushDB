@@ -19,7 +19,8 @@ public class CrushCLI {
     }
 
     public void start() {
-        System.out.println("🧃 Welcome to CrushCLI (Type 'exit' to quit)");
+        printBanner();
+        System.out.println("Welcome to CrushCLI (Type 'exit' to quit)");
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
@@ -36,6 +37,17 @@ public class CrushCLI {
                 System.out.println("Error: " + e.getMessage());
             }
         }
+    }
+
+    private void printBanner() {
+        System.out.println(" :::===== :::====  :::  === :::===  :::  === :::====  :::==== ");
+        System.out.println(" :::      :::  === :::  === :::     :::  === :::  === :::  ===");
+        System.out.println(" ===      =======  ===  ===  =====  ======== ===  === =======" );
+        System.out.println(" ===      === ===  ===  ===     === ===  === ===  === ===  ===");
+        System.out.println("  ======= ===  ===  ======  ======  ===  === =======  =======" );
+        System.out.println("**************************************************************");
+        System.out.println("=================**:: Welcome to CRUSHDB:: **=================");
+        System.out.println();
     }
 
     private void handleInput(String input) {
