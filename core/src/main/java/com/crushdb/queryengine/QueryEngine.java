@@ -1,5 +1,6 @@
 package com.crushdb.queryengine;
 
+import com.crushdb.model.crate.CrateManager;
 import com.crushdb.model.document.Document;
 import com.crushdb.queryengine.executor.QueryExecutor;
 import com.crushdb.queryengine.parser.QueryExpression;
@@ -23,6 +24,7 @@ import java.util.Map;
  * <p>
  */
 public class QueryEngine {
+
     /**
      * Represents the query parsing component of the {@code QueryEngine}. Responsible for converting
      * raw query input into a structured list of {@link QueryExpression} objects using the
@@ -66,5 +68,14 @@ public class QueryEngine {
         List<QueryExpression> expressions = queryParser.parse(rawQuery);
         List<QueryPlan> plans = queryPlanner.plan(crateName, expressions);
         return queryExecutor.execute(plans);
+    }
+
+    /**
+     * Get {@code CrateManager}.
+     *
+     * @return {@link CrateManager}
+     */
+    public CrateManager getCrateManager() {
+        return this.queryPlanner.getCrateManager();
     }
 }

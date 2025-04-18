@@ -54,4 +54,13 @@ public class QueryPlanner {
         }
         return plans;
     }
+
+    /**
+     * Get {@code CrateManager}.
+     *
+     * @return {@link CrateManager}
+     */
+    public CrateManager getCrateManager() {
+        return this.crateManager;
+    }
 }
