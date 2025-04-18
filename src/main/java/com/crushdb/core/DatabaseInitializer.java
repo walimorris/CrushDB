@@ -25,6 +25,7 @@ public class DatabaseInitializer {
         if (base && log && data && wal && certs) {
             createFileIfMissing(DATABASE_FILE);
             createFileIfMissing(META_FILE);
+            createFileIfMissing(JOURNAL_FILE);
 
             if (new File(CONFIGURATION_FILE).exists()) {
                 LOGGER.info("Configuration already alive: " + CONFIGURATION_FILE, null);

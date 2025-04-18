@@ -10,14 +10,26 @@ import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.model.document.BsonType;
 import com.crushdb.model.document.BsonValue;
 import com.crushdb.model.document.Document;
+import com.crushdb.storageengine.journal.JournalEntry;
+import com.crushdb.storageengine.journal.JournalManager;
 import com.crushdb.storageengine.page.PageManager;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public record StorageEngine(PageManager pageManager, BPTreeIndexManager indexManager) {
+public class StorageEngine {
     private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(StorageEngine.class);
+
+    private final PageManager pageManager;
+    private final BPTreeIndexManager indexManager;
+    private final JournalManager journalManager;
+
+    public StorageEngine(PageManager pageManager, BPTreeIndexManager indexManager, JournalManager journalManager) {
+        this.pageManager = pageManager;
+        this.indexManager = indexManager;
+        this.journalManager = journalManager;
+    }
 
     /**
      * Inserts a document into the storage engine and indexes it using the specified indexes.
@@ -33,6 +45,8 @@ public record StorageEngine(PageManager pageManager, BPTreeIndexManager indexMan
      * @see BPTreeIndexManager
      */
     public Document insert(String crateName, Document document) {
+        // append to journal
+        this.journalManager.append(new JournalEntry(System.currentTimeMillis(), JournalEntry.OperationType.WRITE, crateName, document.getDocumentId()));
         Document insertedDocument = pageManager.insertDocument(document);
         if (insertedDocument != null) {
             // index the document - any fields that matches an index name will be indexed
@@ -48,6 +62,8 @@ public record StorageEngine(PageManager pageManager, BPTreeIndexManager indexMan
     }
 
     public Document insert(String crateName, Document document, List<BPTreeIndex<?>> indexes) {
+        // journal append
+        this.journalManager.append(new JournalEntry(System.currentTimeMillis(), JournalEntry.OperationType.WRITE, crateName, document.getDocumentId()));
         Document insertedDocument = pageManager.insertDocument(document);
         for (BPTreeIndex<?> index: indexes) {
             IndexEntry<?> entry = IndexEntryBuilder.fromDocument(document, index);
@@ -180,11 +196,15 @@ public record StorageEngine(PageManager pageManager, BPTreeIndexManager indexMan
         return results;
     }
 
+    public JournalManager getJournalManager() {
+        return this.journalManager;
+    }
+
     public PageManager getPageManager() {
-        return pageManager;
+        return this.pageManager;
     }
 
     public BPTreeIndexManager getIndexManager() {
-        return indexManager;
+        return this.indexManager;
     }
 }

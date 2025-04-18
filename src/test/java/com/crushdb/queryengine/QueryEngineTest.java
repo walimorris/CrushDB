@@ -9,6 +9,7 @@ import com.crushdb.queryengine.executor.QueryExecutor;
 import com.crushdb.queryengine.parser.QueryParser;
 import com.crushdb.queryengine.planner.QueryPlanner;
 import com.crushdb.storageengine.StorageEngine;
+import com.crushdb.storageengine.journal.JournalManager;
 import com.crushdb.storageengine.page.PageManager;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,8 @@ class QueryEngineTest {
         // storage engine
         PageManager pageManager = PageManager.getInstance();
         BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
-        StorageEngine storageEngine = new StorageEngine(pageManager, indexManager);
+        JournalManager journalManager = JournalManager.getInstance();
+        StorageEngine storageEngine = new StorageEngine(pageManager, indexManager, journalManager);
 
         // crate manager
         CrateManager.init(storageEngine);

@@ -56,6 +56,10 @@ public class ConfigManager {
      */
     public static final String WAL_DIR = BASE_DIR + "wal/";
 
+    public static final String JOURNAL_FILE = WAL_DIR + "crushdb.journal";
+
+    public static final String JOURNAL_FILE_FIELD = "wal_path";
+
     /**
      * The file path for the data file used by CrushDB. This constant combines
      * the base data directory with the specific data file name "crushdb.db".

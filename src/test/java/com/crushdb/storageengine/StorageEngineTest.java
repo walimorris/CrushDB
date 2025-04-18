@@ -7,6 +7,7 @@ import com.crushdb.model.crate.Crate;
 import com.crushdb.model.document.BsonType;
 import com.crushdb.model.document.BsonValue;
 import com.crushdb.model.document.Document;
+import com.crushdb.storageengine.journal.JournalManager;
 import com.crushdb.storageengine.page.PageManager;
 import org.junit.jupiter.api.*;
 
@@ -20,6 +21,7 @@ class StorageEngineTest {
     private static StorageEngine storageEngine;
     private static PageManager pageManager = PageManager.getInstance();
     private static BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
+    private static JournalManager journalManager = JournalManager.getInstance();
     private static Document document1;
     private static Document document2;
     private static Document document3;
@@ -28,7 +30,7 @@ class StorageEngineTest {
 
     @BeforeAll
     public static void setUp() {
-        storageEngine = new StorageEngine(pageManager, indexManager);
+        storageEngine = new StorageEngine(pageManager, indexManager, journalManager);
 
         document1 = new Document(1234567L);
         document1.put("vehicle_make", "Subaru");
@@ -77,7 +79,7 @@ class StorageEngineTest {
     void createIndex() {
         storageEngine.createIndex(BsonType.STRING, "Vehicle", "make_index", "vehicle_make", false, 3, SortOrder.ASC);
         storageEngine.createIndex(BsonType.LONG, "Vehicle", "id_index", "_id", false, 3, SortOrder.ASC);
-        BPTreeIndexManager storageEngineIndexManager = storageEngine.indexManager();
+        BPTreeIndexManager storageEngineIndexManager = storageEngine.getIndexManager();
         assertEquals(2, storageEngineIndexManager.getAllIndexesFromCrate("Vehicle").size());
         assertNotNull(storageEngineIndexManager.getIndex("Vehicle", "make_index"));
         assertNotNull(storageEngineIndexManager.getIndex("Vehicle", "id_index"));
@@ -110,7 +112,7 @@ class StorageEngineTest {
         // the index corresponding index(es) will be found in the crate's find method before passing to
         // the storage engine
         BPTreeIndex<?> index = null;
-        List<BPTreeIndex<?>> indexes = storageEngine.indexManager().getAllIndexesFromCrate("Vehicle");
+        List<BPTreeIndex<?>> indexes = storageEngine.getIndexManager().getAllIndexesFromCrate("Vehicle");
         for (BPTreeIndex<?> i : indexes) {
             if (i.getIndexName().equals("make_index")) {
                 index = i;
@@ -119,7 +121,7 @@ class StorageEngineTest {
         }
 
         BPTreeIndex<?> id_index = null;
-        List<BPTreeIndex<?>> moreIndexes = storageEngine.indexManager().getAllIndexesFromCrate("Vehicle");
+        List<BPTreeIndex<?>> moreIndexes = storageEngine.getIndexManager().getAllIndexesFromCrate("Vehicle");
         for (BPTreeIndex<?> i : moreIndexes) {
             if (i.getIndexName().equals("id_index")) {
                 id_index = i;
@@ -145,7 +147,7 @@ class StorageEngineTest {
     @Order(4)
     void rangeFind() {
         BPTreeIndex<?> index = null;
-        List<BPTreeIndex<?>> indexes = storageEngine.indexManager().getAllIndexesFromCrate("Vehicle");
+        List<BPTreeIndex<?>> indexes = storageEngine.getIndexManager().getAllIndexesFromCrate("Vehicle");
         for (BPTreeIndex<?> i : indexes) {
             if (i.getIndexName().equals("make_index")) {
                 index = i;
