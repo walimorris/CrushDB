@@ -178,6 +178,11 @@ public class Page {
     private Set<Document> documents;
 
     /**
+     * A Mapping for document offsets to the actual document for fast reads.
+     */
+    private final Map<Integer, Document> offsetToDocument = new HashMap<>();
+
+    /**
      * Maps document IDs to their position within the page.
      * Enables fast lookups of document locations without scanning the entire page.
      */
@@ -318,6 +323,11 @@ public class Page {
         this.numberOfDocuments = numberOfDocuments;
     }
 
+    public Page(long pageId, byte[] bytes, boolean autoCompressOnInsert) {
+        this.pageId = pageId;
+        this.page = bytes;
+        this.autoCompressOnInsert = autoCompressOnInsert;
+    }
 
     public Page(long pageId) {
         this(pageId, false);
@@ -436,6 +446,42 @@ public class Page {
         int offset = this.offsets.get(documentId);
 
         return Document.fromBytes(data, pageId, offset, dcs, cs);
+    }
+
+    /**
+     * Loads documents into memory from the provided page offsets.
+     * This method processes the offsets map, clears any previously loaded
+     * in-memory documents, and attempts to read and store each corresponding document.
+     * <p>
+     * If the offsets map is null or empty, the operation is skipped. It ensures
+     * that all previously loaded documents are cleared before loading new ones.
+     * Each document is retrieved using the offset value and added to the
+     * documents collection.
+     */
+    public void loadDocumentsFromPageData() {
+        if (this.offsets == null || this.offsets.isEmpty()) {
+            return;
+        }
+
+        // clear any old in-memory documents if somehow loaded
+        this.documents.clear();
+        this.offsetToDocument.clear();
+
+        for (Map.Entry<Long, Integer> entry : this.offsets.entrySet()) {
+            long documentId = entry.getKey();
+            int offset = entry.getValue();
+
+            try {
+                Document doc = readDocumentAtOffset(offset);
+                if (doc != null) {
+                    this.documents.add(doc);
+                }
+            } catch (Exception e) {
+                LOGGER.error(String.format(
+                        "Failed to load document with ID '%d' from page '%d' at offset '%d': %s",
+                        documentId, this.pageId, offset, e.getMessage()), e.getClass().getName());
+            }
+        }
     }
 
     /**
@@ -1051,6 +1097,11 @@ public class Page {
      * @return the reconstructed Document object based on the parsed data at the given offset
      */
     public Document readDocumentAtOffset(int offset) {
+        Document doc = this.offsetToDocument.get(offset);
+        if (doc != null) {
+            return doc;
+        }
+
         ByteBuffer buffer = ByteBuffer.wrap(this.page);
         buffer.position(offset);
 

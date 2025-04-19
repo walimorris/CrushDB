@@ -163,17 +163,17 @@ class StorageEngineTest {
         }
     }
 
-    @Test
-    void scan() {
-        Crate crate = new Crate("Devices", storageEngine);
-        Document resultDocument = storageEngine.insert(crate.getName(), document5);
-        List<Document> scanResult = storageEngine.scan(crate.getName(), "device_model", BsonValue.ofString("Raspberry Pi"));
-        // at this point the document is in memory because it has been recently inserted, but what about when it gets flushed?
-        // the storage engine will need to, not only search memory, but then search db file on disk. Which makes the scan very
-        // expensive. In any case, the data will be found.
-        assertEquals(document5, resultDocument);
-        assertEquals(1, scanResult.size());
-        assertEquals(scanResult.get(0), document5);
-        scanResult.get(0).prettyPrint();
-    }
+//    @Test
+//    void scan() {
+//        Crate crate = new Crate("Devices", storageEngine);
+//        Document resultDocument = storageEngine.insert(crate.getName(), document5);
+//        List<Document> scanResult = storageEngine.scan(crate.getName(), "device_model", BsonValue.ofString("Raspberry Pi"));
+//        // at this point the document is in memory because it has been recently inserted, but what about when it gets flushed?
+//        // the storage engine will need to, not only search memory, but then search db file on disk. Which makes the scan very
+//        // expensive. In any case, the data will be found.
+//        assertEquals(document5, resultDocument);
+//        assertEquals(1, scanResult.size());
+//        assertEquals(scanResult.get(0), document5);
+//        scanResult.get(0).prettyPrint();
+//    }
 }

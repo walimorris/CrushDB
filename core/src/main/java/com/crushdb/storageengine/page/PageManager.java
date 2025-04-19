@@ -13,13 +13,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.HashSet;
+import java.util.*;
 
 public class PageManager {
     private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(PageManager.class);
@@ -204,9 +198,11 @@ public class PageManager {
     public Document retrieveDocument(PageOffsetReference reference) {
         Page page = this.cache.get(reference.getPageId());
         if (page == null) {
-            // TODO: try loading from disk?
-            // TODO: add all document to page when loading from disk (Set<Documents) on page
-            throw new IllegalArgumentException("Page not found in cache: " + reference.getPageId());
+            page = loadPageFromDisk(reference.getPageId());
+            if (page == null) {
+                throw new IllegalArgumentException("Page not found in cache: " + reference.getPageId());
+            }
+            cache.put(page.getPageId(), page);
         }
         Document document = page.readDocumentAtOffset(reference.getOffset());
         document.setPageId(reference.getPageId());
@@ -221,6 +217,45 @@ public class PageManager {
      */
     public List<Page> getAllInMemoryPages() {
         return new ArrayList<>(this.cache.values());
+    }
+
+    /**
+     * Loads a page from disk using the specified page ID. The method reads the corresponding
+     * page data from the configured database file based on the page size and page ID. If the
+     * page data is successfully read, it creates and returns a {@code Page} object populated
+     * with the data.
+     *
+     * @param pageId the ID of the page to be loaded from disk. This ID determines the page's
+     *               offset in the database file.
+     *
+     * @return the loaded {@code Page} object if successful; otherwise, {@code null}.
+     */
+    private Page loadPageFromDisk(long pageId) {
+        Path dataFile = Paths.get(ConfigManager.get(ConfigManager.DATABASE_FILED_FIELD, null));
+        int pageSize = ConfigManager.getInt(ConfigManager.PAGE_SIZE_FIELD, 4096);
+
+        try (RandomAccessFile raf = new RandomAccessFile(dataFile.toFile(), "r");
+             FileChannel channel = raf.getChannel()) {
+            long offset = pageId * pageSize;
+            ByteBuffer buffer = ByteBuffer.allocate(pageSize);
+            channel.position(offset);
+            int bytesRead = channel.read(buffer);
+
+            if (bytesRead <= 0) {
+                LOGGER.error("Failed to read page " + pageId, IOException.class.getName());
+                return null;
+            }
+            buffer.flip();
+            byte[] pageData = new byte[pageSize];
+            buffer.get(pageData);
+
+            Page page = new Page(pageId, pageData, false); // TODO: get from config, default is false
+            page.loadDocumentsFromPageData();
+            return page;
+        } catch (IOException e) {
+            LOGGER.error("Failed to load page " + pageId + ": " + e.getMessage(), IOException.class.getName());
+            return null;
+        }
     }
 
     /**
@@ -318,5 +353,35 @@ public class PageManager {
             LOGGER.error("Failed to flush page " + page.getPageId() + " " + e.getMessage(),
                     IOException.class.getName());
         }
+    }
+
+    /**
+     * Loads all available pages from disk into memory at startup and caches them.
+     *
+     * This method is typically invoked during the initialization process to preload
+     * pages into cache for faster access. It retrieves the last page ID stored in the
+     * metadata, iterates through all page IDs, and loads each page from disk into the
+     * cache.
+     */
+    public void loadAllPagesOnStartup() throws IllegalArgumentException {
+        // TODO: add to config cache_preload_limit = 10000 # Max pages to preload
+        // TODO: add to config eager_load_pages=true
+        if (this.metadata == null) {
+            LOGGER.error("Metadata not loaded. Cannot load pages at startup.", IllegalStateException.class.getName());
+            throw new IllegalStateException("ERROR: Metadata must be loaded before loading pages.");
+        }
+        long maxPageId = this.metadata.lastPageId();
+        LOGGER.info(String.format("Loading pages 0 to %d into memory...", maxPageId), null);
+
+        for (long pageId = 0; pageId <= maxPageId; pageId++) {
+            Page page = loadPageFromDisk(pageId);
+            if (page != null) {
+                cache.put(pageId, page);
+                LOGGER.info(String.format("Page %d loaded into cache.", pageId), null);
+            } else {
+                LOGGER.error(String.format("Failed to load page %d from disk.", pageId), null);
+            }
+        }
+        LOGGER.info("All available pages loaded into memory.", null);
     }
 }

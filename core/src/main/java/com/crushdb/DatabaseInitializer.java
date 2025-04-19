@@ -90,6 +90,7 @@ public class DatabaseInitializer {
     private static StorageEngine createStorageEngine() {
         if (storageEngine == null) {
             PageManager pageManager = PageManager.getInstance();
+            pageManager.loadAllPagesOnStartup();
             BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
             JournalManager journalManager = JournalManager.getInstance();
             return new StorageEngine(pageManager, indexManager, journalManager);
