@@ -32,6 +32,7 @@ public class Crate {
      */
     public Document insert(Document document) {
         // get the index
+        // what if document Id is empty?
         List<BPTreeIndex<?>> indexes = new ArrayList<>();
         for (BPTreeIndex<?> crateIndex : crateIndexes) {
             if (document.getFields().containsKey(crateIndex.getFieldName())) {

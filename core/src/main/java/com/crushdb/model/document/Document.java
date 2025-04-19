@@ -2,10 +2,7 @@ package com.crushdb.model.document;
 
 import com.crushdb.storageengine.page.Page;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Represents a single Document within the CrushDB database.
@@ -229,6 +226,67 @@ public class Document {
         return result.toString();
     }
 
+    public static Document fromJson(String json) {
+        // json should look as such {_id:987654321, name: james, age: 17}
+        // so we can strip the open and close brackets
+        String content = json.substring(1);
+        content = content.substring(0, content.length() - 1);
+
+        boolean idFieldPresent = content.contains("_id");
+
+        // with brackets removed we can split on comma to get parts
+        // [_id: 987654321, name: james, age: 17]
+        String[] parts = content.split(",");
+        Document document = null;
+
+        if (!idFieldPresent) {
+            document = new Document(nextId());
+        }
+
+        for (int i = 0; i < parts.length; i++) {
+            String[] pair = parts[i].split(":");
+
+            String field = pair[0].trim().replace("\"", "");
+            String value = pair[1].trim();
+
+            if (idFieldPresent && i == 0 && !field.equals("_id")) {
+                throw new IllegalArgumentException("_id field must be first if provided.");
+            }
+
+            if (idFieldPresent && i == 0) {
+                if (value.length() < 10) {
+                    throw new IllegalArgumentException(String.format("_id field must be 10 digits or more but got: %s", value));
+                }
+                long id = Long.parseLong(value);
+                document = new Document(id);
+                continue;
+            }
+
+            // dynamically detect value type
+            if (value.equalsIgnoreCase("true") || value.equalsIgnoreCase("false")) {
+                document.put(field, Boolean.parseBoolean(value));
+            } else if (value.startsWith("\"") && value.endsWith("\"")) {
+                // remove quotes
+                document.put(field, value.substring(1, value.length() - 1));
+            } else if (value.contains(".")) {
+                // contains dot = float or double
+                if (value.length() < 8) {
+                    document.put(field, Float.parseFloat(value));
+                } else {
+                    document.put(field, Double.parseDouble(value));
+                }
+            } else {
+                // no quotes, no dot — assume integer or long
+                if (value.length() >= 10) {
+                    document.put(field, Long.parseLong(value));
+                } else {
+                    document.put(field, Integer.parseInt(value));
+                }
+            }
+        }
+        return document;
+    }
+
     /**
      * Utilizes the {@code Document} toString method to parse and pretty print
      * into a standard JSON format.
@@ -286,6 +344,10 @@ public class Document {
         document.setCompressedSize(cs);
         document.setDecompressedSize(dcs);
         return document;
+    }
+
+    public static long nextId() {
+        return UUID.randomUUID().getMostSignificantBits() & Long.MAX_VALUE;
     }
 
     /**
