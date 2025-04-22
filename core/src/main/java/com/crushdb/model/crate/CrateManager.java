@@ -1,8 +1,16 @@
 package com.crushdb.model.crate;
 
+import com.crushdb.index.btree.SortOrder;
 import com.crushdb.logger.CrushDBLogger;
+import com.crushdb.model.document.BsonType;
 import com.crushdb.storageengine.StorageEngine;
+import com.crushdb.storageengine.config.ConfigManager;
 
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -69,6 +77,11 @@ public class CrateManager {
         }
         Crate crate = new Crate(crateName, storageEngine);
         crateRegistry.put(crateName, crate);
+
+        // persist crate
+        crate.serialize(ConfigManager.CRATES_DIR + crateName + ".crate");
+        //create the _id index on the crate immediately - TODO: establish order practices on id_indexes
+        this.storageEngine.createIndex(BsonType.LONG, crateName, "id_index", "_id", false, 3, SortOrder.ASC);
         return crate;
     }
 
@@ -128,5 +141,17 @@ public class CrateManager {
      */
     public boolean exists(String crateName) {
         return this.crateRegistry.containsKey(crateName);
+    }
+
+    public void loadCratesFromDisk() {
+        Path cratesDir = Paths.get(ConfigManager.CRATES_DIR);
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(cratesDir, "*.crate")) {
+            for (Path crateFile : stream) {
+                Crate crate = Crate.deserialize(crateFile, storageEngine);
+                this.crateRegistry.put(crate.getName(), crate);
+            }
+        } catch (IOException e) {
+            LOGGER.error("Failed to load crates from disk: " + e.getMessage(), IOException.class.getName());
+        }
     }
 }

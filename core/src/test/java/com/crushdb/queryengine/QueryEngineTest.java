@@ -87,7 +87,6 @@ class QueryEngineTest {
         // create indexes
         crateManager.createCrate("Vehicle");
         crateManager.getCrate("Vehicle").createIndex(BsonType.STRING, "make_index", "vehicle_make", false, 3, SortOrder.ASC);
-        crateManager.getCrate("Vehicle").createIndex(BsonType.LONG, "id_index", "_id", false, 3, SortOrder.ASC);
 
         // insert documents
         crateManager.getCrate("Vehicle").insert(document1);

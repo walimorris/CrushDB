@@ -6,7 +6,14 @@ import com.crushdb.index.btree.SortOrder;
 import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.model.crate.Crate;
 import com.crushdb.model.document.BsonType;
+import com.crushdb.storageengine.StorageEngine;
+import com.crushdb.storageengine.config.ConfigManager;
 
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -65,9 +72,19 @@ public class BPTreeIndexManager {
      * @param sortOrder sort order
      */
     public <T extends Comparable<T>> BPTreeIndex<T> createIndex(BsonType bsonType, String crateName, String indexName, String fieldName, boolean unique, int order, SortOrder sortOrder) {
+        try {
+            if (crateIndexes.get(crateName).get(indexName) != null) {
+                LOGGER.info(String.format("%s Crate with Index %s already exists.", crateName, indexName), null);
+                return (BPTreeIndex<T>) crateIndexes.get(crateName).get(indexName);
+            }
+        } catch (NullPointerException e) {
+            LOGGER.info(String.format("Attempting to validate a non existent index %s... creating index.", indexName),
+                    NullPointerException.class.getName());
+        }
         BPTreeIndex<T> index = new BPTreeIndex<>(bsonType, crateName, indexName, fieldName, unique, order, sortOrder);
         crateIndexes.computeIfAbsent(crateName, key -> new HashMap<>())
                         .put(indexName, index);
+        index.serialize(Path.of(ConfigManager.INDEXES_DIR + indexName + ".index"));
         return index;
     }
 
@@ -230,5 +247,18 @@ public class BPTreeIndexManager {
      */
     public BPTreeIndex<?> getIndex(String crateName, String indexName) {
         return this.crateIndexes.getOrDefault(crateName, Collections.emptyMap()).get(indexName);
+    }
+
+    public void loadIndexesFromDisk(StorageEngine storageEngine) {
+        Path indexesDir = Paths.get(ConfigManager.INDEXES_DIR);
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(indexesDir, "*.index")) {
+            for (Path indexFile : stream) {
+                BPTreeIndex<?> index = BPTreeIndex.deserialize(indexFile, storageEngine);
+                crateIndexes.computeIfAbsent(index.getCrateName(), k -> new HashMap<>())
+                        .put(index.getIndexName(), index);
+            }
+        } catch (IOException e) {
+            LOGGER.error("Failed to load indexes from disk: " + e.getMessage(), IOException.class.getName());
+        }
     }
 }

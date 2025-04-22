@@ -6,19 +6,29 @@ import com.crushdb.model.document.BsonType;
 import com.crushdb.model.document.BsonValue;
 import com.crushdb.model.document.Document;
 import com.crushdb.storageengine.StorageEngine;
+import com.crushdb.storageengine.config.ConfigManager;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 public class Crate {
     private final String name;
     private final StorageEngine storageEngine;
     private final Set<BPTreeIndex<?>> crateIndexes;
+    private final String fileName;
+
+    private final String CRATE_DIRECTORY = ConfigManager.CRATES_DIR;
 
     // TODO: Need disk persistence across restarts
     public Crate(String name, StorageEngine storageEngine) {
         this.name = name;
         this.storageEngine = storageEngine;
         this.crateIndexes = new HashSet<>(); // I want to set max size
+        this.fileName = name + ".crate";
     }
 
     /**
@@ -138,5 +148,33 @@ public class Crate {
      */
     public String getName() {
         return this.name;
+    }
+
+    public void serialize(String path) {
+        try (BufferedWriter writer = Files.newBufferedWriter(Path.of(path))) {
+            writer.write("name=" + name);
+            writer.newLine();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to serialize Crate: " + this.name, e);
+        }
+    }
+
+    public static Crate deserialize(Path path, StorageEngine storageEngine) {
+        try (BufferedReader reader = Files.newBufferedReader(path)) {
+            String line;
+            String name = null;
+
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("name=")) {
+                    name = line.substring("name=".length());
+                }
+            }
+            if (name == null) {
+                throw new IllegalArgumentException("Invalid Crate file: missing name");
+            }
+            return new Crate(name, storageEngine);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to deserialize Crate from: " + path, e);
+        }
     }
 }

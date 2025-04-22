@@ -70,6 +70,9 @@ public class ConfigManager {
 
     public static final String DATABASE_FILED_FIELD = "data_path";
 
+    public static final String CRATES_DIR = DATA_DIR + "crates/";
+    public static final String INDEXES_DIR = DATA_DIR + "indexes/";
+
     /**
      * Defines the path to the metadata file used by CrushDB. The metadata file
      * stores essential configuration and state information.

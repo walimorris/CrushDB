@@ -42,10 +42,12 @@ public class DatabaseInitializer {
         boolean base = createDirectory(BASE_DIR);
         boolean log = createDirectory(LOG_DIR);
         boolean data = createDirectory(DATA_DIR);
+        boolean crates = createDirectory(CRATES_DIR);
+        boolean indexes = createDirectory(INDEXES_DIR);
         boolean wal = createDirectory(WAL_DIR);
         boolean certs = createDirectory(CU_CA_CERT_PATH);
 
-        if (base && log && data && wal && certs) {
+        if (base && log && data && crates && indexes && wal && certs) {
             createFileIfMissing(DATABASE_FILE);
             createFileIfMissing(META_FILE);
             createFileIfMissing(JOURNAL_FILE);
@@ -93,7 +95,9 @@ public class DatabaseInitializer {
             pageManager.loadAllPagesOnStartup();
             BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
             JournalManager journalManager = JournalManager.getInstance();
-            return new StorageEngine(pageManager, indexManager, journalManager);
+            StorageEngine engine = new StorageEngine(pageManager, indexManager, journalManager);
+            indexManager.loadIndexesFromDisk(engine);
+            return engine;
         }
         return storageEngine;
     }
@@ -119,6 +123,7 @@ public class DatabaseInitializer {
         if (queryEngine == null) {
             CrateManager.init(storageEngine);
             CrateManager crateManager = CrateManager.getInstance();
+            crateManager.loadCratesFromDisk();
 
             QueryParser queryParser = new QueryParser();
             QueryPlanner queryPlanner = new QueryPlanner(crateManager);

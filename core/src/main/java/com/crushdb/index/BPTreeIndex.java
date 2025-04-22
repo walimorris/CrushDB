@@ -4,7 +4,13 @@ import com.crushdb.index.btree.BPTree;
 import com.crushdb.index.btree.PageOffsetReference;
 import com.crushdb.index.btree.SortOrder;
 import com.crushdb.model.document.BsonType;
+import com.crushdb.storageengine.StorageEngine;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -183,5 +189,65 @@ public class BPTreeIndex<T extends Comparable<T>> {
      */
     public BPTree<T> getTree() {
         return this.tree;
+    }
+
+    public void serialize(Path path) {
+        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+            writer.write("crateName=" + this.crateName);
+            writer.newLine();
+            writer.write("indexName=" + this.indexName);
+            writer.newLine();
+            writer.write("fieldName=" + this.fieldName);
+            writer.newLine();
+            writer.write("unique=" + this.unique);
+            writer.newLine();
+            writer.write("order=" + this.tree.getOrder());
+            writer.newLine();
+            writer.write("sortOrder=" + this.tree.getSortOrder().name());
+            writer.newLine();
+            writer.write("bsonType=" + this.bsonType.name());
+            writer.newLine();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to serialize Index: " + this.indexName, e);
+        }
+    }
+
+    public static BPTreeIndex<?> deserialize(Path path, StorageEngine storageEngine) {
+        try (BufferedReader reader = Files.newBufferedReader(path)) {
+            String line;
+            String crateName = null;
+            String indexName = null;
+            String fieldName = null;
+            Boolean unique = null;
+            Integer order = null;
+            SortOrder sortOrder = null;
+            BsonType bsonType = null;
+
+            while ((line = reader.readLine()) != null) {
+                if (line.startsWith("crateName=")) {
+                    crateName = line.substring("crateName=".length());
+                } else if (line.startsWith("indexName=")) {
+                    indexName = line.substring("indexName=".length());
+                } else if (line.startsWith("fieldName=")) {
+                    fieldName = line.substring("fieldName=".length());
+                } else if (line.startsWith("unique=")) {
+                    unique = Boolean.parseBoolean(line.substring("unique=".length()));
+                } else if (line.startsWith("order=")) {
+                    order = Integer.parseInt(line.substring("order=".length()));
+                } else if (line.startsWith("sortOrder=")) {
+                    sortOrder = SortOrder.valueOf(line.substring("sortOrder=".length()));
+                } else if (line.startsWith("bsonType=")) {
+                    bsonType = BsonType.valueOf(line.substring("bsonType=".length()));
+                }
+            }
+            if (crateName == null || indexName == null || fieldName == null || unique == null || order == null || sortOrder == null || bsonType == null) {
+                throw new IllegalArgumentException("Invalid Index file: missing fields");
+            }
+
+            // use storage engine to create the Index cleanly
+            return storageEngine.createIndex(bsonType, crateName, indexName, fieldName, unique, order, sortOrder);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to deserialize Index from: " + path, e);
+        }
     }
 }

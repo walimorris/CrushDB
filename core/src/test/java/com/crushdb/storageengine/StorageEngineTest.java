@@ -3,7 +3,6 @@ package com.crushdb.storageengine;
 import com.crushdb.index.BPTreeIndex;
 import com.crushdb.index.BPTreeIndexManager;
 import com.crushdb.index.btree.SortOrder;
-import com.crushdb.model.crate.Crate;
 import com.crushdb.model.document.BsonType;
 import com.crushdb.model.document.BsonValue;
 import com.crushdb.model.document.Document;
