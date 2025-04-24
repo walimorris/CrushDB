@@ -26,6 +26,8 @@ public class DatabaseInitializer {
      */
     private static StorageEngine storageEngine;
 
+    private static String configurationDirectory;
+
     /**
      * A static instance of {@code QueryEngine} used to manage the lifecycle
      * and operations of the query processing pipeline within CrushDB system.
@@ -37,8 +39,11 @@ public class DatabaseInitializer {
 
     private DatabaseInitializer() {}
 
-    public static Properties init() throws IllegalStateException {
-        Properties properties = null;
+    public static Properties init(boolean isTest) throws IllegalStateException {
+        Properties properties;
+        if (isTest) {
+            return createTestEnvironment();
+        }
         boolean base = createDirectory(BASE_DIR);
         boolean log = createDirectory(LOG_DIR);
         boolean data = createDirectory(DATA_DIR);
@@ -56,8 +61,8 @@ public class DatabaseInitializer {
                 LOGGER.info("Configuration already alive: " + CONFIGURATION_FILE, null);
             }
             properties = ConfigManager.loadConfig();
-            storageEngine = createStorageEngine();
-            queryEngine = createQueryEngine();
+            storageEngine = createStorageEngine(properties);
+            queryEngine = createQueryEngine(properties);
         } else {
             throw new IllegalStateException("Database directory structure failed to initialize.");
         }
@@ -82,6 +87,46 @@ public class DatabaseInitializer {
         return queryEngine;
     }
 
+    private static Properties createTestEnvironment() {
+        Properties properties;
+        boolean base = createDirectory(TEST_BASE_DIR);
+        boolean log = createDirectory(TEST_LOG_DIR);
+        boolean data = createDirectory(TEST_DATA_DIR);
+        boolean crates = createDirectory(TEST_CRATES_DIR);
+        boolean indexes = createDirectory(TEST_INDEXES_DIR);
+        boolean wal = createDirectory(TEST_WAL_DIR);
+        boolean certs = createDirectory(TEST_CU_CA_CERT_PATH);
+
+        if (base && log && data && crates && indexes && wal && certs) {
+            createFileIfMissing(TEST_DATABASE_FILE);
+            createFileIfMissing(TEST_META_FILE);
+            createFileIfMissing(TEST_JOURNAL_FILE);
+
+            if (new File(TEST_CONFIGURATION_FILE).exists()) {
+                LOGGER.info("Test Configuration already alive: " + CONFIGURATION_FILE, null);
+            }
+            properties = ConfigManager.loadTestConfig();
+            storageEngine = createStorageEngine(properties);
+            queryEngine = createQueryEngine(properties);
+        } else {
+            throw new IllegalStateException("Database directory structure failed to initialize.");
+        }
+        return properties;
+    }
+
+    private static StorageEngine createTestStorageEngine(Properties properties) {
+        if (storageEngine == null) {
+            PageManager pageManager = PageManager.getInstance();
+            pageManager.loadAllPagesOnStartup();
+            BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
+            JournalManager journalManager = JournalManager.getInstance();
+            StorageEngine engine = new StorageEngine(pageManager, indexManager, journalManager);
+            indexManager.loadIndexesFromDisk(engine, properties);
+            return engine;
+        }
+        return storageEngine;
+    }
+
     /**
      * Creates and initializes a new instance of {@code StorageEngine} if it does not exist.
      * Otherwise, returns the {@code StorageEngine}
@@ -89,14 +134,14 @@ public class DatabaseInitializer {
      * @return a {@code StorageEngine} instance initialized with a
      * {@code PageManager}, {@code BPTreeIndexManager}, and {@code JournalManager}.
      */
-    private static StorageEngine createStorageEngine() {
+    private static StorageEngine createStorageEngine(Properties properties) {
         if (storageEngine == null) {
             PageManager pageManager = PageManager.getInstance();
             pageManager.loadAllPagesOnStartup();
             BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
             JournalManager journalManager = JournalManager.getInstance();
             StorageEngine engine = new StorageEngine(pageManager, indexManager, journalManager);
-            indexManager.loadIndexesFromDisk(engine);
+            indexManager.loadIndexesFromDisk(engine, properties);
             return engine;
         }
         return storageEngine;
@@ -115,9 +160,9 @@ public class DatabaseInitializer {
      * @return a {@code QueryEngine} instance responsible for query processing, including parsing,
      *         planning, and execution. If a {@code QueryEngine} is already initialized, the existing instance is returned.
      */
-    private static QueryEngine createQueryEngine() {
+    private static QueryEngine createQueryEngine(Properties properties) {
         if (storageEngine == null) {
-            storageEngine = createStorageEngine();
+            storageEngine = createStorageEngine(properties);
         }
 
         if (queryEngine == null) {

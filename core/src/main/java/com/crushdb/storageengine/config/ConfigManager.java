@@ -26,12 +26,14 @@ public class ConfigManager {
      * This directory contains all database-related files, including data, logs, and configurations.
      */
     public static final String BASE_DIR = Paths.get(System.getProperty("user.home")) + "/.crushdb/";
+    public static final String TEST_BASE_DIR = Paths.get(System.getProperty("user.home")) + "/.crushdb/tmp";
 
     /**
      * Path to the main configuration file for CrushDB.
      * This file stores database settings such as page size, WAL settings, and storage paths.
      */
     public static final String CONFIGURATION_FILE = BASE_DIR + "crushdb.conf";
+    public static final String TEST_CONFIGURATION_FILE = TEST_BASE_DIR + "crushdb.conf";
 
     /**
      * Path to CrushDB configuration file. This file contains most database configuration properties.
@@ -43,20 +45,24 @@ public class ConfigManager {
      * This is separate from WAL logs to maintain clarity between operational and transactional logs.
      */
     public static final String LOG_DIR = BASE_DIR + "log/";
+    public static final String TEST_LOG_DIR = TEST_BASE_DIR + "log/";
 
     /**
      * Directory where database data files (pages, indexes, etc.) are stored.
      * This includes all persistent storage related to the database.
      */
     public static final String DATA_DIR = BASE_DIR + "data/";
+    public static final String TEST_DATA_DIR = TEST_BASE_DIR + "data/";
 
     /**
      * Directory where Write-Ahead Log (WAL) files are stored.
      * WAL files ensure durability and recovery in case of a crash.
      */
     public static final String WAL_DIR = BASE_DIR + "wal/";
+    public static final String TEST_WAL_DIR = TEST_BASE_DIR + "wal/";
 
     public static final String JOURNAL_FILE = WAL_DIR + "crushdb.journal";
+    public static final String TEST_JOURNAL_FILE = TEST_WAL_DIR + "crushdb.journal";
 
     public static final String JOURNAL_FILE_FIELD = "wal_path";
 
@@ -67,17 +73,22 @@ public class ConfigManager {
      * data is stored.
      */
     public static final String DATABASE_FILE = DATA_DIR + "crushdb.db";
+    public static final String TEST_DATABASE_FILE = TEST_DATA_DIR + "crushdb.db";
 
     public static final String DATABASE_FILED_FIELD = "data_path";
 
     public static final String CRATES_DIR = DATA_DIR + "crates/";
+    public static final String TEST_CRATES_DIR = TEST_DATA_DIR + "crates/";
+
     public static final String INDEXES_DIR = DATA_DIR + "indexes/";
+    public static final String TEST_INDEXES_DIR = TEST_DATA_DIR + "indexes/";
 
     /**
      * Defines the path to the metadata file used by CrushDB. The metadata file
      * stores essential configuration and state information.
      */
     public static final String META_FILE = DATA_DIR + "meta.dat";
+    public static final String TEST_META_FILE = TEST_DATA_DIR + "meta.dat";
 
     public static final String META_FILE_FIELD = "meta_file_path";
 
@@ -89,6 +100,7 @@ public class ConfigManager {
      * Default location: {@code ~/.crushdb/certs}
      */
     public static final String CU_CA_CERT_PATH = BASE_DIR + "certs/";
+    public static final String TEST_CU_CA_CERT_PATH = TEST_BASE_DIR + "certs/";
 
     /**
      * Max memory allowed to for caching pages - if there's a preference to utilize an explicit
@@ -195,6 +207,19 @@ public class ConfigManager {
         loadConfig();
     }
 
+    public static Properties loadTestConfig() {
+        if (!Files.exists(Path.of(TEST_CONFIGURATION_FILE))) {
+            writeTestDefaultConfig();
+        }
+        try (BufferedReader reader = Files.newBufferedReader(Path.of(TEST_CONFIGURATION_FILE))) {
+            properties.load(reader);
+            return properties;
+        } catch (IOException e) {
+            System.err.println("Error loading CrushDB configuration for testing: " + e.getMessage());
+            return null;
+        }
+    }
+
     public static Properties loadConfig() {
         if (!Files.exists(Path.of(CONFIGURATION_FILE))) {
             writeDefaultConfig();
@@ -203,8 +228,17 @@ public class ConfigManager {
             properties.load(reader);
             return properties;
         } catch (IOException e) {
-            System.err.println("Error loading CrushDB configuration: " + e.getMessage());
+            System.err.println("Error loading CrushDB configuration for testing: " + e.getMessage());
             return null;
+        }
+    }
+
+    private static void writeTestDefaultConfig() {
+        try (InputStream inputStream = Files.newInputStream(Path.of(DEFAULT_CONFIGURATION_FILE))) {
+            Files.copy(inputStream, Paths.get(TEST_CONFIGURATION_FILE), StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("CrushDB Configuration file written for testing: " + TEST_CONFIGURATION_FILE);
+        } catch (IOException e) {
+            System.err.println("Error writing CrushDB configuration for testing: " + e.getMessage());
         }
     }
 

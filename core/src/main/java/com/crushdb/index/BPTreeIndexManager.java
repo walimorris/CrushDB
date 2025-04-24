@@ -14,11 +14,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 
 /**
  * Manages multiple named {@link BPTree } indexes, providing an interface for creation, insertion, and search.
@@ -249,8 +245,8 @@ public class BPTreeIndexManager {
         return this.crateIndexes.getOrDefault(crateName, Collections.emptyMap()).get(indexName);
     }
 
-    public void loadIndexesFromDisk(StorageEngine storageEngine) {
-        Path indexesDir = Paths.get(ConfigManager.INDEXES_DIR);
+    public void loadIndexesFromDisk(StorageEngine storageEngine, Properties properties) {
+        Path indexesDir = Paths.get(properties.getProperty(ConfigManager.INDEXES_DIR)); // TODO:  update to properties field
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(indexesDir, "*.index")) {
             for (Path indexFile : stream) {
                 BPTreeIndex<?> index = BPTreeIndex.deserialize(indexFile, storageEngine);

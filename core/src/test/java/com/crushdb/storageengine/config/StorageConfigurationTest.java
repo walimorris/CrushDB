@@ -12,7 +12,7 @@ public class StorageConfigurationTest {
 
     @Test
     public void initDefaultConfigurationTest() {
-        Properties crushDBProperties = DatabaseInitializer.init();
+        Properties crushDBProperties = DatabaseInitializer.init(true);
         StorageEngine storageEngine = DatabaseInitializer.getStorageEngine();
         QueryEngine queryEngine = DatabaseInitializer.getQueryEngine();
 
