@@ -26,7 +26,7 @@ public class ConfigManager {
      * This directory contains all database-related files, including data, logs, and configurations.
      */
     public static final String BASE_DIR = Paths.get(System.getProperty("user.home")) + "/.crushdb/";
-    public static final String TEST_BASE_DIR = Paths.get(System.getProperty("user.home")) + "/.crushdb/tmp";
+    public static final String TEST_BASE_DIR = Paths.get(System.getProperty("user.home")) + "/.crushdb/tmp/";
 
     /**
      * Path to the main configuration file for CrushDB.

@@ -106,8 +106,8 @@ public class DatabaseInitializer {
                 LOGGER.info("Test Configuration already alive: " + CONFIGURATION_FILE, null);
             }
             properties = ConfigManager.loadTestConfig();
-            storageEngine = createStorageEngine(properties);
-            queryEngine = createQueryEngine(properties);
+            storageEngine = createTestStorageEngine(properties);
+            queryEngine = createTestQueryEngine(properties);
         } else {
             throw new IllegalStateException("Database directory structure failed to initialize.");
         }
@@ -145,6 +145,24 @@ public class DatabaseInitializer {
             return engine;
         }
         return storageEngine;
+    }
+
+    private static QueryEngine createTestQueryEngine(Properties properties) {
+        if (storageEngine == null) {
+            storageEngine = createTestStorageEngine(properties);
+        }
+
+        if (queryEngine == null) {
+            CrateManager.init(storageEngine);
+            CrateManager crateManager = CrateManager.getInstance();
+            crateManager.loadCratesFromDisk();
+
+            QueryParser queryParser = new QueryParser();
+            QueryPlanner queryPlanner = new QueryPlanner(crateManager);
+            QueryExecutor queryExecutor = new QueryExecutor();
+            return new QueryEngine(queryParser, queryPlanner, queryExecutor);
+        }
+        return queryEngine;
     }
 
     /**
