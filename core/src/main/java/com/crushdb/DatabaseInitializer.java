@@ -61,6 +61,9 @@ public class DatabaseInitializer {
                 LOGGER.info("Configuration already alive: " + CONFIGURATION_FILE, null);
             }
             properties = ConfigManager.loadConfig();
+            if (properties != null) {
+                properties.setProperty("isTest", String.valueOf(false));
+            }
             storageEngine = createStorageEngine(properties);
             queryEngine = createQueryEngine(properties);
         } else {
@@ -106,6 +109,9 @@ public class DatabaseInitializer {
                 LOGGER.info("Test Configuration already alive: " + CONFIGURATION_FILE, null);
             }
             properties = ConfigManager.loadTestConfig();
+            if (properties != null) {
+                properties.setProperty("isTest", String.valueOf(true));
+            }
             storageEngine = createTestStorageEngine(properties);
             queryEngine = createTestQueryEngine(properties);
         } else {
@@ -117,7 +123,7 @@ public class DatabaseInitializer {
     private static StorageEngine createTestStorageEngine(Properties properties) {
         if (storageEngine == null) {
             PageManager pageManager = PageManager.getInstance();
-            pageManager.loadAllPagesOnStartup();
+            pageManager.loadAllPagesOnStartup(properties);
             BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
             JournalManager journalManager = JournalManager.getInstance();
             StorageEngine engine = new StorageEngine(pageManager, indexManager, journalManager);
@@ -137,7 +143,7 @@ public class DatabaseInitializer {
     private static StorageEngine createStorageEngine(Properties properties) {
         if (storageEngine == null) {
             PageManager pageManager = PageManager.getInstance();
-            pageManager.loadAllPagesOnStartup();
+            pageManager.loadAllPagesOnStartup(properties);
             BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
             JournalManager journalManager = JournalManager.getInstance();
             StorageEngine engine = new StorageEngine(pageManager, indexManager, journalManager);

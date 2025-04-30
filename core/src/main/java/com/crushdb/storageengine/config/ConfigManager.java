@@ -77,9 +77,11 @@ public class ConfigManager {
 
     public static final String DATABASE_FILED_FIELD = "data_path";
 
+    public static final String CRATES_DIR_FIELD = "crates_path";
     public static final String CRATES_DIR = DATA_DIR + "crates/";
     public static final String TEST_CRATES_DIR = TEST_DATA_DIR + "crates/";
 
+    public static final String INDEXES_DIR_FIELD = "indexes_path";
     public static final String INDEXES_DIR = DATA_DIR + "indexes/";
     public static final String TEST_INDEXES_DIR = TEST_DATA_DIR + "indexes/";
 
@@ -122,6 +124,8 @@ public class ConfigManager {
      * Example: page_size=4096
      */
     public static final String PAGE_SIZE_FIELD = "page_size";
+
+    public static final String EAGER_LOAD_PAGES_FIELD = "eager_load_pages";
 
     /**
      * Configuration file field defining the tombstone garbage collection grace period.

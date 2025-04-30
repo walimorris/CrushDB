@@ -13,13 +13,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.HashSet;
+import java.util.*;
 
 public class PageManager {
     private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(PageManager.class);
@@ -369,25 +363,25 @@ public class PageManager {
      * metadata, iterates through all page IDs, and loads each page from disk into the
      * cache.
      */
-    public void loadAllPagesOnStartup() throws IllegalArgumentException {
-        // TODO: add to config cache_preload_limit = 10000 # Max pages to preload
-        // TODO: add to config eager_load_pages=true
-        if (this.metadata == null) {
-            LOGGER.error("Metadata not loaded. Cannot load pages at startup.", IllegalStateException.class.getName());
-            throw new IllegalStateException("ERROR: Metadata must be loaded before loading pages.");
-        }
-        long maxPageId = this.metadata.lastPageId();
-        LOGGER.info(String.format("Loading pages 0 to %d into memory...", maxPageId), null);
-
-        for (long pageId = 0; pageId <= maxPageId; pageId++) {
-            Page page = loadPageFromDisk(pageId);
-            if (page != null) {
-                cache.put(pageId, page);
-                LOGGER.info(String.format("Page %d loaded into cache.", pageId), null);
-            } else {
-                LOGGER.error(String.format("Failed to load page %d from disk.", pageId), null);
+    public void loadAllPagesOnStartup(Properties properties) throws IllegalArgumentException {
+        if (Boolean.parseBoolean(properties.getProperty((ConfigManager.EAGER_LOAD_PAGES_FIELD)))) {
+            if (this.metadata == null) {
+                LOGGER.error("Metadata not loaded. Cannot load pages at startup.", IllegalStateException.class.getName());
+                throw new IllegalStateException("ERROR: Metadata must be loaded before loading pages.");
             }
+            long maxPageId = this.metadata.lastPageId();
+            LOGGER.info(String.format("Loading pages 0 to %d into memory...", maxPageId), null);
+
+            for (long pageId = 0; pageId <= maxPageId; pageId++) {
+                Page page = loadPageFromDisk(pageId);
+                if (page != null) {
+                    cache.put(pageId, page);
+                    LOGGER.info(String.format("Page %d loaded into cache.", pageId), null);
+                } else {
+                    LOGGER.error(String.format("Failed to load page %d from disk.", pageId), null);
+                }
+            }
+            LOGGER.info("All available pages loaded into memory.", null);
         }
-        LOGGER.info("All available pages loaded into memory.", null);
     }
 }

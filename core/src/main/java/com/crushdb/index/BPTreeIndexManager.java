@@ -246,7 +246,8 @@ public class BPTreeIndexManager {
     }
 
     public void loadIndexesFromDisk(StorageEngine storageEngine, Properties properties) {
-        Path indexesDir = Paths.get(properties.getProperty(ConfigManager.INDEXES_DIR)); // TODO:  update to properties field
+        Path indexesDir = Paths.get(properties.getProperty(ConfigManager.INDEXES_DIR_FIELD));
+        // TODO: Add a field in properties that determines if this is test if so prepend the correct folder (regular or tmp)
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(indexesDir, "*.index")) {
             for (Path indexFile : stream) {
                 BPTreeIndex<?> index = BPTreeIndex.deserialize(indexFile, storageEngine);
