@@ -15,7 +15,8 @@ class BPTreeTest {
 
     @Test
     void insertUniqueASC() {
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
+        Properties properties = null;
+        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
         indexManager.createIndex(BsonType.STRING, "Food","fruit_index", "fruit_name", true, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
@@ -35,7 +36,8 @@ class BPTreeTest {
 
     @Test
     void searchUniqueASC() {
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
+        Properties properties = null;
+        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
         indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name",true, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
@@ -96,7 +98,8 @@ class BPTreeTest {
 
     @Test
     void searchUniqueWithDuplicateASC() {
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
+        Properties properties = null;
+        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
         indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name",true, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
@@ -147,7 +150,8 @@ class BPTreeTest {
     void searchNonUniqueASC() {
         // non-unique indexes can have multiple references with the same indexed key, in this case the
         // return is a list of references that point to the actual documents
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
+        Properties properties = null;
+        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
         indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name", false, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
@@ -213,7 +217,8 @@ class BPTreeTest {
 
     @Test
     void rangeSearchASC() {
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
+        Properties properties = null;
+        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
         indexManager.createIndex(BsonType.STRING, "Travel", "country_index", "country", false, 3, SortOrder.ASC);
         BPTreeIndex<String> countryIndex = (BPTreeIndex<String>) indexManager.getIndex("Travel", "country_index");
 
@@ -263,7 +268,8 @@ class BPTreeTest {
 
     @Test
     void insertUniqueDESC() {
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
+        Properties properties = null;
+        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
         indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name",  true, 3, SortOrder.DESC);
         BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
@@ -283,7 +289,8 @@ class BPTreeTest {
 
     @Test
     void searchUniqueDESC() {
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
+        Properties properties = null;
+        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
         indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name", true, 5, SortOrder.DESC);
         BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
@@ -371,7 +378,8 @@ class BPTreeTest {
     void searchNonUniqueASCDocuments() {
         // in the index manager we should probable have some schema parsing tool that can parse the
         // values to inject the index data type on creation
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
+        Properties properties = null;
+        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
         BPTreeIndex<String> vehicleMakeIndex = indexManager.createIndex(BsonType.STRING, "Cars", "vehicle_make_index", "vehicle_make", false, 3, SortOrder.ASC);
 
         Page page = new Page(1L);

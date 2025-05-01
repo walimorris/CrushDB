@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -32,14 +33,15 @@ class QueryEngineTest {
     @BeforeAll
     public static void setUp() {
         // storage engine
-        PageManager pageManager = PageManager.getInstance();
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
-        JournalManager journalManager = JournalManager.getInstance();
+        Properties properties = null;
+        PageManager pageManager = PageManager.getInstance(properties);
+        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
+        JournalManager journalManager = JournalManager.getInstance(properties);
         StorageEngine storageEngine = new StorageEngine(pageManager, indexManager, journalManager);
 
         // crate manager
         CrateManager.init(storageEngine);
-        CrateManager crateManager = CrateManager.getInstance();
+        CrateManager crateManager = CrateManager.getInstance(properties);
 
         // query engine
         QueryParser queryParser = new QueryParser();

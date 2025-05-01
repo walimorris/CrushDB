@@ -20,6 +20,8 @@ public class PageManager {
 
     private static PageManager instance;
 
+    private static Properties properties;
+
     /**
      * Represents the file path to the data file used by the crushdb.
      */
@@ -129,9 +131,10 @@ public class PageManager {
         init();
     }
 
-    public static synchronized PageManager getInstance() {
+    public static synchronized PageManager getInstance(Properties props) {
         if (instance == null) {
             instance = new PageManager();
+            properties = props;
         }
         return instance;
     }
@@ -363,7 +366,7 @@ public class PageManager {
      * metadata, iterates through all page IDs, and loads each page from disk into the
      * cache.
      */
-    public void loadAllPagesOnStartup(Properties properties) throws IllegalArgumentException {
+    public void loadAllPagesOnStartup() throws IllegalArgumentException {
         if (Boolean.parseBoolean(properties.getProperty((ConfigManager.EAGER_LOAD_PAGES_FIELD)))) {
             if (this.metadata == null) {
                 LOGGER.error("Metadata not loaded. Cannot load pages at startup.", IllegalStateException.class.getName());
@@ -383,5 +386,9 @@ public class PageManager {
             }
             LOGGER.info("All available pages loaded into memory.", null);
         }
+    }
+
+    public static Properties getProperties() {
+        return properties;
     }
 }

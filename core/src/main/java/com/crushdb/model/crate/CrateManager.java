@@ -14,11 +14,14 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 public class CrateManager {
     private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(CrateManager.class);
 
     private static CrateManager instance;
+
+    private static Properties properties;
 
     private final Map<String, Crate> crateRegistry;
 
@@ -51,12 +54,13 @@ public class CrateManager {
      *
      * @throws IllegalArgumentException if the CrateManager has not been initialized
      */
-    public static CrateManager getInstance() throws IllegalArgumentException {
+    public static CrateManager getInstance(Properties props) throws IllegalArgumentException {
         if (instance == null) {
             LOGGER.error("Attempt to utilize CrateManager without initialization. Init before use.",
                     IllegalArgumentException.class.getName());
             throw new IllegalArgumentException("Attempt to utilize uninitialized CrateManager. Init CrateManager before use.");
         }
+        properties = props;
         return instance;
     }
 

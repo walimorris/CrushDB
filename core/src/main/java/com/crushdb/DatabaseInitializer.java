@@ -26,8 +26,6 @@ public class DatabaseInitializer {
      */
     private static StorageEngine storageEngine;
 
-    private static String configurationDirectory;
-
     /**
      * A static instance of {@code QueryEngine} used to manage the lifecycle
      * and operations of the query processing pipeline within CrushDB system.
@@ -122,12 +120,12 @@ public class DatabaseInitializer {
 
     private static StorageEngine createTestStorageEngine(Properties properties) {
         if (storageEngine == null) {
-            PageManager pageManager = PageManager.getInstance();
-            pageManager.loadAllPagesOnStartup(properties);
-            BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
-            JournalManager journalManager = JournalManager.getInstance();
+            PageManager pageManager = PageManager.getInstance(properties);
+            pageManager.loadAllPagesOnStartup();
+            BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
+            JournalManager journalManager = JournalManager.getInstance(properties);
             StorageEngine engine = new StorageEngine(pageManager, indexManager, journalManager);
-            indexManager.loadIndexesFromDisk(engine, properties);
+            indexManager.loadIndexesFromDisk(engine);
             return engine;
         }
         return storageEngine;
@@ -142,12 +140,12 @@ public class DatabaseInitializer {
      */
     private static StorageEngine createStorageEngine(Properties properties) {
         if (storageEngine == null) {
-            PageManager pageManager = PageManager.getInstance();
-            pageManager.loadAllPagesOnStartup(properties);
-            BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
-            JournalManager journalManager = JournalManager.getInstance();
+            PageManager pageManager = PageManager.getInstance(properties);
+            pageManager.loadAllPagesOnStartup();
+            BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
+            JournalManager journalManager = JournalManager.getInstance(properties);
             StorageEngine engine = new StorageEngine(pageManager, indexManager, journalManager);
-            indexManager.loadIndexesFromDisk(engine, properties);
+            indexManager.loadIndexesFromDisk(engine);
             return engine;
         }
         return storageEngine;
@@ -160,7 +158,7 @@ public class DatabaseInitializer {
 
         if (queryEngine == null) {
             CrateManager.init(storageEngine);
-            CrateManager crateManager = CrateManager.getInstance();
+            CrateManager crateManager = CrateManager.getInstance(properties);
             crateManager.loadCratesFromDisk();
 
             QueryParser queryParser = new QueryParser();
@@ -191,7 +189,7 @@ public class DatabaseInitializer {
 
         if (queryEngine == null) {
             CrateManager.init(storageEngine);
-            CrateManager crateManager = CrateManager.getInstance();
+            CrateManager crateManager = CrateManager.getInstance(properties);
             crateManager.loadCratesFromDisk();
 
             QueryParser queryParser = new QueryParser();

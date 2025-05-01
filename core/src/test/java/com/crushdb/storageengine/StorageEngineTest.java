@@ -11,16 +11,18 @@ import com.crushdb.storageengine.page.PageManager;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
+import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class StorageEngineTest {
+    private static Properties properties = null;
     private static StorageEngine storageEngine;
-    private static PageManager pageManager = PageManager.getInstance();
-    private static BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance();
-    private static JournalManager journalManager = JournalManager.getInstance();
+    private static PageManager pageManager = PageManager.getInstance(properties);
+    private static BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
+    private static JournalManager journalManager = JournalManager.getInstance(properties);
     private static Document document1;
     private static Document document2;
     private static Document document3;

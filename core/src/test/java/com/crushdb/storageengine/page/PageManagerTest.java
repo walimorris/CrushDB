@@ -4,6 +4,8 @@ import com.crushdb.index.btree.PageOffsetReference;
 import com.crushdb.model.document.Document;
 import org.junit.jupiter.api.*;
 
+import java.util.Properties;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 
@@ -18,7 +20,8 @@ class PageManagerTest {
 
     @BeforeAll
     static void setup() {
-        pageManager = PageManager.getInstance();
+        Properties properties = null;
+        pageManager = PageManager.getInstance(properties);
         document1 = new Document(1234567L);
         document1.put("vehicle_make", "Subaru");
         document1.put("vehicle_model", "Forester");

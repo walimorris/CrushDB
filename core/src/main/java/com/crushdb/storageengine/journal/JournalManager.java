@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * The {@code JournalManager} is responsible for managing the operations related to
@@ -22,6 +23,8 @@ public class JournalManager {
     private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(JournalManager.class);
 
     private static JournalManager instance;
+
+    private static Properties properties;
 
     /**
      * Path to journal file.
@@ -35,9 +38,10 @@ public class JournalManager {
         this.journal = Paths.get(ConfigManager.JOURNAL_FILE);
     }
 
-    public static synchronized JournalManager getInstance() {
+    public static synchronized JournalManager getInstance(Properties props) {
         if (instance == null) {
             instance = new JournalManager();
+            properties = props;
         }
         return instance;
     }

@@ -24,6 +24,8 @@ public class BPTreeIndexManager {
 
     private static BPTreeIndexManager instance;
 
+    private static Properties properties;
+
     /**
      * A map that stores all indexes managed by the BPTreeIndexManager, organized by Crate names
      * and their corresponding index names.
@@ -45,9 +47,11 @@ public class BPTreeIndexManager {
         init();
     }
 
-    public static synchronized BPTreeIndexManager getInstance() {
+    public static synchronized BPTreeIndexManager getInstance(Properties props) {
         if (instance == null) {
             instance = new BPTreeIndexManager();
+            properties = props;
+
         }
         return instance;
     }
@@ -245,7 +249,7 @@ public class BPTreeIndexManager {
         return this.crateIndexes.getOrDefault(crateName, Collections.emptyMap()).get(indexName);
     }
 
-    public void loadIndexesFromDisk(StorageEngine storageEngine, Properties properties) {
+    public void loadIndexesFromDisk(StorageEngine storageEngine) {
         Path indexesDir = Paths.get(properties.getProperty(ConfigManager.INDEXES_DIR_FIELD));
         // TODO: Add a field in properties that determines if this is test if so prepend the correct folder (regular or tmp)
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(indexesDir, "*.index")) {
