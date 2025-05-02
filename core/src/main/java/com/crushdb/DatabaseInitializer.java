@@ -61,6 +61,7 @@ public class DatabaseInitializer {
             properties = ConfigManager.loadConfig();
             if (properties != null) {
                 properties.setProperty("isTest", String.valueOf(false));
+                properties.setProperty("baseDir", BASE_DIR);
             }
             storageEngine = createStorageEngine(properties);
             queryEngine = createQueryEngine(properties);
@@ -109,6 +110,7 @@ public class DatabaseInitializer {
             properties = ConfigManager.loadTestConfig();
             if (properties != null) {
                 properties.setProperty("isTest", String.valueOf(true));
+                properties.setProperty("baseDir", TEST_BASE_DIR);
             }
             storageEngine = createTestStorageEngine(properties);
             queryEngine = createTestQueryEngine(properties);

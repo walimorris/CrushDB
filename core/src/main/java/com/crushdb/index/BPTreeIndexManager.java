@@ -84,7 +84,15 @@ public class BPTreeIndexManager {
         BPTreeIndex<T> index = new BPTreeIndex<>(bsonType, crateName, indexName, fieldName, unique, order, sortOrder);
         crateIndexes.computeIfAbsent(crateName, key -> new HashMap<>())
                         .put(indexName, index);
-        index.serialize(Path.of(ConfigManager.INDEXES_DIR + indexName + ".index"));
+
+        String indexesDir = properties.getProperty(ConfigManager.INDEXES_DIR_FIELD);
+
+        // build indexesDir based on environment
+        if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
+            indexesDir = indexesDir.replace("~/", properties.getProperty("baseDir"))
+                    .replace("/tmp/.crushdb/", "/tmp/");
+        }
+        index.serialize(Path.of(indexesDir + indexName + ".index"));
         return index;
     }
 
@@ -250,9 +258,14 @@ public class BPTreeIndexManager {
     }
 
     public void loadIndexesFromDisk(StorageEngine storageEngine) {
-        Path indexesDir = Paths.get(properties.getProperty(ConfigManager.INDEXES_DIR_FIELD));
-        // TODO: Add a field in properties that determines if this is test if so prepend the correct folder (regular or tmp)
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(indexesDir, "*.index")) {
+        String indexesDir = properties.getProperty(ConfigManager.INDEXES_DIR_FIELD);
+
+        // build indexesDir based on environment
+        if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
+            indexesDir = indexesDir.replace("~/", properties.getProperty("baseDir"))
+                    .replace("/tmp/.crushdb/", "/tmp/");
+        }
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(indexesDir), "*.index")) {
             for (Path indexFile : stream) {
                 BPTreeIndex<?> index = BPTreeIndex.deserialize(indexFile, storageEngine);
                 crateIndexes.computeIfAbsent(index.getCrateName(), k -> new HashMap<>())
