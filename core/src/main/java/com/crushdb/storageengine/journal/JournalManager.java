@@ -115,7 +115,10 @@ public class JournalManager {
      * {@code timestamp|operationType|crateName|documentId}
      */
     private String serialize(JournalEntry entry) {
-        return entry.getTimestamp() + "|" + entry.getOperationType() + "|" + entry.getCrateName() + "|" + entry.getDocumentId();
+        return entry.getTimestamp() + "|"
+                + entry.getOperationType() + "|"
+                + entry.getCrateName() + "|"
+                + entry.getDocumentId();
     }
 
     /**
@@ -135,5 +138,9 @@ public class JournalManager {
         String crateName = parts[2];
         long documentId = Long.parseLong(String.valueOf(parts[3]));
         return new JournalEntry(timestamp, operationType, crateName, documentId);
+    }
+
+    public Properties getProperties() {
+        return properties;
     }
 }

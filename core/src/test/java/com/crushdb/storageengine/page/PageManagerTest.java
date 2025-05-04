@@ -1,5 +1,6 @@
 package com.crushdb.storageengine.page;
 
+import com.crushdb.DatabaseInitializer;
 import com.crushdb.index.btree.PageOffsetReference;
 import com.crushdb.model.document.Document;
 import org.junit.jupiter.api.*;
@@ -11,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PageManagerTest {
-
+    private static Properties properties;
     private static PageManager pageManager;
     private static Document document1;
     private static Document document2;
@@ -20,8 +21,9 @@ class PageManagerTest {
 
     @BeforeAll
     static void setup() {
-        Properties properties = null;
+        properties = DatabaseInitializer.init(true);
         pageManager = PageManager.getInstance(properties);
+
         document1 = new Document(1234567L);
         document1.put("vehicle_make", "Subaru");
         document1.put("vehicle_model", "Forester");

@@ -25,7 +25,7 @@ public class PageManager {
     /**
      * Represents the file path to the data file used by the crushdb.
      */
-    private final Path dataFile = Paths.get(ConfigManager.get(ConfigManager.DATABASE_FILED_FIELD, null));
+    private static Path dataFile;
 
     /**
      * Holds metadata information that is read from the metadata file.
@@ -135,11 +135,19 @@ public class PageManager {
         if (instance == null) {
             instance = new PageManager();
             properties = props;
+
+            String dataPathDir = properties.getProperty(ConfigManager.INDEXES_DIR_FIELD);
+            if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
+                dataPathDir = dataPathDir.replace("~/", properties.getProperty("baseDir"))
+                        .replace("/tmp/.crushdb/", "/tmp/");
+            }
+            dataFile =  Paths.get(dataPathDir);
         }
         return instance;
     }
 
     private void init() {
+        // TODO: MetaFile also needs a test metadata file
         this.metadata = MetaFileManager.readMetadata();
         this.lastPageId = (metadata != null) ? metadata.lastPageId() : 0L;
     }

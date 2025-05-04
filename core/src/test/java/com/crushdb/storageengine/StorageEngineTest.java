@@ -1,5 +1,6 @@
 package com.crushdb.storageengine;
 
+import com.crushdb.DatabaseInitializer;
 import com.crushdb.index.BPTreeIndex;
 import com.crushdb.index.BPTreeIndexManager;
 import com.crushdb.index.btree.SortOrder;
@@ -18,11 +19,11 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class StorageEngineTest {
-    private static Properties properties = null;
+    private static Properties properties;
     private static StorageEngine storageEngine;
-    private static PageManager pageManager = PageManager.getInstance(properties);
-    private static BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
-    private static JournalManager journalManager = JournalManager.getInstance(properties);
+    private static PageManager pageManager;
+    private static BPTreeIndexManager indexManager;
+    private static JournalManager journalManager;
     private static Document document1;
     private static Document document2;
     private static Document document3;
@@ -31,6 +32,11 @@ class StorageEngineTest {
 
     @BeforeAll
     public static void setUp() {
+        properties = DatabaseInitializer.init(true);
+        pageManager = PageManager.getInstance(properties);
+        indexManager = BPTreeIndexManager.getInstance(properties);
+        journalManager = JournalManager.getInstance(properties);
+
         storageEngine = new StorageEngine(pageManager, indexManager, journalManager);
 
         document1 = new Document(1234567L);
