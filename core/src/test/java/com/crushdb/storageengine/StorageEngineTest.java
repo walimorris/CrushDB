@@ -1,9 +1,11 @@
 package com.crushdb.storageengine;
 
 import com.crushdb.DatabaseInitializer;
+import com.crushdb.TestUtil;
 import com.crushdb.index.BPTreeIndex;
 import com.crushdb.index.BPTreeIndexManager;
 import com.crushdb.index.btree.SortOrder;
+import com.crushdb.model.crate.CrateManager;
 import com.crushdb.model.document.BsonType;
 import com.crushdb.model.document.BsonValue;
 import com.crushdb.model.document.Document;
@@ -32,6 +34,13 @@ class StorageEngineTest {
 
     @BeforeAll
     public static void setUp() {
+        TestUtil.cleanTestDir();
+
+        PageManager.reset();
+        BPTreeIndexManager.reset();
+        JournalManager.reset();
+        CrateManager.reset();
+
         properties = DatabaseInitializer.init(true);
         pageManager = PageManager.getInstance(properties);
         indexManager = BPTreeIndexManager.getInstance(properties);
@@ -79,6 +88,15 @@ class StorageEngineTest {
         document5.put("device_model", "Raspberry Pi");
         document5.put("device_name", "Locust");
         document5.put("device_serial_number", 232345455L);
+    }
+
+    @AfterAll
+    public static void tearDown() {
+        TestUtil.cleanTestDir();
+        PageManager.reset();
+        BPTreeIndexManager.reset();
+        JournalManager.reset();
+        CrateManager.reset();
     }
 
     @Test

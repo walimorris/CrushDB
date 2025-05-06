@@ -23,13 +23,21 @@ public class CrateManager {
 
     private static Properties properties;
 
-    private final Map<String, Crate> crateRegistry;
+    private Map<String, Crate> crateRegistry;
 
     private final StorageEngine storageEngine;
 
     private CrateManager(StorageEngine storageEngine) {
         this.crateRegistry = new HashMap<>();
         this.storageEngine = storageEngine;
+    }
+
+    public static void reset() {
+        if (instance != null) {
+            instance.crateRegistry.clear();
+        }
+        instance = null;
+        properties = null;
     }
 
     /**
@@ -75,15 +83,23 @@ public class CrateManager {
      * @throws IllegalArgumentException if the provided crate already exists
      */
     public Crate createCrate(String crateName) throws IllegalArgumentException {
-        if (this.crateRegistry.containsKey(crateName)) {
+        if (crateRegistry.containsKey(crateName)) {
             LOGGER.error("Crate already exists: " + crateName, IllegalArgumentException.class.getName());
             throw new IllegalArgumentException("Crate already exist: " + crateName);
         }
         Crate crate = new Crate(crateName, storageEngine);
         crateRegistry.put(crateName, crate);
 
+        String cratesDir = properties.getProperty(ConfigManager.CRATES_DIR_FIELD);
+
+        // build indexesDir based on environment
+        if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
+            cratesDir = cratesDir.replace("~/", properties.getProperty("baseDir"))
+                    .replace("/tmp/.crushdb/", "/tmp/");
+        }
+
         // persist crate
-        crate.serialize(ConfigManager.CRATES_DIR + crateName + ".crate");
+        crate.serialize(cratesDir + crateName + ".crate");
         //create the _id index on the crate immediately - TODO: establish order practices on id_indexes
         this.storageEngine.createIndex(BsonType.LONG, crateName, "id_index", "_id", false, 3, SortOrder.ASC);
         return crate;
@@ -148,14 +164,24 @@ public class CrateManager {
     }
 
     public void loadCratesFromDisk() {
-        Path cratesDir = Paths.get(ConfigManager.CRATES_DIR);
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(cratesDir, "*.crate")) {
-            for (Path crateFile : stream) {
-                Crate crate = Crate.deserialize(crateFile, storageEngine);
-                this.crateRegistry.put(crate.getName(), crate);
+        String cratesDir = properties.getProperty(ConfigManager.CRATES_DIR_FIELD);
+
+        // build indexesDir based on environment
+        if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
+            cratesDir = cratesDir.replace("~/", properties.getProperty("baseDir"))
+                    .replace("/tmp/.crushdb/", "/tmp/");
+        }
+        // pull if exists
+        Path cratesPath = Path.of(cratesDir);
+        if (Files.exists(cratesPath)) {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(cratesPath, "*.crate")) {
+                for (Path crateFile : stream) {
+                    Crate crate = Crate.deserialize(crateFile, storageEngine);
+                    this.crateRegistry.put(crate.getName(), crate);
+                }
+            } catch (IOException e) {
+                LOGGER.error("Failed to load crates from disk: " + e.getMessage(), IOException.class.getName());
             }
-        } catch (IOException e) {
-            LOGGER.error("Failed to load crates from disk: " + e.getMessage(), IOException.class.getName());
         }
     }
 }

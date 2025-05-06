@@ -1,9 +1,13 @@
 package com.crushdb.index;
 
+import com.crushdb.DatabaseInitializer;
+import com.crushdb.TestUtil;
 import com.crushdb.index.btree.*;
 import com.crushdb.model.document.BsonType;
 import com.crushdb.model.document.Document;
 import com.crushdb.storageengine.page.Page;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
@@ -12,11 +16,29 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BPTreeTest {
+    private static BPTreeIndexManager indexManager;
+    private static Properties properties;
+
+    @BeforeEach
+    public void setUp() {
+        // Managers, such as the BPTreeIndexManager need to be reset because they retain in-memory state across
+        // tests. With this, we can explicitly reset these manager.
+        TestUtil.cleanTestDir();
+        BPTreeIndexManager.reset();
+        properties = DatabaseInitializer.init(true);
+        indexManager = BPTreeIndexManager.getInstance(properties);
+    }
+
+    @AfterEach
+    public void tearDown() {
+        BPTreeIndexManager.reset();
+        TestUtil.cleanTestDir();
+    }
 
     @Test
+    @SuppressWarnings("unchecked")
     void insertUniqueASC() {
-        Properties properties = null;
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
+        indexManager = BPTreeIndexManager.getInstance(properties);
         indexManager.createIndex(BsonType.STRING, "Food","fruit_index", "fruit_name", true, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
@@ -35,9 +57,9 @@ class BPTreeTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void searchUniqueASC() {
-        Properties properties = null;
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
+        indexManager = BPTreeIndexManager.getInstance(properties);
         indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name",true, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
@@ -97,9 +119,9 @@ class BPTreeTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void searchUniqueWithDuplicateASC() {
-        Properties properties = null;
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
+        indexManager = BPTreeIndexManager.getInstance(properties);
         indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name",true, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
@@ -147,11 +169,11 @@ class BPTreeTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void searchNonUniqueASC() {
         // non-unique indexes can have multiple references with the same indexed key, in this case the
         // return is a list of references that point to the actual documents
-        Properties properties = null;
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
+        indexManager = BPTreeIndexManager.getInstance(properties);
         indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name", false, 3, SortOrder.ASC);
         BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
@@ -216,9 +238,9 @@ class BPTreeTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void rangeSearchASC() {
-        Properties properties = null;
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
+        indexManager = BPTreeIndexManager.getInstance(properties);
         indexManager.createIndex(BsonType.STRING, "Travel", "country_index", "country", false, 3, SortOrder.ASC);
         BPTreeIndex<String> countryIndex = (BPTreeIndex<String>) indexManager.getIndex("Travel", "country_index");
 
@@ -267,9 +289,9 @@ class BPTreeTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void insertUniqueDESC() {
-        Properties properties = null;
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
+        indexManager = BPTreeIndexManager.getInstance(properties);
         indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name",  true, 3, SortOrder.DESC);
         BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
@@ -288,9 +310,9 @@ class BPTreeTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void searchUniqueDESC() {
-        Properties properties = null;
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
+        indexManager = BPTreeIndexManager.getInstance(properties);
         indexManager.createIndex(BsonType.STRING, "Food", "fruit_index", "fruit_name", true, 5, SortOrder.DESC);
         BPTreeIndex<String> fruitIndex = (BPTreeIndex<String>) indexManager.getIndex("Food", "fruit_index");
 
@@ -378,8 +400,7 @@ class BPTreeTest {
     void searchNonUniqueASCDocuments() {
         // in the index manager we should probable have some schema parsing tool that can parse the
         // values to inject the index data type on creation
-        Properties properties = null;
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
+        indexManager = BPTreeIndexManager.getInstance(properties);
         BPTreeIndex<String> vehicleMakeIndex = indexManager.createIndex(BsonType.STRING, "Cars", "vehicle_make_index", "vehicle_make", false, 3, SortOrder.ASC);
 
         Page page = new Page(1L);

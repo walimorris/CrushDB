@@ -38,6 +38,10 @@ public class JournalManager {
         this.journal = Paths.get(ConfigManager.JOURNAL_FILE);
     }
 
+    public static void reset() {
+        instance = null;
+    }
+
     public static synchronized JournalManager getInstance(Properties props) {
         if (instance == null) {
             instance = new JournalManager();

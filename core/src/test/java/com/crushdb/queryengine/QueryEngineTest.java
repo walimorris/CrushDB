@@ -1,5 +1,7 @@
 package com.crushdb.queryengine;
 
+import com.crushdb.DatabaseInitializer;
+import com.crushdb.TestUtil;
 import com.crushdb.index.BPTreeIndexManager;
 import com.crushdb.index.btree.SortOrder;
 import com.crushdb.model.crate.CrateManager;
@@ -11,6 +13,7 @@ import com.crushdb.queryengine.planner.QueryPlanner;
 import com.crushdb.storageengine.StorageEngine;
 import com.crushdb.storageengine.journal.JournalManager;
 import com.crushdb.storageengine.page.PageManager;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -21,6 +24,12 @@ import java.util.Properties;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class QueryEngineTest {
+
+    private static PageManager pageManager;
+    private static BPTreeIndexManager indexManager;
+    private static JournalManager journalManager;
+    private static CrateManager crateManager;
+    private static Properties properties;
 
     private static QueryEngine queryEngine;
 
@@ -33,15 +42,24 @@ class QueryEngineTest {
     @BeforeAll
     public static void setUp() {
         // storage engine
-        Properties properties = null;
-        PageManager pageManager = PageManager.getInstance(properties);
-        BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
-        JournalManager journalManager = JournalManager.getInstance(properties);
+        TestUtil.cleanTestDir();
+
+        PageManager.reset();
+        BPTreeIndexManager.reset();
+        JournalManager.reset();
+        CrateManager.reset();
+
+        properties = DatabaseInitializer.init(true);
+
+        pageManager = PageManager.getInstance(properties);
+        indexManager = BPTreeIndexManager.getInstance(properties);
+        journalManager = JournalManager.getInstance(properties);
+
         StorageEngine storageEngine = new StorageEngine(pageManager, indexManager, journalManager);
 
         // crate manager
         CrateManager.init(storageEngine);
-        CrateManager crateManager = CrateManager.getInstance(properties);
+        crateManager = CrateManager.getInstance(properties);
 
         // query engine
         QueryParser queryParser = new QueryParser();
@@ -95,6 +113,15 @@ class QueryEngineTest {
         crateManager.getCrate("Vehicle").insert(document2);
         crateManager.getCrate("Vehicle").insert(document3);
         crateManager.getCrate("Vehicle").insert(document4);
+    }
+
+    @AfterAll
+    public static void tearDown() {
+        TestUtil.cleanTestDir();
+        PageManager.reset();
+        BPTreeIndexManager.reset();
+        JournalManager.reset();
+        CrateManager.reset();
     }
 
     @Test

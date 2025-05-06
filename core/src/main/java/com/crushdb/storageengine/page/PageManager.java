@@ -131,6 +131,10 @@ public class PageManager {
         init();
     }
 
+    public static void reset() {
+        instance = null;
+    }
+
     public static synchronized PageManager getInstance(Properties props) {
         if (instance == null) {
             instance = new PageManager();

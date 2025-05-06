@@ -47,6 +47,10 @@ public class BPTreeIndexManager {
         init();
     }
 
+    public static void reset() {
+        instance = null;
+    }
+
     public static synchronized BPTreeIndexManager getInstance(Properties props) {
         if (instance == null) {
             instance = new BPTreeIndexManager();
