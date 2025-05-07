@@ -140,7 +140,7 @@ public class PageManager {
             instance = new PageManager();
             properties = props;
 
-            String dataPathDir = properties.getProperty(ConfigManager.INDEXES_DIR_FIELD);
+            String dataPathDir = properties.getProperty(ConfigManager.DATABASE_FILED_FIELD);
             if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
                 dataPathDir = dataPathDir.replace("~/", properties.getProperty("baseDir"))
                         .replace("/tmp/.crushdb/", "/tmp/");
