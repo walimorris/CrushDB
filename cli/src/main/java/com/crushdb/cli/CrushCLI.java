@@ -1,24 +1,52 @@
 package com.crushdb.cli;
 
 import com.crushdb.DatabaseInitializer;
+import com.crushdb.index.BPTreeIndexManager;
 import com.crushdb.index.btree.SortOrder;
+import com.crushdb.model.crate.CrateManager;
 import com.crushdb.model.document.BsonType;
 import com.crushdb.model.document.Document;
 import com.crushdb.queryengine.QueryEngine;
+import com.crushdb.queryengine.executor.QueryExecutor;
+import com.crushdb.queryengine.parser.QueryParser;
+import com.crushdb.queryengine.planner.QueryPlanner;
 import com.crushdb.storageengine.StorageEngine;
+import com.crushdb.storageengine.journal.JournalManager;
+import com.crushdb.storageengine.page.PageManager;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Scanner;
 
 public class CrushCLI {
-    private final StorageEngine storageEngine;
+    private PageManager pageManager;
+    private BPTreeIndexManager indexManager;
+    private JournalManager journalManager;
+    private CrateManager crateManager;
+    private Properties properties;
+
     private final QueryEngine queryEngine;
+    private final StorageEngine storageEngine;
 
     public CrushCLI() {
-        DatabaseInitializer.init();
-        storageEngine = DatabaseInitializer.getStorageEngine();
-        queryEngine = DatabaseInitializer.getQueryEngine();
+        properties = DatabaseInitializer.init(true);
+
+        pageManager = PageManager.getInstance(properties);
+        indexManager = BPTreeIndexManager.getInstance(properties);
+        journalManager = JournalManager.getInstance(properties);
+
+        storageEngine = new StorageEngine(pageManager, indexManager, journalManager);
+
+        // crate manager
+        CrateManager.init(storageEngine);
+        crateManager = CrateManager.getInstance(properties);
+
+        // query engine
+        QueryParser queryParser = new QueryParser();
+        QueryPlanner queryPlanner = new QueryPlanner(crateManager);
+        QueryExecutor queryExecutor = new QueryExecutor();
+        queryEngine = new QueryEngine(queryParser, queryPlanner, queryExecutor);
     }
 
     public void start() {
@@ -55,13 +83,9 @@ public class CrushCLI {
 
     private void handleInput(String input) {
         String[] parts;
-        if (input.contains("insertOne") || input.contains("insertone")) {
-            parts = input.split(" ", 3);
-        } else {
-            parts = input.split(" ");
-        }
+        String lowered = input.toLowerCase();
 
-        if (input.contains("find")) {
+        if (lowered.startsWith("insertone") || lowered.startsWith("find")) {
             parts = input.split(" ", 3);
         } else {
             parts = input.split(" ");
@@ -72,6 +96,7 @@ public class CrushCLI {
         }
 
         String command = parts[0].toLowerCase();
+        System.out.println("COMMAND: " + command);
 
         switch (command) {
             case "createcrate" -> {
