@@ -49,45 +49,45 @@ class StorageEngineTest {
         storageEngine = new StorageEngine(pageManager, indexManager, journalManager);
 
         document1 = new Document(1234567L);
-        document1.put("vehicle_make", "Subaru");
-        document1.put("vehicle_model", "Forester");
-        document1.put("vehicle_year", 2019);
-        document1.put("vehicle_type", "automobile");
-        document1.put("vehicle_body_style", "SUV");
-        document1.put("vehicle_price", 28500.99);
+        document1.put("vehicleMake", "Subaru");
+        document1.put("vehicleModel", "Forester");
+        document1.put("vehicleYear", 2019);
+        document1.put("vehicleType", "automobile");
+        document1.put("vehicleBodyStyle", "SUV");
+        document1.put("vehiclePrice", 28500.99);
         document1.put("hasHeating", true);
 
         document2 = new Document(12345678L);
-        document2.put("vehicle_make", "Subaru");
-        document2.put("vehicle_model", "Impreza");
-        document2.put("vehicle_year", 2018);
-        document2.put("vehicle_type", "automobile");
-        document2.put("vehicle_body_style", "Sedan");
-        document2.put("vehicle_price", 22500.99);
+        document2.put("vehicleMake", "Subaru");
+        document2.put("vehicleModel", "Impreza");
+        document2.put("vehicleYear", 2018);
+        document2.put("vehicleType", "automobile");
+        document2.put("vehicleBodyStyle", "Sedan");
+        document2.put("vehiclePrice", 22500.99);
         document2.put("hasHeating", true);
 
         document3 = new Document(123456789L);
-        document3.put("vehicle_make", "Tesla");
-        document3.put("vehicle_model", "Model 3");
-        document3.put("vehicle_year", 2017);
-        document3.put("vehicle_type", "automobile");
-        document3.put("vehicle_body_style", "Sedan");
-        document3.put("vehicle_price", 40200.99);
+        document3.put("vehicleMake", "Tesla");
+        document3.put("vehicleModel", "Model 3");
+        document3.put("vehicleYear", 2017);
+        document3.put("vehicleType", "automobile");
+        document3.put("vehicleBodyStyle", "Sedan");
+        document3.put("vehiclePrice", 40200.99);
         document3.put("hasHeating", true);
 
         document4 = new Document(12345678910L);
-        document4.put("vehicle_make", "BMW");
-        document4.put("vehicle_model", "X3");
-        document4.put("vehicle_year", 2014);
-        document4.put("vehicle_type", "automobile");
-        document4.put("vehicle_body_style", "SUV");
-        document4.put("vehicle_price", 18000.00);
+        document4.put("vehicleMake", "BMW");
+        document4.put("vehicleModel", "X3");
+        document4.put("vehicleYear", 2014);
+        document4.put("vehicleType", "automobile");
+        document4.put("vehicleBodyStyle", "SUV");
+        document4.put("vehiclePrice", 18000.00);
         document4.put("hasHeating", true);
 
         document5 = new Document(987654321L);
-        document5.put("device_model", "Raspberry Pi");
-        document5.put("device_name", "Locust");
-        document5.put("device_serial_number", 232345455L);
+        document5.put("deviceModel", "Raspberry Pi");
+        document5.put("deviceName", "Locust");
+        document5.put("deviceSerialNumber", 232345455L);
     }
 
     @AfterAll
@@ -102,7 +102,7 @@ class StorageEngineTest {
     @Test
     @Order(1)
     void createIndex() {
-        storageEngine.createIndex(BsonType.STRING, "Vehicle", "make_index", "vehicle_make", false, 3, SortOrder.ASC);
+        storageEngine.createIndex(BsonType.STRING, "Vehicle", "make_index", "vehicleMake", false, 3, SortOrder.ASC);
         storageEngine.createIndex(BsonType.LONG, "Vehicle", "id_index", "_id", false, 3, SortOrder.ASC);
         BPTreeIndexManager storageEngineIndexManager = storageEngine.getIndexManager();
         assertEquals(2, storageEngineIndexManager.getAllIndexesFromCrate("Vehicle").size());

@@ -85,7 +85,7 @@ public class Crate {
             // "make_index" -> [make], [index], "make_model_index" -> [make], [model], [index]
             String[] parts = index.getIndexName().split("_");
             if (parts.length == 2) { // single indexed field, includes "index"
-                if (index.getFieldName().contains(field) && parts[0].equals(field)) {
+                if (index.getFieldName().equals(field) && parts[0].equals(field)) {
                     documents.addAll(storageEngine.find(index.getCrateName(), index, value));
                     hit++;
                     break;

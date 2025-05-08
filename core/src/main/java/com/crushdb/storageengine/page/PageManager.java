@@ -25,7 +25,7 @@ public class PageManager {
     /**
      * Represents the file path to the data file used by the crushdb.
      */
-    private static Path dataFile;
+    private final Path dataFile;
 
     /**
      * Holds metadata information that is read from the metadata file.
@@ -34,9 +34,9 @@ public class PageManager {
      * PageManager, such as providing versioning details, the magic number for
      * validation, and the last page ID for tracking.
      *
-     * @see MetaFileManager#readMetadata()
+     * @see MetaFileManager#readMetadata(Properties properties)
      */
-    private Metadata metadata;
+    private final Metadata metadata;
 
     /**
      * Represents the ID of the last page that was accessed, modified, or created
@@ -127,8 +127,16 @@ public class PageManager {
         }
     };
 
-    private PageManager() {
-        init();
+    private PageManager(Properties props) {
+        properties = props;
+        String dataPathDir = properties.getProperty(ConfigManager.DATABASE_FILED_FIELD);
+        if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
+            dataPathDir = dataPathDir.replace("~/", properties.getProperty("baseDir"))
+                    .replace("/tmp/.crushdb/", "/tmp/");
+        }
+        dataFile =  Paths.get(dataPathDir);
+        this.metadata = MetaFileManager.readMetadata(properties);
+        this.lastPageId = (metadata != null) ? metadata.lastPageId() : 0L;
     }
 
     public static void reset() {
@@ -137,23 +145,9 @@ public class PageManager {
 
     public static synchronized PageManager getInstance(Properties props) {
         if (instance == null) {
-            instance = new PageManager();
-            properties = props;
-
-            String dataPathDir = properties.getProperty(ConfigManager.DATABASE_FILED_FIELD);
-            if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
-                dataPathDir = dataPathDir.replace("~/", properties.getProperty("baseDir"))
-                        .replace("/tmp/.crushdb/", "/tmp/");
-            }
-            dataFile =  Paths.get(dataPathDir);
+            instance = new PageManager(props);
         }
         return instance;
-    }
-
-    private void init() {
-        // TODO: MetaFile also needs a test metadata file
-        this.metadata = MetaFileManager.readMetadata();
-        this.lastPageId = (metadata != null) ? metadata.lastPageId() : 0L;
     }
 
     /**
@@ -308,7 +302,7 @@ public class PageManager {
 
         if (isWritable) {
             Metadata writeableMetadata = new Metadata(metadata.magicNumber(), metadata.version(), page.getPageId());
-            MetaFileManager.writeMetadata(writeableMetadata);
+            MetaFileManager.writeMetadata(writeableMetadata, properties);
             return page;
         }
         return null;

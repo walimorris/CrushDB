@@ -9,6 +9,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Properties;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -55,9 +56,15 @@ public class MetaFileManager {
      */
     protected static final int CAPACITY = 17;
 
-    public static void writeMetadata(Metadata metadata) throws IllegalArgumentException {
+    public static void writeMetadata(Metadata metadata, Properties properties) throws IllegalArgumentException {
         if (isValidMetadata(metadata)) {
-            try (FileChannel channel = FileChannel.open(META_PATH, CREATE, WRITE, TRUNCATE_EXISTING)) {
+            String meta = properties.getProperty(ConfigManager.META_FILE_FIELD);
+            if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
+                meta = meta.replace("~/", properties.getProperty("baseDir"))
+                        .replace("/tmp/.crushdb/", "/tmp/");
+            }
+            Path metaPath = meta.contains("tmp") ? Paths.get(meta) : META_PATH;
+            try (FileChannel channel = FileChannel.open(metaPath, CREATE, WRITE, TRUNCATE_EXISTING)) {
                 ByteBuffer buffer = ByteBuffer.allocate(CAPACITY);
                 buffer.putInt(metadata.magicNumber());
                 buffer.put((byte) metadata.version());
@@ -74,12 +81,18 @@ public class MetaFileManager {
         }
     }
 
-    public static Metadata readMetadata() {
-        if (!Files.exists(META_PATH)) {
+    public static Metadata readMetadata(Properties properties) {
+        String meta = properties.getProperty(ConfigManager.META_FILE_FIELD);
+        if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
+            meta = meta.replace("~/", properties.getProperty("baseDir"))
+                    .replace("/tmp/.crushdb/", "/tmp/");
+        }
+        Path metaPath = meta.contains("tmp") ? Paths.get(meta) : META_PATH;
+        if (!Files.exists(metaPath)) {
             // if there's no meta file - create it
             return new Metadata(MAGIC_NUMBER, VERSION, 0L);
         }
-        try (FileChannel channel = FileChannel.open(META_PATH, READ)) {
+        try (FileChannel channel = FileChannel.open(metaPath, READ)) {
             // empty meta file - it's created when database inits
             if (channel.size() == 0) {
                 return new Metadata(MAGIC_NUMBER, VERSION, 0L);
@@ -95,7 +108,7 @@ public class MetaFileManager {
 
             return new Metadata(magicNumber, version, lastPageId);
         } catch (IOException e) {
-            LOGGER.error("Error reading metadata file: " + META_PATH, IOException.class.getName());
+            LOGGER.error("Error reading metadata file: " + metaPath, IOException.class.getName());
             return null;
         }
     }
