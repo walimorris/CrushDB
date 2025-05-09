@@ -1,7 +1,6 @@
 package com.crushdb.storageengine;
 
 import com.crushdb.DatabaseInitializer;
-import com.crushdb.TestUtil;
 import com.crushdb.index.BPTreeIndex;
 import com.crushdb.index.BPTreeIndexManager;
 import com.crushdb.index.btree.SortOrder;
@@ -11,6 +10,7 @@ import com.crushdb.model.document.BsonValue;
 import com.crushdb.model.document.Document;
 import com.crushdb.storageengine.journal.JournalManager;
 import com.crushdb.storageengine.page.PageManager;
+import com.crushdb.utils.FileUtil;
 import org.junit.jupiter.api.*;
 
 import java.util.List;
@@ -34,7 +34,7 @@ class StorageEngineTest {
 
     @BeforeAll
     public static void setUp() {
-        TestUtil.cleanTestDir();
+        FileUtil.cleanTestDatabaseDirectory();
 
         PageManager.reset();
         BPTreeIndexManager.reset();
@@ -92,7 +92,7 @@ class StorageEngineTest {
 
     @AfterAll
     public static void tearDown() {
-        TestUtil.cleanTestDir();
+        FileUtil.cleanTestDatabaseDirectory();
         PageManager.reset();
         BPTreeIndexManager.reset();
         JournalManager.reset();

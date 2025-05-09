@@ -13,6 +13,7 @@ import com.crushdb.queryengine.planner.QueryPlanner;
 import com.crushdb.storageengine.StorageEngine;
 import com.crushdb.storageengine.journal.JournalManager;
 import com.crushdb.storageengine.page.PageManager;
+import com.crushdb.utils.FileUtil;
 
 import java.util.List;
 import java.util.Map;
@@ -64,7 +65,12 @@ public class CrushCLI {
             System.out.print("> ");
             String input = scanner.nextLine().trim();
             if (input.equalsIgnoreCase("exit")) {
+
+                // clean up
                 System.out.println("Goodbye!");
+                if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
+                    FileUtil.cleanTestDatabaseDirectory();
+                }
                 scanner.close();
                 break;
             }

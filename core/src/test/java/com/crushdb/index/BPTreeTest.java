@@ -1,11 +1,11 @@
 package com.crushdb.index;
 
 import com.crushdb.DatabaseInitializer;
-import com.crushdb.TestUtil;
 import com.crushdb.index.btree.*;
 import com.crushdb.model.document.BsonType;
 import com.crushdb.model.document.Document;
 import com.crushdb.storageengine.page.Page;
+import com.crushdb.utils.FileUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ class BPTreeTest {
     public void setUp() {
         // Managers, such as the BPTreeIndexManager need to be reset because they retain in-memory state across
         // tests. With this, we can explicitly reset these manager.
-        TestUtil.cleanTestDir();
+        FileUtil.cleanTestDatabaseDirectory();
         BPTreeIndexManager.reset();
         properties = DatabaseInitializer.init(true);
         indexManager = BPTreeIndexManager.getInstance(properties);
@@ -32,7 +32,7 @@ class BPTreeTest {
     @AfterEach
     public void tearDown() {
         BPTreeIndexManager.reset();
-        TestUtil.cleanTestDir();
+        FileUtil.cleanTestDatabaseDirectory();
     }
 
     @Test
