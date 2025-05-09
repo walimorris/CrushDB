@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
 
+import java.io.IOException;
+
 public class CrushCLI {
     private PageManager pageManager;
     private BPTreeIndexManager indexManager;
@@ -28,6 +30,8 @@ public class CrushCLI {
 
     private final QueryEngine queryEngine;
     private final StorageEngine storageEngine;
+
+    private final List<String> singleCommands;
 
     public CrushCLI() {
         properties = DatabaseInitializer.init(true);
@@ -47,6 +51,8 @@ public class CrushCLI {
         QueryPlanner queryPlanner = new QueryPlanner(crateManager);
         QueryExecutor queryExecutor = new QueryExecutor();
         queryEngine = new QueryEngine(queryParser, queryPlanner, queryExecutor);
+
+        singleCommands = List.of("clear", "help");
     }
 
     public void start() {
@@ -59,6 +65,7 @@ public class CrushCLI {
             String input = scanner.nextLine().trim();
             if (input.equalsIgnoreCase("exit")) {
                 System.out.println("Goodbye!");
+                scanner.close();
                 break;
             }
 
@@ -91,7 +98,7 @@ public class CrushCLI {
             parts = input.split(" ");
         }
 
-        if (parts.length < 2) {
+        if (parts.length < 2 && !singleCommands.contains(parts[0])) {
             throw new IllegalArgumentException("Invalid command. At least <command> <crate> required.");
         }
 
@@ -126,6 +133,11 @@ public class CrushCLI {
                     String query = parts[2].trim();
                     handleFind(crateName, query);
                 }
+            }
+            case "clear" -> {
+                clearScreen();
+                printBanner();
+                System.out.println("Welcome to CrushCLI (Type 'exit' to quit)");
             }
             default -> throw new IllegalArgumentException("Unknown command: " + command);
         }
@@ -203,6 +215,23 @@ public class CrushCLI {
         List<Document> results = queryEngine.find(crateName, query);
         for (Document result : results) {
             result.prettyPrint();
+        }
+    }
+
+    /**
+     * Uses system properties to determine which operating system being used. The respective
+     * operating system "clear" method is utilized to clear crushcli screen.
+     */
+    public static void clearScreen() {
+        try {
+            String os = System.getProperty("os.name");
+            if (os.contains("Windows")) {
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            } else {
+                new ProcessBuilder("clear").inheritIO().start().waitFor();
+            }
+        } catch (IOException | InterruptedException e) {
+            System.out.println("Error clearing the console: " + e.getMessage());
         }
     }
 
