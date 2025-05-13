@@ -125,10 +125,10 @@ public class CrushContext {
         return new CrushContext(
                 baseDirectory,
                 Boolean.parseBoolean(properties.getProperty("isTest")),
-                Boolean.parseBoolean(properties.getProperty("eagerLoadPages", "true")),
+                Boolean.parseBoolean(properties.getProperty("eager_load_pages", "true")),
                 Boolean.parseBoolean(properties.getProperty("autoCompressOnInsert", "false")),
-                Boolean.parseBoolean(properties.getProperty("walEnabled", "true")),
-                Boolean.parseBoolean(properties.getProperty("tlsEnabled", "false")),
+                Boolean.parseBoolean(properties.getProperty("wal_enabled", "true")),
+                Boolean.parseBoolean(properties.getProperty("tls_enabled", "false")),
                 configFile,
                 storagePath,
                 dataPath,
@@ -138,16 +138,16 @@ public class CrushContext {
                 logDirectory,
                 walDirectory,
                 walPath,
-                properties.getProperty("caCertPath", ""),
-                properties.getProperty("customCaCertPath", ""),
-                properties.getProperty("logLevel", "Info,Error"),
-                Integer.parseInt(properties.getProperty("cacheMemoryLimitMb")),
-                Integer.parseInt(properties.getProperty("cacheMaxPages")),
-                Integer.parseInt(properties.getProperty("pageSize")),
-                Integer.parseInt(properties.getProperty("tombstoneGc")),
-                Integer.parseInt(properties.getProperty("logMaxFiles")),
-                Integer.parseInt(properties.getProperty("logRetentionDays")),
-                Integer.parseInt(properties.getProperty("logMaxSizeMb"))
+                properties.getProperty("ca_cert_path", ""),
+                properties.getProperty("custom_ca_cert_path", ""),
+                properties.getProperty("log_level", "INFO,ERROR"),
+                Integer.parseInt(properties.getProperty("cache_memory_limit_mb")),
+                Integer.parseInt(properties.getProperty("cache_max_pages")),
+                Integer.parseInt(properties.getProperty("page_size")),
+                Integer.parseInt(properties.getProperty("tombstone_gc")),
+                Integer.parseInt(properties.getProperty("log_max_files")),
+                Integer.parseInt(properties.getProperty("log_retention_days")),
+                Integer.parseInt(properties.getProperty("log_max_size_mb"))
         );
     }
 
