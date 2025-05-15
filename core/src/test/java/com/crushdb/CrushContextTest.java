@@ -7,9 +7,16 @@ class CrushContextTest {
 
     @Test
     void fromProperties() {
-        CrushContext context = ConfigManager.loadContext();
-        if (context != null) {
-            System.out.println(context.toProperties());
+        CrushContext prodContext = ConfigManager.loadContext();
+        if (prodContext != null) {
+            System.out.println(prodContext.toProperties());
+        }
+
+        CrushContext testContext = ConfigManager.loadTestContext();
+        if (testContext != null) {
+            System.out.println(testContext.toProperties());
+        } else {
+            System.out.println("TestContext is not available!");
         }
     }
 
