@@ -23,7 +23,7 @@ class BPTreeTest {
     public void setUp() {
         // Managers, such as the BPTreeIndexManager need to be reset because they retain in-memory state across
         // tests. With this, we can explicitly reset these manager.
-        FileUtil.cleanTestDatabaseDirectory();
+        FileUtil.destroyTestDatabaseDirectory();
         BPTreeIndexManager.reset();
         properties = DatabaseInitializer.init(true);
         indexManager = BPTreeIndexManager.getInstance(properties);
@@ -32,7 +32,7 @@ class BPTreeTest {
     @AfterEach
     public void tearDown() {
         BPTreeIndexManager.reset();
-        FileUtil.cleanTestDatabaseDirectory();
+        FileUtil.destroyTestDatabaseDirectory();
     }
 
     @Test

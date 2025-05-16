@@ -116,7 +116,7 @@ public class CrushContext {
             cratesDirectory = ConfigManager.TEST_CRATES_DIR;
             indexesDirectory = ConfigManager.TEST_INDEXES_DIR;
             walDirectory = ConfigManager.TEST_WAL_DIR;
-            walPath = ConfigManager.JOURNAL_FILE;
+            walPath = ConfigManager.TEST_JOURNAL_FILE;
             metaFile = ConfigManager.TEST_META_FILE;
             configFile = ConfigManager.TEST_CONFIGURATION_FILE;
             storagePath = ConfigManager.TEST_DATABASE_FILE;

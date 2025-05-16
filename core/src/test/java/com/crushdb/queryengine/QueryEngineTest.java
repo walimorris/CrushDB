@@ -41,7 +41,7 @@ class QueryEngineTest {
     @BeforeAll
     public static void setUp() {
         // storage engine
-        FileUtil.cleanTestDatabaseDirectory();
+        FileUtil.destroyTestDatabaseDirectory();
 
         PageManager.reset();
         BPTreeIndexManager.reset();
@@ -116,7 +116,7 @@ class QueryEngineTest {
 
     @AfterAll
     public static void tearDown() {
-        FileUtil.cleanTestDatabaseDirectory();
+        FileUtil.destroyTestDatabaseDirectory();
         PageManager.reset();
         BPTreeIndexManager.reset();
         JournalManager.reset();

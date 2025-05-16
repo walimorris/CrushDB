@@ -69,7 +69,7 @@ public class CrushCLI {
                 // clean up
                 System.out.println("Goodbye!");
                 if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
-                    FileUtil.cleanTestDatabaseDirectory();
+                    FileUtil.destroyTestDatabaseDirectory();
                 }
                 scanner.close();
                 break;

@@ -34,7 +34,7 @@ class StorageEngineTest {
 
     @BeforeAll
     public static void setUp() {
-        FileUtil.cleanTestDatabaseDirectory();
+        FileUtil.destroyTestDatabaseDirectory();
 
         PageManager.reset();
         BPTreeIndexManager.reset();
@@ -92,7 +92,7 @@ class StorageEngineTest {
 
     @AfterAll
     public static void tearDown() {
-        FileUtil.cleanTestDatabaseDirectory();
+        FileUtil.destroyTestDatabaseDirectory();
         PageManager.reset();
         BPTreeIndexManager.reset();
         JournalManager.reset();
