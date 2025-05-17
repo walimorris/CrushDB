@@ -61,85 +61,6 @@ public class CrushContext extends Properties {
 
     public CrushContext() {}
 
-    public CrushContext(
-            String baseDir,
-            boolean isTest,
-            boolean eagerLoadPages,
-            boolean autoCompressOnInsert,
-            boolean walEnabled,
-            boolean tlsEnabled,
-            String configPath,
-            String storagePath,
-            String dataPath,
-            String metaFilePath,
-            String cratesPath,
-            String indexesPath,
-            String logDirectory,
-            String walDirectory,
-            String walPath,
-            String caCertPath,
-            String customCaCertPath,
-            String logLevel,
-            int cacheMemoryLimitMb,
-            int cacheMaxPages,
-            int pageSize,
-            int tombstoneGc,
-            int logMaxFiles,
-            int logRetentionDays,
-            int logMaxSizeMb) {
-
-        this.baseDir = baseDir;
-        setProperty(BASE_DIR, baseDir);
-        this.isTest = isTest;
-        setProperty(IS_TEST, String.valueOf(isTest));
-        this.eagerLoadPages = eagerLoadPages;
-        setProperty(EAGER_LOAD_PAGES, String.valueOf(eagerLoadPages));
-        this.autoCompressOnInsert = autoCompressOnInsert;
-        setProperty(AUTO_COMPRESS_ON_INSERT, String.valueOf(autoCompressOnInsert));
-        this.walEnabled = walEnabled;
-        setProperty(WAL_ENABLED, String.valueOf(walEnabled));
-        this.tlsEnabled = tlsEnabled;
-        setProperty(TLS_ENABLED, String.valueOf(tlsEnabled));
-        this.configPath = configPath;
-        setProperty(CONFIG_PATH, configPath);
-        this.storagePath = storagePath;
-        setProperty(STORAGE_PATH, storagePath);
-        this.dataPath = dataPath;
-        setProperty(DATA_PATH, dataPath);
-        this.metaFilePath = metaFilePath;
-        setProperty(META_FILE_PATH, metaFilePath);
-        this.cratesPath = cratesPath;
-        setProperty(CRATES_PATH, cratesPath);
-        this.indexesPath = indexesPath;
-        setProperty(INDEXES_PATH, indexesPath);
-        this.logDirectory = logDirectory;
-        setProperty(LOG_DIRECTORY, logDirectory);
-        this.walDirectory = walDirectory;
-        setProperty(WAL_DIRECTORY, walDirectory);
-        this.walPath = walPath;
-        setProperty(WAL_PATH, walPath);
-        this.caCertPath = caCertPath;
-        setProperty(CA_CERT_PATH, caCertPath);
-        this.customCaCertPath = customCaCertPath;
-        setProperty(CUSTOM_CA_CERT_PATH, customCaCertPath);
-        this.logLevel = logLevel;
-        setProperty(LOGLEVEL, logLevel);
-        this.cacheMemoryLimitMb = cacheMemoryLimitMb;
-        setProperty(CACHE_MEMORY_LIMIT_MB, String.valueOf(cacheMemoryLimitMb));
-        this.cacheMaxPages = cacheMaxPages;
-        setProperty(CACHE_MAX_PAGES, String.valueOf(cacheMaxPages));
-        this.pageSize = pageSize;
-        setProperty(PAGE_SIZE, String.valueOf(pageSize));
-        this.tombstoneGc = tombstoneGc;
-        setProperty(TOMBSTONE_GC, String.valueOf(tombstoneGc));
-        this.logMaxFiles = logMaxFiles;
-        setProperty(LOG_MAX_FILES, String.valueOf(logMaxFiles));
-        this.logRetentionDays = logRetentionDays;
-        setProperty(LOG_RETENTION_DAYS, String.valueOf(logRetentionDays));
-        this.logMaxSizeMb = logMaxSizeMb;
-        setProperty(LOG_MAX_SIZE_MB, String.valueOf(logMaxSizeMb));
-    }
-
     public void load(Reader reader, boolean isTest, String baseDir) throws IOException {
         load(reader);
         setProperty(IS_TEST, String.valueOf(isTest));
@@ -188,13 +109,13 @@ public class CrushContext extends Properties {
             caCertPath = getProperty(CA_CERT_PATH);
             customCaCertPath = getProperty(CUSTOM_CA_CERT_PATH);
             logLevel = getProperty(LOGLEVEL);
-            Integer.parseInt(properties.getProperty("cache_memory_limit_mb"));
-            Integer.parseInt(properties.getProperty("cache_max_pages"));
-            Integer.parseInt(properties.getProperty("page_size"));
-            Integer.parseInt(properties.getProperty("tombstone_gc"));
-            Integer.parseInt(properties.getProperty("log_max_files"));
-            Integer.parseInt(properties.getProperty("log_retention_days"));
-            Integer.parseInt(properties.getProperty("log_max_size_mb"));
+            cacheMemoryLimitMb = Integer.parseInt(getProperty(CACHE_MEMORY_LIMIT_MB));
+            cacheMaxPages = Integer.parseInt(getProperty(CACHE_MAX_PAGES));
+            pageSize = Integer.parseInt(getProperty(PAGE_SIZE));
+            tombstoneGc = Integer.parseInt(getProperty(TOMBSTONE_GC));
+            logMaxFiles = Integer.parseInt(getProperty(LOG_MAX_FILES));
+            logRetentionDays = Integer.parseInt(getProperty(LOG_RETENTION_DAYS));
+            logMaxSizeMb = Integer.parseInt(getProperty(LOG_MAX_SIZE_MB));
         }
     }
 
