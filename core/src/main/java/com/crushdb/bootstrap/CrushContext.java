@@ -1,9 +1,8 @@
-package com.crushdb;
-
-import com.crushdb.storageengine.config.ConfigManager;
+package com.crushdb.bootstrap;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Map;
 import java.util.Properties;
 
 public class CrushContext extends Properties {
@@ -61,10 +60,28 @@ public class CrushContext extends Properties {
 
     public CrushContext() {}
 
-    public void load(Reader reader, boolean isTest, String baseDir) throws IOException {
+    protected CrushContext load(Reader reader, boolean isTest, String baseDir) throws IOException {
         load(reader);
         setProperty(IS_TEST, String.valueOf(isTest));
         setProperty(BASE_DIR, baseDir);
+        setFromReader();
+
+        // if the context is not meant for a test - ensure default '~'
+        // is replaced with system parent directory
+        if (!Boolean.parseBoolean(getProperty(IS_TEST))) {
+            setSystemParent();
+        }
+        return this;
+    }
+
+    private void setSystemParent() {
+        for (Map.Entry<Object, Object> prop: this.entrySet()) {
+            String value = (String) prop.getValue();
+            if (value.startsWith("~")) {
+                value = value.replaceFirst("~", System.getProperty("user.home"));
+            }
+            setProperty((String) prop.getKey(), value);
+        }
     }
 
     private void setFromReader() {
@@ -131,5 +148,105 @@ public class CrushContext extends Properties {
         String strValue = (objectValue instanceof String) ? (String) objectValue : null;
         Properties defaults = this.defaults;
         return ((strValue == null) && ((defaults) != null)) ? defaults.getProperty(key) : strValue;
+    }
+
+    public String getBaseDir() {
+        return baseDir;
+    }
+
+    public boolean isTest() {
+        return isTest;
+    }
+
+    public boolean isEagerLoadPages() {
+        return eagerLoadPages;
+    }
+
+    public boolean isAutoCompressOnInsert() {
+        return autoCompressOnInsert;
+    }
+
+    public boolean isWalEnabled() {
+        return walEnabled;
+    }
+
+    public boolean isTlsEnabled() {
+        return tlsEnabled;
+    }
+
+    public String getConfigPath() {
+        return configPath;
+    }
+
+    public String getStoragePath() {
+        return storagePath;
+    }
+
+    public String getDataPath() {
+        return dataPath;
+    }
+
+    public String getMetaFilePath() {
+        return metaFilePath;
+    }
+
+    public String getCratesPath() {
+        return cratesPath;
+    }
+
+    public String getIndexesPath() {
+        return indexesPath;
+    }
+
+    public String getLogDirectory() {
+        return logDirectory;
+    }
+
+    public String getWalDirectory() {
+        return walDirectory;
+    }
+
+    public String getWalPath() {
+        return walPath;
+    }
+
+    public String getCaCertPath() {
+        return caCertPath;
+    }
+
+    public String getCustomCaCertPath() {
+        return customCaCertPath;
+    }
+
+    public String getLogLevel() {
+        return logLevel;
+    }
+
+    public int getCacheMemoryLimitMb() {
+        return cacheMemoryLimitMb;
+    }
+
+    public int getCacheMaxPages() {
+        return cacheMaxPages;
+    }
+
+    public int getPageSize() {
+        return pageSize;
+    }
+
+    public int getTombstoneGc() {
+        return tombstoneGc;
+    }
+
+    public int getLogMaxFiles() {
+        return logMaxFiles;
+    }
+
+    public int getLogRetentionDays() {
+        return logRetentionDays;
+    }
+
+    public int getLogMaxSizeMb() {
+        return logMaxSizeMb;
     }
 }

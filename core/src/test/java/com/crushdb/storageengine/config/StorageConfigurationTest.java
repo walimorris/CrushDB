@@ -1,6 +1,6 @@
 package com.crushdb.storageengine.config;
 
-import com.crushdb.DatabaseInitializer;
+import com.crushdb.bootstrap.DatabaseInitializer;
 import com.crushdb.queryengine.QueryEngine;
 import com.crushdb.storageengine.StorageEngine;
 import org.junit.jupiter.api.Test;

@@ -4,13 +4,12 @@ import com.crushdb.index.btree.SortOrder;
 import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.model.document.BsonType;
 import com.crushdb.storageengine.StorageEngine;
-import com.crushdb.storageengine.config.ConfigManager;
+import com.crushdb.bootstrap.ConfigManager;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

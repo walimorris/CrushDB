@@ -7,7 +7,7 @@ import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.model.crate.Crate;
 import com.crushdb.model.document.BsonType;
 import com.crushdb.storageengine.StorageEngine;
-import com.crushdb.storageengine.config.ConfigManager;
+import com.crushdb.bootstrap.ConfigManager;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;

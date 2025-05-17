@@ -1,6 +1,6 @@
 package com.crushdb.storageengine;
 
-import com.crushdb.DatabaseInitializer;
+import com.crushdb.bootstrap.DatabaseInitializer;
 import com.crushdb.index.BPTreeIndex;
 import com.crushdb.index.BPTreeIndexManager;
 import com.crushdb.index.btree.SortOrder;

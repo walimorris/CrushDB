@@ -6,7 +6,7 @@ import com.crushdb.model.document.BsonType;
 import com.crushdb.model.document.BsonValue;
 import com.crushdb.model.document.Document;
 import com.crushdb.storageengine.StorageEngine;
-import com.crushdb.storageengine.config.ConfigManager;
+import com.crushdb.bootstrap.ConfigManager;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

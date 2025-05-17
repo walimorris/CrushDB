@@ -1,6 +1,6 @@
 package com.crushdb.utils;
 
-import com.crushdb.storageengine.config.ConfigManager;
+import com.crushdb.bootstrap.ConfigManager;
 
 import java.io.IOException;
 import java.nio.file.Files;

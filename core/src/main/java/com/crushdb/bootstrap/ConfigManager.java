@@ -1,6 +1,5 @@
-package com.crushdb.storageengine.config;
+package com.crushdb.bootstrap;
 
-import com.crushdb.CrushContext;
 import com.crushdb.storageengine.page.PageManager;
 
 import java.io.IOException;
@@ -229,12 +228,11 @@ public class ConfigManager {
         if (!Files.exists(Path.of(TEST_CONFIGURATION_FILE))) {
             writeTestDefaultConfig();
         }
+        CrushContext testCxt = new CrushContext();
         try (BufferedReader reader = Files.newBufferedReader(Path.of(TEST_CONFIGURATION_FILE))) {
-            properties.load(reader);
-            properties.setProperty("isTest", "true");
-            return CrushContext.fromProperties(properties);
+            return testCxt.load(reader, true, ConfigManager.TEST_BASE_DIR);
         } catch (IOException e) {
-            System.err.println("Error loading CrushDB configuration for testing: " + e.getMessage());
+            System.err.println("Error loading Crush Context Configuration for testing: " + e.getMessage());
             return null;
         }
     }
@@ -245,10 +243,9 @@ public class ConfigManager {
         }
         CrushContext cxt = new CrushContext();
         try (BufferedReader reader = Files.newBufferedReader(Path.of(CONFIGURATION_FILE))) {
-            cxt.load(reader, false, ConfigManager.BASE_DIR);
-            return cxt;
+            return cxt.load(reader, false, ConfigManager.BASE_DIR);
         } catch (IOException e) {
-            System.err.println("Error loading CrushDB configuration: " + e.getMessage());
+            System.err.println("Error loading CrushDB Context Configuration: " + e.getMessage());
             return null;
         }
     }

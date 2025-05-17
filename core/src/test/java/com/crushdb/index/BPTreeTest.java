@@ -1,6 +1,6 @@
 package com.crushdb.index;
 
-import com.crushdb.DatabaseInitializer;
+import com.crushdb.bootstrap.DatabaseInitializer;
 import com.crushdb.index.btree.*;
 import com.crushdb.model.document.BsonType;
 import com.crushdb.model.document.Document;

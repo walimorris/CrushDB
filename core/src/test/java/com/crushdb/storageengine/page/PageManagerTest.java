@@ -1,6 +1,6 @@
 package com.crushdb.storageengine.page;
 
-import com.crushdb.DatabaseInitializer;
+import com.crushdb.bootstrap.DatabaseInitializer;
 import com.crushdb.index.btree.PageOffsetReference;
 import com.crushdb.model.document.Document;
 import org.junit.jupiter.api.*;

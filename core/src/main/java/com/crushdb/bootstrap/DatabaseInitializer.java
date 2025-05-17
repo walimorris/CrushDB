@@ -1,4 +1,4 @@
-package com.crushdb;
+package com.crushdb.bootstrap;
 
 import com.crushdb.index.BPTreeIndexManager;
 import com.crushdb.logger.CrushDBLogger;
@@ -8,7 +8,6 @@ import com.crushdb.queryengine.executor.QueryExecutor;
 import com.crushdb.queryengine.parser.QueryParser;
 import com.crushdb.queryengine.planner.QueryPlanner;
 import com.crushdb.storageengine.StorageEngine;
-import com.crushdb.storageengine.config.ConfigManager;
 import com.crushdb.storageengine.journal.JournalManager;
 import com.crushdb.storageengine.page.PageManager;
 
@@ -16,7 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
 
-import static com.crushdb.storageengine.config.ConfigManager.*;
+import static com.crushdb.bootstrap.ConfigManager.*;
 
 public class DatabaseInitializer {
     private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(DatabaseInitializer.class);
