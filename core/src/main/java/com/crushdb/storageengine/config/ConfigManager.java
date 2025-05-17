@@ -243,12 +243,12 @@ public class ConfigManager {
         if (!Files.exists(Path.of(CONFIGURATION_FILE))) {
             writeDefaultConfig();
         }
+        CrushContext cxt = new CrushContext();
         try (BufferedReader reader = Files.newBufferedReader(Path.of(CONFIGURATION_FILE))) {
-            properties.load(reader);
-            properties.setProperty("isTest", "false");
-            return CrushContext.fromProperties(properties);
+            cxt.load(reader, false, ConfigManager.BASE_DIR);
+            return cxt;
         } catch (IOException e) {
-            System.err.println("Error loading CrushDB configuration for testing: " + e.getMessage());
+            System.err.println("Error loading CrushDB configuration: " + e.getMessage());
             return null;
         }
     }
@@ -261,7 +261,7 @@ public class ConfigManager {
             properties.load(reader);
             return properties;
         } catch (IOException e) {
-            System.err.println("Error loading CrushDB configuration for testing: " + e.getMessage());
+            System.err.println("Error loading CrushDB configuration: " + e.getMessage());
             return null;
         }
     }
