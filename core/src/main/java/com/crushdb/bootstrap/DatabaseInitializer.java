@@ -13,7 +13,6 @@ import com.crushdb.storageengine.page.PageManager;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Properties;
 
 import static com.crushdb.bootstrap.ConfigManager.*;
 
@@ -36,8 +35,8 @@ public class DatabaseInitializer {
 
     private DatabaseInitializer() {}
 
-    public static Properties init(boolean isTest) throws IllegalStateException {
-        Properties properties;
+    public static CrushContext init(boolean isTest) throws IllegalStateException {
+        CrushContext cxt;
         if (isTest) {
             return createTestEnvironment();
         }
@@ -57,17 +56,13 @@ public class DatabaseInitializer {
             if (new File(CONFIGURATION_FILE).exists()) {
                 LOGGER.info("Configuration already alive: " + CONFIGURATION_FILE, null);
             }
-            properties = ConfigManager.loadConfig();
-            if (properties != null) {
-                properties.setProperty("isTest", String.valueOf(false));
-                properties.setProperty("baseDir", BASE_DIR);
-            }
-            storageEngine = createStorageEngine(properties);
-            queryEngine = createQueryEngine(properties);
+            cxt = ConfigManager.loadContext();
+            storageEngine = createStorageEngine(cxt);
+            queryEngine = createQueryEngine(cxt);
         } else {
             throw new IllegalStateException("Database directory structure failed to initialize.");
         }
-        return properties;
+        return cxt;
     }
 
     /**
@@ -88,8 +83,8 @@ public class DatabaseInitializer {
         return queryEngine;
     }
 
-    private static Properties createTestEnvironment() {
-        Properties properties;
+    private static TestCrushContext createTestEnvironment() {
+        TestCrushContext cxt;
         boolean base = createDirectory(TEST_BASE_DIR);
         boolean log = createDirectory(TEST_LOG_DIR);
         boolean data = createDirectory(TEST_DATA_DIR);
@@ -106,25 +101,21 @@ public class DatabaseInitializer {
             if (new File(TEST_CONFIGURATION_FILE).exists()) {
                 LOGGER.info("Test Configuration already alive: " + CONFIGURATION_FILE, null);
             }
-            properties = ConfigManager.loadTestConfig();
-            if (properties != null) {
-                properties.setProperty("isTest", String.valueOf(true));
-                properties.setProperty("baseDir", TEST_BASE_DIR);
-            }
-            storageEngine = createTestStorageEngine(properties);
-            queryEngine = createTestQueryEngine(properties);
+            cxt = ConfigManager.loadTestContext();
+            storageEngine = createTestStorageEngine(cxt);
+            queryEngine = createTestQueryEngine(cxt);
         } else {
             throw new IllegalStateException("Database directory structure failed to initialize.");
         }
-        return properties;
+        return cxt;
     }
 
-    private static StorageEngine createTestStorageEngine(Properties properties) {
+    private static StorageEngine createTestStorageEngine(TestCrushContext cxt) {
         if (storageEngine == null) {
-            PageManager pageManager = PageManager.getInstance(properties);
+            PageManager pageManager = PageManager.getInstance(cxt);
             pageManager.loadAllPagesOnStartup();
-            BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
-            JournalManager journalManager = JournalManager.getInstance(properties);
+            BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(cxt);
+            JournalManager journalManager = JournalManager.getInstance(cxt);
             StorageEngine engine = new StorageEngine(pageManager, indexManager, journalManager);
             indexManager.loadIndexesFromDisk(engine);
             return engine;
@@ -139,12 +130,12 @@ public class DatabaseInitializer {
      * @return a {@code StorageEngine} instance initialized with a
      * {@code PageManager}, {@code BPTreeIndexManager}, and {@code JournalManager}.
      */
-    private static StorageEngine createStorageEngine(Properties properties) {
+    private static StorageEngine createStorageEngine(CrushContext cxt) {
         if (storageEngine == null) {
-            PageManager pageManager = PageManager.getInstance(properties);
+            PageManager pageManager = PageManager.getInstance(cxt);
             pageManager.loadAllPagesOnStartup();
-            BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(properties);
-            JournalManager journalManager = JournalManager.getInstance(properties);
+            BPTreeIndexManager indexManager = BPTreeIndexManager.getInstance(cxt);
+            JournalManager journalManager = JournalManager.getInstance(cxt);
             StorageEngine engine = new StorageEngine(pageManager, indexManager, journalManager);
             indexManager.loadIndexesFromDisk(engine);
             return engine;
@@ -152,14 +143,14 @@ public class DatabaseInitializer {
         return storageEngine;
     }
 
-    private static QueryEngine createTestQueryEngine(Properties properties) {
+    private static QueryEngine createTestQueryEngine(TestCrushContext cxt) {
         if (storageEngine == null) {
-            storageEngine = createTestStorageEngine(properties);
+            storageEngine = createTestStorageEngine(cxt);
         }
 
         if (queryEngine == null) {
             CrateManager.init(storageEngine);
-            CrateManager crateManager = CrateManager.getInstance(properties);
+            CrateManager crateManager = CrateManager.getInstance(cxt);
             crateManager.loadCratesFromDisk();
 
             QueryParser queryParser = new QueryParser();
@@ -183,14 +174,14 @@ public class DatabaseInitializer {
      * @return a {@code QueryEngine} instance responsible for query processing, including parsing,
      *         planning, and execution. If a {@code QueryEngine} is already initialized, the existing instance is returned.
      */
-    private static QueryEngine createQueryEngine(Properties properties) {
+    private static QueryEngine createQueryEngine(CrushContext cxt) {
         if (storageEngine == null) {
-            storageEngine = createStorageEngine(properties);
+            storageEngine = createStorageEngine(cxt);
         }
 
         if (queryEngine == null) {
             CrateManager.init(storageEngine);
-            CrateManager crateManager = CrateManager.getInstance(properties);
+            CrateManager crateManager = CrateManager.getInstance(cxt);
             crateManager.loadCratesFromDisk();
 
             QueryParser queryParser = new QueryParser();

@@ -1,7 +1,7 @@
 package com.crushdb.storageengine.page;
 
+import com.crushdb.bootstrap.CrushContext;
 import com.crushdb.logger.CrushDBLogger;
-import com.crushdb.bootstrap.ConfigManager;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -9,7 +9,6 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Properties;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -20,14 +19,6 @@ import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 
 public class MetaFileManager {
     private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(MetaFileManager.class);
-
-    /**
-     * Represents the file path to the metadata file used by the PageManager.
-     *
-     * This file is used for storing or managing metadata essential to the PageManager's
-     * operations, such as page tracking, cache management, or other data.
-     */
-    private static final Path META_PATH = Paths.get(ConfigManager.get(ConfigManager.META_FILE_FIELD, null));
 
     /**
      * The CrushDB Magic Number is used as a unique identifier or signature within
@@ -56,14 +47,10 @@ public class MetaFileManager {
      */
     protected static final int CAPACITY = 17;
 
-    public static void writeMetadata(Metadata metadata, Properties properties) throws IllegalArgumentException {
+    public static void writeMetadata(Metadata metadata, CrushContext cxt) throws IllegalArgumentException {
         if (isValidMetadata(metadata)) {
-            String meta = properties.getProperty(ConfigManager.META_FILE_FIELD);
-            if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
-                meta = meta.replace("~/", properties.getProperty("baseDir"))
-                        .replace("/tmp/.crushdb/", "/tmp/");
-            }
-            Path metaPath = meta.contains("tmp") ? Paths.get(meta) : META_PATH;
+            String meta = cxt.getMetaFilePath();
+            Path metaPath = Paths.get(meta);
             try (FileChannel channel = FileChannel.open(metaPath, CREATE, WRITE, TRUNCATE_EXISTING)) {
                 ByteBuffer buffer = ByteBuffer.allocate(CAPACITY);
                 buffer.putInt(metadata.magicNumber());
@@ -81,13 +68,9 @@ public class MetaFileManager {
         }
     }
 
-    public static Metadata readMetadata(Properties properties) {
-        String meta = properties.getProperty(ConfigManager.META_FILE_FIELD);
-        if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
-            meta = meta.replace("~/", properties.getProperty("baseDir"))
-                    .replace("/tmp/.crushdb/", "/tmp/");
-        }
-        Path metaPath = meta.contains("tmp") ? Paths.get(meta) : META_PATH;
+    public static Metadata readMetadata(CrushContext cxt) {
+        String meta = cxt.getMetaFilePath();
+        Path metaPath = Paths.get(meta);
         if (!Files.exists(metaPath)) {
             // if there's no meta file - create it
             return new Metadata(MAGIC_NUMBER, VERSION, 0L);

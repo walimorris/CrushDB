@@ -1,5 +1,6 @@
 package com.crushdb.queryengine;
 
+import com.crushdb.bootstrap.CrushContext;
 import com.crushdb.bootstrap.DatabaseInitializer;
 import com.crushdb.index.BPTreeIndexManager;
 import com.crushdb.index.btree.SortOrder;
@@ -19,7 +20,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -29,7 +29,7 @@ class QueryEngineTest {
     private static BPTreeIndexManager indexManager;
     private static JournalManager journalManager;
     private static CrateManager crateManager;
-    private static Properties properties;
+    private static CrushContext cxt;
 
     private static QueryEngine queryEngine;
 
@@ -48,17 +48,17 @@ class QueryEngineTest {
         JournalManager.reset();
         CrateManager.reset();
 
-        properties = DatabaseInitializer.init(true);
+        cxt = DatabaseInitializer.init(true);
 
-        pageManager = PageManager.getInstance(properties);
-        indexManager = BPTreeIndexManager.getInstance(properties);
-        journalManager = JournalManager.getInstance(properties);
+        pageManager = PageManager.getInstance(cxt);
+        indexManager = BPTreeIndexManager.getInstance(cxt);
+        journalManager = JournalManager.getInstance(cxt);
 
         StorageEngine storageEngine = new StorageEngine(pageManager, indexManager, journalManager);
 
         // crate manager
         CrateManager.init(storageEngine);
-        crateManager = CrateManager.getInstance(properties);
+        crateManager = CrateManager.getInstance(cxt);
 
         // query engine
         QueryParser queryParser = new QueryParser();

@@ -1,18 +1,17 @@
 package com.crushdb.storageengine.page;
 
+import com.crushdb.bootstrap.CrushContext;
 import com.crushdb.bootstrap.DatabaseInitializer;
 import com.crushdb.index.btree.PageOffsetReference;
 import com.crushdb.model.document.Document;
 import org.junit.jupiter.api.*;
-
-import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PageManagerTest {
-    private static Properties properties;
+    private static CrushContext cxt;
     private static PageManager pageManager;
     private static Document document1;
     private static Document document2;
@@ -21,8 +20,8 @@ class PageManagerTest {
 
     @BeforeAll
     static void setup() {
-        properties = DatabaseInitializer.init(true);
-        pageManager = PageManager.getInstance(properties);
+        cxt = DatabaseInitializer.init(true);
+        pageManager = PageManager.getInstance(cxt);
 
         document1 = new Document(1234567L);
         document1.put("vehicleMake", "Subaru");

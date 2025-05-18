@@ -7,7 +7,6 @@ import java.util.Properties;
 
 public class CrushContext extends Properties {
     private String baseDir;
-    private boolean isTest;
     private boolean eagerLoadPages;
     private boolean autoCompressOnInsert;
     private boolean walEnabled;
@@ -60,9 +59,9 @@ public class CrushContext extends Properties {
 
     public CrushContext() {}
 
-    protected CrushContext load(Reader reader, boolean isTest, String baseDir) throws IOException {
+    protected CrushContext load(Reader reader, String baseDir) throws IOException {
         load(reader);
-        setProperty(IS_TEST, String.valueOf(isTest));
+        setProperty(IS_TEST, String.valueOf(isTest()));
         setProperty(BASE_DIR, baseDir);
         setFromReader();
 
@@ -85,7 +84,7 @@ public class CrushContext extends Properties {
     }
 
     private void setFromReader() {
-        if (getProperty(IS_TEST) != null && getProperty(BASE_DIR) != null) {
+        if (getProperty(BASE_DIR) != null) {
             if (Boolean.parseBoolean(getProperty(IS_TEST))) {
                 baseDir = ConfigManager.TEST_BASE_DIR;
                 setProperty(BASE_DIR, baseDir);
@@ -109,7 +108,6 @@ public class CrushContext extends Properties {
                 setProperty(STORAGE_PATH, storagePath);
             }
             baseDir = getProperty(BASE_DIR);
-            isTest = Boolean.parseBoolean(getProperty(IS_TEST));
             eagerLoadPages = Boolean.parseBoolean(getProperty(EAGER_LOAD_PAGES));
             autoCompressOnInsert = Boolean.parseBoolean(getProperty(AUTO_COMPRESS_ON_INSERT));
             walEnabled = Boolean.parseBoolean(getProperty(WAL_ENABLED));
@@ -155,7 +153,7 @@ public class CrushContext extends Properties {
     }
 
     public boolean isTest() {
-        return isTest;
+        return false;
     }
 
     public boolean isEagerLoadPages() {

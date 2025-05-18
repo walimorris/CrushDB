@@ -3,10 +3,22 @@ package com.crushdb;
 import com.crushdb.bootstrap.ConfigManager;
 import com.crushdb.bootstrap.CrushContext;
 import com.crushdb.utils.FileUtil;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 class CrushContextTest {
+
+    @BeforeAll
+    public static void setUp() {
+        FileUtil.spawnParentTestDatabaseDirectory();
+    }
+
+    @AfterAll
+    public static void tearDown() {
+        FileUtil.destroyTestDatabaseDirectory();
+    }
 
     @Test
     void prodContextTest() {

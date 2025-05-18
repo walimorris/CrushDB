@@ -208,29 +208,15 @@ public class ConfigManager {
     private static final Properties properties = new Properties();
 
     static {
-        loadConfig();
+        loadContext();
     }
 
-    public static Properties loadTestConfig() {
+    public static TestCrushContext loadTestContext() {
         if (!Files.exists(Path.of(TEST_CONFIGURATION_FILE))) {
             writeTestDefaultConfig();
         }
         try (BufferedReader reader = Files.newBufferedReader(Path.of(TEST_CONFIGURATION_FILE))) {
-            properties.load(reader);
-            return properties;
-        } catch (IOException e) {
-            System.err.println("Error loading CrushDB configuration for testing: " + e.getMessage());
-            return null;
-        }
-    }
-
-    public static CrushContext loadTestContext() {
-        if (!Files.exists(Path.of(TEST_CONFIGURATION_FILE))) {
-            writeTestDefaultConfig();
-        }
-        CrushContext testCxt = new CrushContext();
-        try (BufferedReader reader = Files.newBufferedReader(Path.of(TEST_CONFIGURATION_FILE))) {
-            return testCxt.load(reader, true, ConfigManager.TEST_BASE_DIR);
+            return (TestCrushContext) new TestCrushContext().load(reader, ConfigManager.TEST_BASE_DIR);
         } catch (IOException e) {
             System.err.println("Error loading Crush Context Configuration for testing: " + e.getMessage());
             return null;
@@ -241,24 +227,10 @@ public class ConfigManager {
         if (!Files.exists(Path.of(CONFIGURATION_FILE))) {
             writeDefaultConfig();
         }
-        CrushContext cxt = new CrushContext();
         try (BufferedReader reader = Files.newBufferedReader(Path.of(CONFIGURATION_FILE))) {
-            return cxt.load(reader, false, ConfigManager.BASE_DIR);
+            return new CrushContext().load(reader, ConfigManager.BASE_DIR);
         } catch (IOException e) {
             System.err.println("Error loading CrushDB Context Configuration: " + e.getMessage());
-            return null;
-        }
-    }
-
-    public static Properties loadConfig() {
-        if (!Files.exists(Path.of(CONFIGURATION_FILE))) {
-            writeDefaultConfig();
-        }
-        try (BufferedReader reader = Files.newBufferedReader(Path.of(CONFIGURATION_FILE))) {
-            properties.load(reader);
-            return properties;
-        } catch (IOException e) {
-            System.err.println("Error loading CrushDB configuration: " + e.getMessage());
             return null;
         }
     }
@@ -281,20 +253,8 @@ public class ConfigManager {
         }
     }
 
-    public static String get(String key, String defaultValue) {
-        String value = properties.getProperty(key, defaultValue);
-        if (value != null && value.startsWith("~")) {
-            value = value.replaceFirst("~", System.getProperty("user.home"));
-        }
-        return value;
-    }
-
     public static int getInt(String key, int defaultValue) {
         return Integer.parseInt(properties.getProperty(key, String.valueOf(defaultValue)));
-    }
-
-    public static boolean getBoolean(String key, boolean defaultValue) {
-        return Boolean.parseBoolean(properties.getProperty(key, String.valueOf(defaultValue)));
     }
 }
 

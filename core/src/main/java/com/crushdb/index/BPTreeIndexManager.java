@@ -1,5 +1,6 @@
 package com.crushdb.index;
 
+import com.crushdb.bootstrap.CrushContext;
 import com.crushdb.index.btree.BPTree;
 import com.crushdb.index.btree.PageOffsetReference;
 import com.crushdb.index.btree.SortOrder;
@@ -7,7 +8,6 @@ import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.model.crate.Crate;
 import com.crushdb.model.document.BsonType;
 import com.crushdb.storageengine.StorageEngine;
-import com.crushdb.bootstrap.ConfigManager;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -24,7 +24,7 @@ public class BPTreeIndexManager {
 
     private static BPTreeIndexManager instance;
 
-    private static Properties properties;
+    private static CrushContext cxt;
 
     /**
      * A map that stores all indexes managed by the BPTreeIndexManager, organized by Crate names
@@ -51,10 +51,10 @@ public class BPTreeIndexManager {
         instance = null;
     }
 
-    public static synchronized BPTreeIndexManager getInstance(Properties props) {
+    public static synchronized BPTreeIndexManager getInstance(CrushContext crushContext) {
         if (instance == null) {
             instance = new BPTreeIndexManager();
-            properties = props;
+            cxt = crushContext;
 
         }
         return instance;
@@ -89,13 +89,7 @@ public class BPTreeIndexManager {
         crateIndexes.computeIfAbsent(crateName, key -> new HashMap<>())
                         .put(indexName, index);
 
-        String indexesDir = properties.getProperty(ConfigManager.INDEXES_DIR_FIELD);
-
-        // build indexesDir based on environment
-        if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
-            indexesDir = indexesDir.replace("~/", properties.getProperty("baseDir"))
-                    .replace("/tmp/.crushdb/", "/tmp/");
-        }
+        String indexesDir = cxt.getIndexesPath();
         index.serialize(Path.of(indexesDir + indexName + ".index"));
         return index;
     }
@@ -145,7 +139,6 @@ public class BPTreeIndexManager {
      * @throws DuplicateKeyException if the key already exists in a unique index
      * @throws IllegalArgumentException if the index does not exist
      */
-    @SuppressWarnings("unchecked")
     public boolean insert(String crateName, String indexName, IndexEntry<?> indexEntry) throws DuplicateKeyException {
         BPTreeIndex<?> index = getIndex(crateName, indexName);
         if (index == null) {
@@ -262,13 +255,7 @@ public class BPTreeIndexManager {
     }
 
     public void loadIndexesFromDisk(StorageEngine storageEngine) {
-        String indexesDir = properties.getProperty(ConfigManager.INDEXES_DIR_FIELD);
-
-        // build indexesDir based on environment
-        if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
-            indexesDir = indexesDir.replace("~/", properties.getProperty("baseDir"))
-                    .replace("/tmp/.crushdb/", "/tmp/");
-        }
+        String indexesDir = cxt.getIndexesPath();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(indexesDir), "*.index")) {
             for (Path indexFile : stream) {
                 BPTreeIndex<?> index = BPTreeIndex.deserialize(indexFile, storageEngine);

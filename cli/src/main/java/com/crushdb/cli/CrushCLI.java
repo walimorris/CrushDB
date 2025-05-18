@@ -1,5 +1,6 @@
 package com.crushdb.cli;
 
+import com.crushdb.bootstrap.CrushContext;
 import com.crushdb.bootstrap.DatabaseInitializer;
 import com.crushdb.index.BPTreeIndexManager;
 import com.crushdb.index.btree.SortOrder;
@@ -17,7 +18,6 @@ import com.crushdb.utils.FileUtil;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Scanner;
 
 import java.io.IOException;
@@ -27,7 +27,7 @@ public class CrushCLI {
     private BPTreeIndexManager indexManager;
     private JournalManager journalManager;
     private CrateManager crateManager;
-    private Properties properties;
+    private CrushContext cxt;
 
     private final QueryEngine queryEngine;
     private final StorageEngine storageEngine;
@@ -35,17 +35,17 @@ public class CrushCLI {
     private final List<String> singleCommands;
 
     public CrushCLI() {
-        properties = DatabaseInitializer.init(true);
+        cxt = DatabaseInitializer.init(true);
 
-        pageManager = PageManager.getInstance(properties);
-        indexManager = BPTreeIndexManager.getInstance(properties);
-        journalManager = JournalManager.getInstance(properties);
+        pageManager = PageManager.getInstance(cxt);
+        indexManager = BPTreeIndexManager.getInstance(cxt);
+        journalManager = JournalManager.getInstance(cxt);
 
         storageEngine = new StorageEngine(pageManager, indexManager, journalManager);
 
         // crate manager
         CrateManager.init(storageEngine);
-        crateManager = CrateManager.getInstance(properties);
+        crateManager = CrateManager.getInstance(cxt);
 
         // query engine
         QueryParser queryParser = new QueryParser();
@@ -68,7 +68,7 @@ public class CrushCLI {
 
                 // clean up
                 System.out.println("Goodbye!");
-                if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
+                if (cxt.isTest()) {
                     FileUtil.destroyTestDatabaseDirectory();
                 }
                 scanner.close();

@@ -1,6 +1,7 @@
 package com.crushdb.logger;
 
 import com.crushdb.bootstrap.ConfigManager;
+import com.crushdb.bootstrap.CrushContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,13 +15,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static java.lang.Integer.parseInt;
-import static java.lang.Long.parseLong;
 
 public class CrushDBLogger {
     private static int maxLogFiles;
@@ -58,14 +55,14 @@ public class CrushDBLogger {
     }
 
     private static void loadConfiguration() {
-        Properties properties = ConfigManager.loadConfig();
-        if (properties != null) {
-            maxLogFiles = parseInt(properties.getProperty(ConfigManager.LOG_MAX_FILES, "5"));
-            maxLogRetentionDays = parseInt(properties.getProperty(ConfigManager.LOG_RETENTION_DAYS_FIELD, "7"));
-            maxLogSize = parseLong(properties.getProperty(ConfigManager.LOG_MAX_SIZE_MB_FIELD, "50")) * 1024 * 1024;
-            logLevel = properties.getProperty(ConfigManager.LOG_LEVEL, "INFO");
+        CrushContext cxt = ConfigManager.loadContext();
+        if (cxt != null && !cxt.isEmpty()) {
+            maxLogFiles = cxt.getLogMaxFiles();
+            maxLogRetentionDays = cxt.getLogRetentionDays();
+            maxLogSize = (long) cxt.getLogMaxSizeMb() * 1024 * 1024;
+            logLevel = cxt.getLogLevel();
         } else {
-            System.err.println("Error reading configuration. Using default log settings.");
+            System.err.println("Error reading CrushContext. Using default log settings.");
         }
     }
 

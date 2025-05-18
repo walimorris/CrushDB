@@ -1,10 +1,10 @@
 package com.crushdb.model.crate;
 
+import com.crushdb.bootstrap.CrushContext;
 import com.crushdb.index.btree.SortOrder;
 import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.model.document.BsonType;
 import com.crushdb.storageengine.StorageEngine;
-import com.crushdb.bootstrap.ConfigManager;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -13,16 +13,15 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 public class CrateManager {
     private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(CrateManager.class);
 
     private static CrateManager instance;
 
-    private static Properties properties;
+    private static CrushContext cxt;
 
-    private Map<String, Crate> crateRegistry;
+    private final Map<String, Crate> crateRegistry;
 
     private final StorageEngine storageEngine;
 
@@ -36,7 +35,7 @@ public class CrateManager {
             instance.crateRegistry.clear();
         }
         instance = null;
-        properties = null;
+        cxt = null;
     }
 
     /**
@@ -61,13 +60,13 @@ public class CrateManager {
      *
      * @throws IllegalArgumentException if the CrateManager has not been initialized
      */
-    public static CrateManager getInstance(Properties props) throws IllegalArgumentException {
+    public static CrateManager getInstance(CrushContext crushContext) throws IllegalArgumentException {
         if (instance == null) {
             LOGGER.error("Attempt to utilize CrateManager without initialization. Init before use.",
                     IllegalArgumentException.class.getName());
             throw new IllegalArgumentException("Attempt to utilize uninitialized CrateManager. Init CrateManager before use.");
         }
-        properties = props;
+        cxt = crushContext;
         return instance;
     }
 
@@ -89,13 +88,7 @@ public class CrateManager {
         Crate crate = new Crate(crateName, storageEngine);
         crateRegistry.put(crateName, crate);
 
-        String cratesDir = properties.getProperty(ConfigManager.CRATES_DIR_FIELD);
-
-        // build indexesDir based on environment
-        if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
-            cratesDir = cratesDir.replace("~/", properties.getProperty("baseDir"))
-                    .replace("/tmp/.crushdb/", "/tmp/");
-        }
+        String cratesDir = cxt.getCratesPath();
 
         // persist crate
         crate.serialize(cratesDir + crateName + ".crate");
@@ -163,13 +156,8 @@ public class CrateManager {
     }
 
     public void loadCratesFromDisk() {
-        String cratesDir = properties.getProperty(ConfigManager.CRATES_DIR_FIELD);
+        String cratesDir = cxt.getCratesPath();
 
-        // build indexesDir based on environment
-        if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
-            cratesDir = cratesDir.replace("~/", properties.getProperty("baseDir"))
-                    .replace("/tmp/.crushdb/", "/tmp/");
-        }
         // pull if exists
         Path cratesPath = Path.of(cratesDir);
         if (Files.exists(cratesPath)) {

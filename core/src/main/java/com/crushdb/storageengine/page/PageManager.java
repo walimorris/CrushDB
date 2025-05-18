@@ -1,5 +1,6 @@
 package com.crushdb.storageengine.page;
 
+import com.crushdb.bootstrap.CrushContext;
 import com.crushdb.index.btree.PageOffsetReference;
 import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.model.document.Document;
@@ -20,7 +21,7 @@ public class PageManager {
 
     private static PageManager instance;
 
-    private static Properties properties;
+    private static CrushContext cxt;
 
     /**
      * Represents the file path to the data file used by the crushdb.
@@ -34,7 +35,7 @@ public class PageManager {
      * PageManager, such as providing versioning details, the magic number for
      * validation, and the last page ID for tracking.
      *
-     * @see MetaFileManager#readMetadata(Properties properties)
+     * @see MetaFileManager#readMetadata(CrushContext cxt)
      */
     private final Metadata metadata;
 
@@ -50,15 +51,19 @@ public class PageManager {
      * This value is crucial for determining the memory management behavior of the system,
      * particularly regarding the number of pages that can be cached and the calculation
      * of memory limits for storage operations.
+     * <p>
+     * TODO: Need to update this to utilize context...
      */
     private final int pageSize = ConfigManager.getInt(ConfigManager.PAGE_SIZE_FIELD,  4096);
 
     /**
      * Represents the maximum number of pages that can be cached.
-     *
+     * <p>
      * This value is determined by the `calculateMaxPage` method and is based on either:
      * - A configured memory limit in megabytes, which is converted into the maximum number of pages using the page size.
      * - A default or explicitly configured maximum number of cacheable pages if the memory limit is not specified.
+     * <p>
+     * TODO: Need to update this to utilize context...
      */
     private final int maxPages = calculateMaxPage();
 
@@ -127,15 +132,11 @@ public class PageManager {
         }
     };
 
-    private PageManager(Properties props) {
-        properties = props;
-        String dataPathDir = properties.getProperty(ConfigManager.DATABASE_FILED_FIELD);
-        if (Boolean.parseBoolean(properties.getProperty("isTest"))) {
-            dataPathDir = dataPathDir.replace("~/", properties.getProperty("baseDir"))
-                    .replace("/tmp/.crushdb/", "/tmp/");
-        }
+    private PageManager(CrushContext crushContext) {
+        cxt = crushContext;
+        String dataPathDir = crushContext.getDataPath();
         dataFile =  Paths.get(dataPathDir);
-        this.metadata = MetaFileManager.readMetadata(properties);
+        this.metadata = MetaFileManager.readMetadata(crushContext);
         this.lastPageId = (metadata != null) ? metadata.lastPageId() : 0L;
     }
 
@@ -143,9 +144,9 @@ public class PageManager {
         instance = null;
     }
 
-    public static synchronized PageManager getInstance(Properties props) {
+    public static synchronized PageManager getInstance(CrushContext cxt) {
         if (instance == null) {
-            instance = new PageManager(props);
+            instance = new PageManager(cxt);
         }
         return instance;
     }
@@ -240,8 +241,8 @@ public class PageManager {
      * @return the loaded {@code Page} object if successful; otherwise, {@code null}.
      */
     private Page loadPageFromDisk(long pageId) {
-        Path dataFile = Paths.get(ConfigManager.get(ConfigManager.DATABASE_FILED_FIELD, null));
-        int pageSize = ConfigManager.getInt(ConfigManager.PAGE_SIZE_FIELD, 4096);
+        Path dataFile = Paths.get(cxt.getStoragePath());
+        int pageSize = cxt.getPageSize();
 
         try (RandomAccessFile raf = new RandomAccessFile(dataFile.toFile(), "r");
              FileChannel channel = raf.getChannel()) {
@@ -302,7 +303,7 @@ public class PageManager {
 
         if (isWritable) {
             Metadata writeableMetadata = new Metadata(metadata.magicNumber(), metadata.version(), page.getPageId());
-            MetaFileManager.writeMetadata(writeableMetadata, properties);
+            MetaFileManager.writeMetadata(writeableMetadata, cxt);
             return page;
         }
         return null;
@@ -349,7 +350,7 @@ public class PageManager {
         }
         try (RandomAccessFile raf = new RandomAccessFile(dataFile.toFile(), "rw");
              FileChannel fileChannel = raf.getChannel()) {
-            long offset = page.getPageId() * ConfigManager.getInt(ConfigManager.PAGE_SIZE_FIELD, 4096);
+            long offset = page.getPageId() * cxt.getPageSize();
             byte[] pageData = page.getPage();
 
             ByteBuffer buffer = ByteBuffer.wrap(pageData);
@@ -373,7 +374,7 @@ public class PageManager {
      * cache.
      */
     public void loadAllPagesOnStartup() throws IllegalArgumentException {
-        if (Boolean.parseBoolean(properties.getProperty((ConfigManager.EAGER_LOAD_PAGES_FIELD)))) {
+        if (cxt.isEagerLoadPages()) {
             if (this.metadata == null) {
                 LOGGER.error("Metadata not loaded. Cannot load pages at startup.", IllegalStateException.class.getName());
                 throw new IllegalStateException("ERROR: Metadata must be loaded before loading pages.");
@@ -394,7 +395,7 @@ public class PageManager {
         }
     }
 
-    public static Properties getProperties() {
-        return properties;
+    public static CrushContext getCrushContext() {
+        return cxt;
     }
 }
