@@ -38,6 +38,7 @@ class CrushContextTest {
         Assertions.assertFalse(cxt.getProperty(CrushContext.BASE_DIR).contains("/tmp"));
 
         // ensure we have the managers and engines we need
+        Assertions.assertEquals(8082, cxt.getPort());
         Assertions.assertNotNull(cxt.getPageManager());
         Assertions.assertFalse(cxt.getPageManager().getDataFile().toAbsolutePath().toString().contains("/tmp"));
         Assertions.assertNotNull(cxt.getStorageEngine());
@@ -62,6 +63,7 @@ class CrushContextTest {
         Assertions.assertTrue(testCxt.getDataPath().contains("/tmp"));
         FileUtil.destroyTestDatabaseDirectory();
 
+        Assertions.assertEquals(8082, testCxt.getPort());
         Assertions.assertNotNull(testCxt.getPageManager());
         Assertions.assertTrue(testCxt.getPageManager().getDataFile().toAbsolutePath().toString().contains("/tmp"));
         Assertions.assertNotNull(testCxt.getStorageEngine());

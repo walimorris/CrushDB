@@ -40,6 +40,7 @@ public class CrushContext extends Properties {
     private int logMaxFiles;
     private int logRetentionDays;
     private int logMaxSizeMb;
+    private int port;
 
     private PageManager pageManager;
     private BPTreeIndexManager indexManager;
@@ -76,6 +77,7 @@ public class CrushContext extends Properties {
     public static final String CUSTOM_CA_CERT_PATH = "customCaCertPath";
     public static final String WAL_DIRECTORY = "walDirectory";
     public static final String WAL_PATH = "walPath";
+    public static final String PORT = "port";
 
     public CrushContext() {}
 
@@ -157,6 +159,7 @@ public class CrushContext extends Properties {
             logMaxFiles = Integer.parseInt(getProperty(LOG_MAX_FILES));
             logRetentionDays = Integer.parseInt(getProperty(LOG_RETENTION_DAYS));
             logMaxSizeMb = Integer.parseInt(getProperty(LOG_MAX_SIZE_MB));
+            port = Integer.parseInt(getProperty(PORT));
         }
     }
 
@@ -309,4 +312,6 @@ public class CrushContext extends Properties {
     public int getLogMaxSizeMb() {
         return logMaxSizeMb;
     }
+
+    public int getPort() { return port; }
 }
