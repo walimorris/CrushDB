@@ -395,6 +395,14 @@ public class PageManager {
         }
     }
 
+    public static PageManager getInstance() {
+        return instance;
+    }
+
+    public Path getDataFile() {
+        return dataFile;
+    }
+
     public static CrushContext getCrushContext() {
         return cxt;
     }

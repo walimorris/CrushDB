@@ -22,10 +22,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class StorageEngineTest {
     private static CrushContext cxt;
-    private static StorageEngine storageEngine;
-    private static PageManager pageManager;
-    private static BPTreeIndexManager indexManager;
-    private static JournalManager journalManager;
     private static Document document1;
     private static Document document2;
     private static Document document3;
@@ -41,12 +37,7 @@ class StorageEngineTest {
         JournalManager.reset();
         CrateManager.reset();
 
-        cxt = DatabaseInitializer.init(true);
-        pageManager = PageManager.getInstance(cxt);
-        indexManager = BPTreeIndexManager.getInstance(cxt);
-        journalManager = JournalManager.getInstance(cxt);
-
-        storageEngine = new StorageEngine(pageManager, indexManager, journalManager);
+        cxt = DatabaseInitializer.initTest();
 
         document1 = new Document(1234567L);
         document1.put("vehicleMake", "Subaru");
@@ -102,9 +93,9 @@ class StorageEngineTest {
     @Test
     @Order(1)
     void createIndex() {
-        storageEngine.createIndex(BsonType.STRING, "Vehicle", "make_index", "vehicleMake", false, 3, SortOrder.ASC);
-        storageEngine.createIndex(BsonType.LONG, "Vehicle", "id_index", "_id", false, 3, SortOrder.ASC);
-        BPTreeIndexManager storageEngineIndexManager = storageEngine.getIndexManager();
+        cxt.getStorageEngine().createIndex(BsonType.STRING, "Vehicle", "make_index", "vehicleMake", false, 3, SortOrder.ASC);
+        cxt.getStorageEngine().createIndex(BsonType.LONG, "Vehicle", "id_index", "_id", false, 3, SortOrder.ASC);
+        BPTreeIndexManager storageEngineIndexManager = cxt.getStorageEngine().getIndexManager();
         assertEquals(2, storageEngineIndexManager.getAllIndexesFromCrate("Vehicle").size());
         assertNotNull(storageEngineIndexManager.getIndex("Vehicle", "make_index"));
         assertNotNull(storageEngineIndexManager.getIndex("Vehicle", "id_index"));
@@ -113,10 +104,10 @@ class StorageEngineTest {
     @Test
     @Order(2)
     void insert() {
-        Document result1 = storageEngine.insert("Vehicle", document1);
-        Document result2 = storageEngine.insert("Vehicle", document2);
-        Document result3 = storageEngine.insert("Vehicle", document3);
-        Document result4 = storageEngine.insert("Vehicle", document4);
+        Document result1 = cxt.getStorageEngine().insert("Vehicle", document1);
+        Document result2 = cxt.getStorageEngine().insert("Vehicle", document2);
+        Document result3 = cxt.getStorageEngine().insert("Vehicle", document3);
+        Document result4 = cxt.getStorageEngine().insert("Vehicle", document4);
 
         assertAll(
                 () -> assertNotNull(result1),
@@ -137,7 +128,7 @@ class StorageEngineTest {
         // the index corresponding index(es) will be found in the crate's find method before passing to
         // the storage engine
         BPTreeIndex<?> index = null;
-        List<BPTreeIndex<?>> indexes = storageEngine.getIndexManager().getAllIndexesFromCrate("Vehicle");
+        List<BPTreeIndex<?>> indexes = cxt.getStorageEngine().getIndexManager().getAllIndexesFromCrate("Vehicle");
         for (BPTreeIndex<?> i : indexes) {
             if (i.getIndexName().equals("make_index")) {
                 index = i;
@@ -146,7 +137,7 @@ class StorageEngineTest {
         }
 
         BPTreeIndex<?> id_index = null;
-        List<BPTreeIndex<?>> moreIndexes = storageEngine.getIndexManager().getAllIndexesFromCrate("Vehicle");
+        List<BPTreeIndex<?>> moreIndexes = cxt.getStorageEngine().getIndexManager().getAllIndexesFromCrate("Vehicle");
         for (BPTreeIndex<?> i : moreIndexes) {
             if (i.getIndexName().equals("id_index")) {
                 id_index = i;
@@ -154,11 +145,11 @@ class StorageEngineTest {
             }
         }
 
-        List<Document> resultSet1 = storageEngine.find("Vehicle", index, BsonValue.ofString("Subaru"));
-        List<Document> resultSet2 = storageEngine.find("Vehicle", index, BsonValue.ofString("BMW"));
-        List<Document> resultSet3 = storageEngine.find("Vehicle", index, BsonValue.ofString("Tesla"));
+        List<Document> resultSet1 = cxt.getStorageEngine().find("Vehicle", index, BsonValue.ofString("Subaru"));
+        List<Document> resultSet2 = cxt.getStorageEngine().find("Vehicle", index, BsonValue.ofString("BMW"));
+        List<Document> resultSet3 = cxt.getStorageEngine().find("Vehicle", index, BsonValue.ofString("Tesla"));
 
-        List<Document> resultSet4 = storageEngine.find("vehicle", id_index, BsonValue.ofLong(document1.getDocumentId()));
+        List<Document> resultSet4 = cxt.getStorageEngine().find("vehicle", id_index, BsonValue.ofLong(document1.getDocumentId()));
 
         assertAll(
                 () -> assertEquals(2, resultSet1.size()),
@@ -172,7 +163,7 @@ class StorageEngineTest {
     @Order(4)
     void rangeFind() {
         BPTreeIndex<?> index = null;
-        List<BPTreeIndex<?>> indexes = storageEngine.getIndexManager().getAllIndexesFromCrate("Vehicle");
+        List<BPTreeIndex<?>> indexes = cxt.getStorageEngine().getIndexManager().getAllIndexesFromCrate("Vehicle");
         for (BPTreeIndex<?> i : indexes) {
             if (i.getIndexName().equals("make_index")) {
                 index = i;
@@ -181,7 +172,7 @@ class StorageEngineTest {
         }
 
         // range search is Acura -> Subaru (inclusive). This search will return and makes between these values - including BMW
-        List<Document> result = storageEngine.rangeFind("Vehicle", index, BsonValue.ofString("Acura"), BsonValue.ofString("Subaru"));
+        List<Document> result = cxt.getStorageEngine().rangeFind("Vehicle", index, BsonValue.ofString("Acura"), BsonValue.ofString("Subaru"));
         assertEquals(3, result.size());
         for (Document doc : result) {
             doc.prettyPrint();

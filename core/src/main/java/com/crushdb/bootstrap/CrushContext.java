@@ -1,5 +1,15 @@
 package com.crushdb.bootstrap;
 
+import com.crushdb.index.BPTreeIndexManager;
+import com.crushdb.model.crate.CrateManager;
+import com.crushdb.queryengine.QueryEngine;
+import com.crushdb.queryengine.executor.QueryExecutor;
+import com.crushdb.queryengine.parser.QueryParser;
+import com.crushdb.queryengine.planner.QueryPlanner;
+import com.crushdb.storageengine.StorageEngine;
+import com.crushdb.storageengine.journal.JournalManager;
+import com.crushdb.storageengine.page.PageManager;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Map;
@@ -30,6 +40,16 @@ public class CrushContext extends Properties {
     private int logMaxFiles;
     private int logRetentionDays;
     private int logMaxSizeMb;
+
+    private PageManager pageManager;
+    private BPTreeIndexManager indexManager;
+    private JournalManager journalManager;
+    private StorageEngine storageEngine;
+    private CrateManager crateManager;
+    private QueryParser queryParser;
+    private QueryPlanner queryPlanner;
+    private QueryExecutor queryExecutor;
+    private QueryEngine queryEngine;
 
     public static final String BASE_DIR = "baseDir";
     public static final String IS_TEST = "isTest";
@@ -64,12 +84,18 @@ public class CrushContext extends Properties {
         setProperty(IS_TEST, String.valueOf(isTest()));
         setProperty(BASE_DIR, baseDir);
         setFromReader();
+        setSystemParent();
 
-        // if the context is not meant for a test - ensure default '~'
-        // is replaced with system parent directory
-        if (!Boolean.parseBoolean(getProperty(IS_TEST))) {
-            setSystemParent();
-        }
+        pageManager = PageManager.getInstance(this);
+        indexManager = BPTreeIndexManager.getInstance(this);
+        journalManager = JournalManager.getInstance(this);
+        storageEngine = new StorageEngine(pageManager, indexManager, journalManager);
+        CrateManager.init(storageEngine);
+        crateManager = CrateManager.getInstance(this);
+        queryParser = new QueryParser();
+        queryPlanner = new QueryPlanner(crateManager);
+        queryExecutor = new QueryExecutor();
+        queryEngine = new QueryEngine(queryParser, queryPlanner, queryExecutor);
         return this;
     }
 
@@ -78,8 +104,8 @@ public class CrushContext extends Properties {
             String value = (String) prop.getValue();
             if (value.startsWith("~")) {
                 value = value.replaceFirst("~", System.getProperty("user.home"));
+                setProperty((String) prop.getKey(), value);
             }
-            setProperty((String) prop.getKey(), value);
         }
     }
 
@@ -146,6 +172,42 @@ public class CrushContext extends Properties {
         String strValue = (objectValue instanceof String) ? (String) objectValue : null;
         Properties defaults = this.defaults;
         return ((strValue == null) && ((defaults) != null)) ? defaults.getProperty(key) : strValue;
+    }
+
+    public PageManager getPageManager() {
+        return pageManager;
+    }
+
+    public BPTreeIndexManager getIndexManager() {
+        return indexManager;
+    }
+
+    public JournalManager getJournalManager() {
+        return journalManager;
+    }
+
+    public StorageEngine getStorageEngine() {
+        return storageEngine;
+    }
+
+    public CrateManager getCrateManager() {
+        return crateManager;
+    }
+
+    public QueryParser getQueryParser() {
+        return queryParser;
+    }
+
+    public QueryPlanner getQueryPlanner() {
+        return queryPlanner;
+    }
+
+    public QueryExecutor getQueryExecutor() {
+        return queryExecutor;
+    }
+
+    public QueryEngine getQueryEngine() {
+        return queryEngine;
     }
 
     public String getBaseDir() {

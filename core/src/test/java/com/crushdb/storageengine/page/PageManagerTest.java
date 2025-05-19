@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PageManagerTest {
     private static CrushContext cxt;
-    private static PageManager pageManager;
     private static Document document1;
     private static Document document2;
     private static Document document3;
@@ -20,8 +19,7 @@ class PageManagerTest {
 
     @BeforeAll
     static void setup() {
-        cxt = DatabaseInitializer.init(true);
-        pageManager = PageManager.getInstance(cxt);
+        cxt = DatabaseInitializer.initTest();
 
         document1 = new Document(1234567L);
         document1.put("vehicleMake", "Subaru");
@@ -64,16 +62,16 @@ class PageManagerTest {
     @Test
     @Order(1)
     void getInstance() {
-        assertNotNull(pageManager);
+        assertNotNull(cxt.getPageManager());
     }
 
     @Test
     @Order(2)
     void insertAndRetrieveDocument() {
-        Document result1 = pageManager.insertDocument(document1);
-        Document result2 = pageManager.insertDocument(document2);
-        Document result3 = pageManager.insertDocument(document3);
-        Document result4 = pageManager.insertDocument(document4);
+        Document result1 = cxt.getPageManager().insertDocument(document1);
+        Document result2 = cxt.getPageManager().insertDocument(document2);
+        Document result3 = cxt.getPageManager().insertDocument(document3);
+        Document result4 = cxt.getPageManager().insertDocument(document4);
 
         System.out.println(result1);
         System.out.println(result2);
@@ -88,10 +86,10 @@ class PageManagerTest {
         PageOffsetReference pageOffsetReference3 = new PageOffsetReference(result3.getPageId(), result3.getOffset());
         PageOffsetReference pageOffsetReference4 = new PageOffsetReference(result4.getPageId(), result4.getOffset());
 
-        Document retrievedDocument1 = pageManager.retrieveDocument(pageOffsetReference1);
-        Document retrievedDocument2 = pageManager.retrieveDocument(pageOffsetReference2);
-        Document retrievedDocument3 = pageManager.retrieveDocument(pageOffsetReference3);
-        Document retrievedDocument4 = pageManager.retrieveDocument(pageOffsetReference4);
+        Document retrievedDocument1 = cxt.getPageManager().retrieveDocument(pageOffsetReference1);
+        Document retrievedDocument2 = cxt.getPageManager().retrieveDocument(pageOffsetReference2);
+        Document retrievedDocument3 = cxt.getPageManager().retrieveDocument(pageOffsetReference3);
+        Document retrievedDocument4 = cxt.getPageManager().retrieveDocument(pageOffsetReference4);
 
         assertEquals(document1, retrievedDocument1);
         assertEquals(document2, retrievedDocument2);
@@ -102,6 +100,6 @@ class PageManagerTest {
     @Test
     @Order(3)
     void flushAll() {
-        pageManager.flushAll();
+        cxt.getPageManager().flushAll();
     }
 }

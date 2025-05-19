@@ -2,11 +2,13 @@ package com.crushdb;
 
 import com.crushdb.bootstrap.ConfigManager;
 import com.crushdb.bootstrap.CrushContext;
+import com.crushdb.bootstrap.TestCrushContext;
+import com.crushdb.index.BPTreeIndexManager;
+import com.crushdb.model.crate.CrateManager;
+import com.crushdb.storageengine.journal.JournalManager;
+import com.crushdb.storageengine.page.PageManager;
 import com.crushdb.utils.FileUtil;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 class CrushContextTest {
 
@@ -20,24 +22,57 @@ class CrushContextTest {
         FileUtil.destroyTestDatabaseDirectory();
     }
 
+    @BeforeEach
+    public void reset() {
+        PageManager.reset();
+        BPTreeIndexManager.reset();
+        JournalManager.reset();
+        CrateManager.reset();
+    }
+
     @Test
     void prodContextTest() {
-        CrushContext crushContext = ConfigManager.loadContext();
-        Assertions.assertNotNull(crushContext);
-        Assertions.assertFalse(Boolean.parseBoolean(crushContext.getProperty("isTest")));
-        Assertions.assertFalse(crushContext.getProperty(CrushContext.BASE_DIR).contains("/tmp"));
-        System.out.println(crushContext);
+        CrushContext cxt = ConfigManager.loadContext();
+        Assertions.assertNotNull(cxt);
+        Assertions.assertFalse(Boolean.parseBoolean(cxt.getProperty("isTest")));
+        Assertions.assertFalse(cxt.getProperty(CrushContext.BASE_DIR).contains("/tmp"));
+
+        // ensure we have the managers and engines we need
+        Assertions.assertNotNull(cxt.getPageManager());
+        Assertions.assertFalse(cxt.getPageManager().getDataFile().toAbsolutePath().toString().contains("/tmp"));
+        Assertions.assertNotNull(cxt.getStorageEngine());
+        Assertions.assertNotNull(cxt.getIndexManager());
+        Assertions.assertNotNull(cxt.getJournalManager());
+        Assertions.assertNotNull(cxt.getCrateManager());
+        Assertions.assertNotNull(cxt.getQueryParser());
+        Assertions.assertNotNull(cxt.getQueryPlanner());
+        Assertions.assertNotNull(cxt.getQueryExecutor());
+        Assertions.assertNotNull(cxt.getQueryEngine());
+
+        System.out.println(cxt);
     }
 
     @Test
     void testContextToPropertiesTest() {
         // tmp needs to exist, breakdown after
-        FileUtil.spawnParentTestDatabaseDirectory();
-        CrushContext testCrushContext = ConfigManager.loadTestContext();
-        Assertions.assertNotNull(testCrushContext);
-        Assertions.assertTrue(Boolean.parseBoolean(testCrushContext.getProperty("isTest")));
-        Assertions.assertTrue(testCrushContext.getProperty(CrushContext.BASE_DIR).contains("/tmp"));
+        TestCrushContext testCxt = ConfigManager.loadTestContext();
+        Assertions.assertNotNull(testCxt);
+        Assertions.assertTrue(Boolean.parseBoolean(testCxt.getProperty("isTest")));
+        Assertions.assertTrue(testCxt.getProperty(CrushContext.BASE_DIR).contains("/tmp"));
+        Assertions.assertTrue(testCxt.getDataPath().contains("/tmp"));
         FileUtil.destroyTestDatabaseDirectory();
-        System.out.println(testCrushContext);
+
+        Assertions.assertNotNull(testCxt.getPageManager());
+        Assertions.assertTrue(testCxt.getPageManager().getDataFile().toAbsolutePath().toString().contains("/tmp"));
+        Assertions.assertNotNull(testCxt.getStorageEngine());
+        Assertions.assertNotNull(testCxt.getIndexManager());
+        Assertions.assertNotNull(testCxt.getJournalManager());
+        Assertions.assertNotNull(testCxt.getCrateManager());
+        Assertions.assertNotNull(testCxt.getQueryParser());
+        Assertions.assertNotNull(testCxt.getQueryPlanner());
+        Assertions.assertNotNull(testCxt.getQueryExecutor());
+        Assertions.assertNotNull(testCxt.getQueryEngine());
+
+        System.out.println(testCxt);
     }
 }

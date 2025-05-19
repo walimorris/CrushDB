@@ -23,36 +23,12 @@ import java.util.Scanner;
 import java.io.IOException;
 
 public class CrushCLI {
-    private PageManager pageManager;
-    private BPTreeIndexManager indexManager;
-    private JournalManager journalManager;
-    private CrateManager crateManager;
     private CrushContext cxt;
-
-    private final QueryEngine queryEngine;
-    private final StorageEngine storageEngine;
 
     private final List<String> singleCommands;
 
     public CrushCLI() {
-        cxt = DatabaseInitializer.init(true);
-
-        pageManager = PageManager.getInstance(cxt);
-        indexManager = BPTreeIndexManager.getInstance(cxt);
-        journalManager = JournalManager.getInstance(cxt);
-
-        storageEngine = new StorageEngine(pageManager, indexManager, journalManager);
-
-        // crate manager
-        CrateManager.init(storageEngine);
-        crateManager = CrateManager.getInstance(cxt);
-
-        // query engine
-        QueryParser queryParser = new QueryParser();
-        QueryPlanner queryPlanner = new QueryPlanner(crateManager);
-        QueryExecutor queryExecutor = new QueryExecutor();
-        queryEngine = new QueryEngine(queryParser, queryPlanner, queryExecutor);
-
+        cxt = DatabaseInitializer.initTest();
         singleCommands = List.of("clear", "help");
     }
 
@@ -150,7 +126,7 @@ public class CrushCLI {
     }
 
     private void handleCreateCrate(String crateName) {
-        queryEngine.getCrateManager().createCrate(crateName);
+        cxt.getQueryEngine().getCrateManager().createCrate(crateName);
         System.out.println("Created crate: " + crateName);
     }
 
@@ -163,7 +139,7 @@ public class CrushCLI {
             sortOrder = SortOrder.DESC;
         }
 
-        queryEngine.getCrateManager().getCrate(crateName).createIndex(bsonType, indexName, fieldName, unique, order, sortOrder);
+        cxt.getQueryEngine().getCrateManager().getCrate(crateName).createIndex(bsonType, indexName, fieldName, unique, order, sortOrder);
         System.out.println("Created index: " + indexName + " on crate: " + crateName);
     }
 
@@ -171,7 +147,7 @@ public class CrushCLI {
         System.out.println(json);
         Document document = Document.fromJson(json);
         document.prettyPrint();
-        Document resultDocument = queryEngine.getCrateManager().getCrate(crateName).insert(document);
+        Document resultDocument = cxt.getQueryEngine().getCrateManager().getCrate(crateName).insert(document);
         resultDocument.prettyPrint();
     }
 
@@ -218,7 +194,7 @@ public class CrushCLI {
             }
         }
         Map<String, Object> query = Map.of(field, Map.of(operator, typedValue));
-        List<Document> results = queryEngine.find(crateName, query);
+        List<Document> results = cxt.getQueryEngine().find(crateName, query);
         for (Document result : results) {
             result.prettyPrint();
         }
