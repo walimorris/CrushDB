@@ -3,7 +3,6 @@ package com.crushdb.ui;
 import com.crushdb.bootstrap.CrushContext;
 import com.crushdb.bootstrap.DatabaseInitializer;
 import com.crushdb.index.BPTreeIndex;
-import com.crushdb.storageengine.page.Page;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -27,6 +26,10 @@ public class MicroServer {
     }
 
     private static void handleClient(Socket socket, CrushContext cxt) {
+        Iterator<BPTreeIndex<?>> indexIterator = cxt.getIndexManager().getAllIndexes().iterator();
+        for (int index = 0; indexIterator.hasNext(); index++) {
+            System.out.printf("index{%s}=%s%n", index, indexIterator.next().getIndexName());
+        }
         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             OutputStream outputStream = socket.getOutputStream()) {
             String line = in.readLine();

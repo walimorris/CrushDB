@@ -1,6 +1,7 @@
 package com.crushdb.bootstrap;
 
 import com.crushdb.index.BPTreeIndexManager;
+import com.crushdb.logger.CrushDBLogger;
 import com.crushdb.model.crate.CrateManager;
 import com.crushdb.queryengine.QueryEngine;
 import com.crushdb.queryengine.executor.QueryExecutor;
@@ -85,9 +86,9 @@ public class CrushContext extends Properties {
         load(reader);
         setProperty(IS_TEST, String.valueOf(isTest()));
         setProperty(BASE_DIR, baseDir);
-        setFromReader();
-        setSystemParent();
+        normalizePaths();
 
+        CrushDBLogger.loadConfiguration(this);
         pageManager = PageManager.getInstance(this);
         indexManager = BPTreeIndexManager.getInstance(this);
         journalManager = JournalManager.getInstance(this);
@@ -98,7 +99,17 @@ public class CrushContext extends Properties {
         queryPlanner = new QueryPlanner(crateManager);
         queryExecutor = new QueryExecutor();
         queryEngine = new QueryEngine(queryParser, queryPlanner, queryExecutor);
+
+        // load
+        System.out.println(getIndexesPath());
+        indexManager.loadIndexesFromDisk();
         return this;
+    }
+
+    private void normalizePaths() {
+        setFromReader();
+        setSystemParent();
+        setFromReader();
     }
 
     private void setSystemParent() {

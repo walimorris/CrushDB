@@ -1,7 +1,10 @@
 package com.crushdb.index;
 
+import com.crushdb.bootstrap.CrushContext;
+import com.crushdb.bootstrap.DatabaseInitializer;
 import com.crushdb.index.btree.BPMapping;
 import com.crushdb.index.btree.PageOffsetReference;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -10,6 +13,12 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class BPMappingTest {
+    private static CrushContext cxt;
+
+    @BeforeAll
+    public static void setUp() {
+        cxt = DatabaseInitializer.init();
+    }
 
     @Test
     public void compareToTest() {

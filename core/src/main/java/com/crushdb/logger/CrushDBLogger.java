@@ -32,13 +32,22 @@ public class CrushDBLogger {
     private static final String INFO = "INFO";
     private static final String ERROR = "ERROR";
 
-    private static final ReentrantLock lock = new ReentrantLock();
-
-    static {
-        loadConfiguration();
-    }
+    private static final ReentrantLock lock;
 
     private final String className;
+
+    static {
+        ReentrantLock tempLock = null;
+        try {
+            tempLock = new ReentrantLock();
+        } catch (Exception e) {
+            System.err.println("Failed to initialize lock: " + e.getMessage());
+        }
+        lock = tempLock;
+        if (lock == null) {
+            throw new IllegalStateException("Failed to initialize lock in CrushDBLogger.");
+        }
+    }
 
     private CrushDBLogger(Class<?> clazz) {
         this.className = clazz.getSimpleName();
@@ -54,8 +63,7 @@ public class CrushDBLogger {
         return new CrushDBLogger(clazz);
     }
 
-    private static void loadConfiguration() {
-        CrushContext cxt = ConfigManager.loadContext();
+    public static void loadConfiguration(CrushContext cxt) {
         if (cxt != null && !cxt.isEmpty()) {
             maxLogFiles = cxt.getLogMaxFiles();
             maxLogRetentionDays = cxt.getLogRetentionDays();

@@ -254,16 +254,17 @@ public class BPTreeIndexManager {
         return this.crateIndexes.getOrDefault(crateName, Collections.emptyMap()).get(indexName);
     }
 
-    public void loadIndexesFromDisk(StorageEngine storageEngine) {
-        String indexesDir = cxt.getIndexesPath();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(indexesDir), "*.index")) {
-            for (Path indexFile : stream) {
-                BPTreeIndex<?> index = BPTreeIndex.deserialize(indexFile, storageEngine);
-                crateIndexes.computeIfAbsent(index.getCrateName(), k -> new HashMap<>())
-                        .put(index.getIndexName(), index);
+    public void loadIndexesFromDisk() {
+        if (cxt != null) {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(Paths.get(cxt.getIndexesPath()), "*.index")) {
+                for (Path indexFile : stream) {
+                    BPTreeIndex<?> index = BPTreeIndex.deserialize(indexFile, cxt.getStorageEngine());
+                    crateIndexes.computeIfAbsent(index.getCrateName(), k -> new HashMap<>())
+                            .put(index.getIndexName(), index);
+                }
+            } catch (IOException e) {
+                LOGGER.error("Failed to load indexes from disk: " + e.getMessage(), IOException.class.getName());
             }
-        } catch (IOException e) {
-            LOGGER.error("Failed to load indexes from disk: " + e.getMessage(), IOException.class.getName());
         }
     }
 }

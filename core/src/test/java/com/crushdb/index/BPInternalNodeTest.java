@@ -1,6 +1,9 @@
 package com.crushdb.index;
 
+import com.crushdb.bootstrap.CrushContext;
+import com.crushdb.bootstrap.DatabaseInitializer;
 import com.crushdb.index.btree.*;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -8,6 +11,12 @@ import java.util.Arrays;
 import static org.junit.jupiter.api.Assertions.*;
 
 class BPInternalNodeTest {
+    private static CrushContext cxt;
+
+    @BeforeAll
+    public static void setUp() {
+        cxt = DatabaseInitializer.init();
+    }
 
     @Test
     void insertChildPointerAtIndex() {

@@ -1,9 +1,12 @@
 package com.crushdb.index;
 
+import com.crushdb.bootstrap.CrushContext;
+import com.crushdb.bootstrap.DatabaseInitializer;
 import com.crushdb.index.btree.BPLeafNode;
 import com.crushdb.index.btree.BPMapping;
 import com.crushdb.index.btree.PageOffsetReference;
 import com.crushdb.index.btree.SortOrder;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -15,6 +18,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class BPLeafNodeTest {
+    private static CrushContext cxt;
+
+    @BeforeAll
+    public static void setUp() {
+        cxt = DatabaseInitializer.initTest();
+    }
 
     @Test
     void insertASC() {

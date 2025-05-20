@@ -207,10 +207,6 @@ public class ConfigManager {
 
     private static final Properties properties = new Properties();
 
-    static {
-        loadContext();
-    }
-
     public static TestCrushContext loadTestContext() {
         if (!Files.exists(Path.of(TEST_CONFIGURATION_FILE))) {
             writeTestDefaultConfig();

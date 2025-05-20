@@ -8,7 +8,6 @@ import java.io.IOException;
 import static com.crushdb.bootstrap.ConfigManager.*;
 
 public class DatabaseInitializer {
-    private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(DatabaseInitializer.class);
 
     private DatabaseInitializer() {}
 
@@ -35,10 +34,8 @@ public class DatabaseInitializer {
             createFileIfMissing(META_FILE);
             createFileIfMissing(JOURNAL_FILE);
 
-            if (new File(CONFIGURATION_FILE).exists()) {
-                LOGGER.info("Configuration already alive: " + CONFIGURATION_FILE, null);
-            }
             cxt = ConfigManager.loadContext();
+            CrushDBLogger.loadConfiguration(cxt);
         } else {
             throw new IllegalStateException("Database directory structure failed to initialize.");
         }
@@ -60,10 +57,8 @@ public class DatabaseInitializer {
             createFileIfMissing(TEST_META_FILE);
             createFileIfMissing(TEST_JOURNAL_FILE);
 
-            if (new File(TEST_CONFIGURATION_FILE).exists()) {
-                LOGGER.info("Test Configuration already alive: " + CONFIGURATION_FILE, null);
-            }
             cxt = ConfigManager.loadTestContext();
+            CrushDBLogger.loadConfiguration(cxt);
         } else {
             throw new IllegalStateException("Database directory structure failed to initialize.");
         }
@@ -73,33 +68,18 @@ public class DatabaseInitializer {
     private static boolean createDirectory(String path) {
         File directory = new File(path);
         if (directory.exists() && directory.isDirectory()) {
-            LOGGER.info("Directory already alive: " + path, null);
             return true;
         }
-        boolean created = directory.mkdirs();
-        if (created) {
-            LOGGER.info("LOG: spawned directory: " + path, null);
-        } else {
-            LOGGER.info("LOG: failed to spawn directory: " + path, null);
-        }
-        return created;
+        return directory.mkdirs();
     }
 
     private static void createFileIfMissing(String path) {
         File file = new File(path);
         try {
             if (!file.exists()) {
-                boolean created = file.createNewFile();
-                if (created) {
-                    LOGGER.info("Created file: " + path, null);
-                } else {
-                    LOGGER.info("Failed to create file: " + path, null);
-                }
-            } else {
-                LOGGER.info("File already exists: " + path, null);
+                file.createNewFile();
             }
         } catch (IOException e) {
-            LOGGER.error("Unable to create file on path " + path + ": " + e, IllegalArgumentException.class.getName());
             throw new IllegalArgumentException(e);
         }
     }

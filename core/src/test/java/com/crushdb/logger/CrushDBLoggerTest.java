@@ -1,11 +1,20 @@
 package com.crushdb.logger;
 
+import com.crushdb.bootstrap.CrushContext;
+import com.crushdb.bootstrap.DatabaseInitializer;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 public class CrushDBLoggerTest {
+    private static CrushContext cxt;
+
+    @BeforeAll
+    public static void setUp() {
+        cxt = DatabaseInitializer.init();
+    }
 
     @Test
     public void initCrushDBLogger() {
