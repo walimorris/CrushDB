@@ -1,4 +1,4 @@
-package com.crushdb.ui;
+package com.crushdb.server;
 
 import com.crushdb.bootstrap.CrushContext;
 import com.crushdb.bootstrap.DatabaseInitializer;
