@@ -19,6 +19,7 @@
         <module>core</module>
         <module>cli</module>
         <module>ui</module>
+        <module>server</module>
     </modules>
 
     <dependencies>

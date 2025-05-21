@@ -1,15 +1,15 @@
-package com.crushdb.bootstrap;
+package com.crushdb.core.bootstrap;
 
-import com.crushdb.index.BPTreeIndexManager;
-import com.crushdb.logger.CrushDBLogger;
-import com.crushdb.model.crate.CrateManager;
-import com.crushdb.queryengine.QueryEngine;
-import com.crushdb.queryengine.executor.QueryExecutor;
-import com.crushdb.queryengine.parser.QueryParser;
-import com.crushdb.queryengine.planner.QueryPlanner;
-import com.crushdb.storageengine.StorageEngine;
-import com.crushdb.storageengine.journal.JournalManager;
-import com.crushdb.storageengine.page.PageManager;
+import com.crushdb.core.index.BPTreeIndexManager;
+import com.crushdb.core.logger.CrushDBLogger;
+import com.crushdb.core.model.crate.CrateManager;
+import com.crushdb.core.queryengine.QueryEngine;
+import com.crushdb.core.queryengine.executor.QueryExecutor;
+import com.crushdb.core.queryengine.parser.QueryParser;
+import com.crushdb.core.queryengine.planner.QueryPlanner;
+import com.crushdb.core.storageengine.StorageEngine;
+import com.crushdb.core.storageengine.journal.JournalManager;
+import com.crushdb.core.storageengine.page.PageManager;
 
 import java.io.IOException;
 import java.io.Reader;

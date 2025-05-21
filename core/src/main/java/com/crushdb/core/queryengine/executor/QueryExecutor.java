@@ -1,8 +1,8 @@
-package com.crushdb.queryengine.executor;
+package com.crushdb.core.queryengine.executor;
 
-import com.crushdb.logger.CrushDBLogger;
-import com.crushdb.model.document.Document;
-import com.crushdb.queryengine.planner.QueryPlan;
+import com.crushdb.core.logger.CrushDBLogger;
+import com.crushdb.core.model.document.Document;
+import com.crushdb.core.queryengine.planner.QueryPlan;
 
 import java.util.HashSet;
 import java.util.List;

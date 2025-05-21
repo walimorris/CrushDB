@@ -1,6 +1,6 @@
-package com.crushdb.index.btree;
+package com.crushdb.core.index.btree;
 
-import com.crushdb.storageengine.page.Page;
+import com.crushdb.core.storageengine.page.Page;
 
 /**
  * Represents a reference to a specific location in a database page.

@@ -1,10 +1,10 @@
-package com.crushdb.index;
+package com.crushdb.core.index;
 
-import com.crushdb.index.btree.BPTree;
-import com.crushdb.index.btree.PageOffsetReference;
-import com.crushdb.index.btree.SortOrder;
-import com.crushdb.model.document.BsonType;
-import com.crushdb.storageengine.StorageEngine;
+import com.crushdb.core.index.btree.BPTree;
+import com.crushdb.core.index.btree.PageOffsetReference;
+import com.crushdb.core.index.btree.SortOrder;
+import com.crushdb.core.model.document.BsonType;
+import com.crushdb.core.storageengine.StorageEngine;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

@@ -1,18 +1,18 @@
-package com.crushdb.storageengine;
+package com.crushdb.core.storageengine;
 
-import com.crushdb.index.BPTreeIndex;
-import com.crushdb.index.BPTreeIndexManager;
-import com.crushdb.index.IndexEntry;
-import com.crushdb.index.IndexEntryBuilder;
-import com.crushdb.index.btree.PageOffsetReference;
-import com.crushdb.index.btree.SortOrder;
-import com.crushdb.logger.CrushDBLogger;
-import com.crushdb.model.document.BsonType;
-import com.crushdb.model.document.BsonValue;
-import com.crushdb.model.document.Document;
-import com.crushdb.storageengine.journal.JournalEntry;
-import com.crushdb.storageengine.journal.JournalManager;
-import com.crushdb.storageengine.page.PageManager;
+import com.crushdb.core.index.BPTreeIndex;
+import com.crushdb.core.index.BPTreeIndexManager;
+import com.crushdb.core.index.IndexEntry;
+import com.crushdb.core.index.IndexEntryBuilder;
+import com.crushdb.core.index.btree.PageOffsetReference;
+import com.crushdb.core.index.btree.SortOrder;
+import com.crushdb.core.logger.CrushDBLogger;
+import com.crushdb.core.model.document.BsonType;
+import com.crushdb.core.model.document.BsonValue;
+import com.crushdb.core.model.document.Document;
+import com.crushdb.core.storageengine.journal.JournalEntry;
+import com.crushdb.core.storageengine.journal.JournalManager;
+import com.crushdb.core.storageengine.page.PageManager;
 
 import java.util.ArrayList;
 import java.util.List;

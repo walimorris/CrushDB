@@ -1,20 +1,11 @@
 package com.crushdb.cli;
 
-import com.crushdb.bootstrap.CrushContext;
-import com.crushdb.bootstrap.DatabaseInitializer;
-import com.crushdb.index.BPTreeIndexManager;
-import com.crushdb.index.btree.SortOrder;
-import com.crushdb.model.crate.CrateManager;
-import com.crushdb.model.document.BsonType;
-import com.crushdb.model.document.Document;
-import com.crushdb.queryengine.QueryEngine;
-import com.crushdb.queryengine.executor.QueryExecutor;
-import com.crushdb.queryengine.parser.QueryParser;
-import com.crushdb.queryengine.planner.QueryPlanner;
-import com.crushdb.storageengine.StorageEngine;
-import com.crushdb.storageengine.journal.JournalManager;
-import com.crushdb.storageengine.page.PageManager;
-import com.crushdb.utils.FileUtil;
+import com.crushdb.core.bootstrap.CrushContext;
+import com.crushdb.core.bootstrap.DatabaseInitializer;
+import com.crushdb.core.index.btree.SortOrder;
+import com.crushdb.core.model.document.BsonType;
+import com.crushdb.core.model.document.Document;
+import com.crushdb.core.utils.FileUtil;
 
 import java.util.List;
 import java.util.Map;

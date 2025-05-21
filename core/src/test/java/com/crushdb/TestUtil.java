@@ -1,6 +1,6 @@
 package com.crushdb;
 
-import com.crushdb.bootstrap.ConfigManager;
+import com.crushdb.core.bootstrap.ConfigManager;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;

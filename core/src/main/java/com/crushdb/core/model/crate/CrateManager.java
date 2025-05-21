@@ -1,10 +1,10 @@
-package com.crushdb.model.crate;
+package com.crushdb.core.model.crate;
 
-import com.crushdb.bootstrap.CrushContext;
-import com.crushdb.index.btree.SortOrder;
-import com.crushdb.logger.CrushDBLogger;
-import com.crushdb.model.document.BsonType;
-import com.crushdb.storageengine.StorageEngine;
+import com.crushdb.core.bootstrap.CrushContext;
+import com.crushdb.core.index.btree.SortOrder;
+import com.crushdb.core.logger.CrushDBLogger;
+import com.crushdb.core.model.document.BsonType;
+import com.crushdb.core.storageengine.StorageEngine;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;

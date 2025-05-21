@@ -1,12 +1,12 @@
-package com.crushdb.queryengine;
+package com.crushdb.core.queryengine;
 
-import com.crushdb.model.crate.CrateManager;
-import com.crushdb.model.document.Document;
-import com.crushdb.queryengine.executor.QueryExecutor;
-import com.crushdb.queryengine.parser.QueryExpression;
-import com.crushdb.queryengine.parser.QueryParser;
-import com.crushdb.queryengine.planner.QueryPlan;
-import com.crushdb.queryengine.planner.QueryPlanner;
+import com.crushdb.core.model.crate.CrateManager;
+import com.crushdb.core.model.document.Document;
+import com.crushdb.core.queryengine.executor.QueryExecutor;
+import com.crushdb.core.queryengine.parser.QueryExpression;
+import com.crushdb.core.queryengine.parser.QueryParser;
+import com.crushdb.core.queryengine.planner.QueryPlan;
+import com.crushdb.core.queryengine.planner.QueryPlanner;
 
 import java.util.List;
 import java.util.Map;

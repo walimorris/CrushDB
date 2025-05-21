@@ -1,12 +1,12 @@
-package com.crushdb.storageengine.page;
+package com.crushdb.core.storageengine.page;
 
-import com.crushdb.bootstrap.CrushContext;
-import com.crushdb.index.btree.PageOffsetReference;
-import com.crushdb.logger.CrushDBLogger;
-import com.crushdb.model.document.Document;
-import com.crushdb.bootstrap.ConfigManager;
-import com.crushdb.storageengine.StorageEngine;
-import com.crushdb.index.BPTreeIndexManager;
+import com.crushdb.core.bootstrap.CrushContext;
+import com.crushdb.core.index.btree.PageOffsetReference;
+import com.crushdb.core.logger.CrushDBLogger;
+import com.crushdb.core.model.document.Document;
+import com.crushdb.core.bootstrap.ConfigManager;
+import com.crushdb.core.storageengine.StorageEngine;
+import com.crushdb.core.index.BPTreeIndexManager;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;

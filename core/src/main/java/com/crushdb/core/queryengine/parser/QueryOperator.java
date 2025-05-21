@@ -1,4 +1,4 @@
-package com.crushdb.queryengine.parser;
+package com.crushdb.core.queryengine.parser;
 
 /**
  * The {@code QueryOperator} enum defines a set of supported query operators

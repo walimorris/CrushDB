@@ -1,15 +1,15 @@
 package com.crushdb.queryengine;
 
-import com.crushdb.bootstrap.CrushContext;
-import com.crushdb.bootstrap.DatabaseInitializer;
-import com.crushdb.index.BPTreeIndexManager;
-import com.crushdb.index.btree.SortOrder;
-import com.crushdb.model.crate.CrateManager;
-import com.crushdb.model.document.BsonType;
-import com.crushdb.model.document.Document;
-import com.crushdb.storageengine.journal.JournalManager;
-import com.crushdb.storageengine.page.PageManager;
-import com.crushdb.utils.FileUtil;
+import com.crushdb.core.bootstrap.CrushContext;
+import com.crushdb.core.bootstrap.DatabaseInitializer;
+import com.crushdb.core.index.BPTreeIndexManager;
+import com.crushdb.core.index.btree.SortOrder;
+import com.crushdb.core.model.crate.CrateManager;
+import com.crushdb.core.model.document.BsonType;
+import com.crushdb.core.model.document.Document;
+import com.crushdb.core.storageengine.journal.JournalManager;
+import com.crushdb.core.storageengine.page.PageManager;
+import com.crushdb.core.utils.FileUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

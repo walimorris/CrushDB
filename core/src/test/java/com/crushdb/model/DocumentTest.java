@@ -1,6 +1,6 @@
 package com.crushdb.model;
 
-import com.crushdb.model.document.Document;
+import com.crushdb.core.model.document.Document;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

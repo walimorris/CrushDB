@@ -1,8 +1,8 @@
-package com.crushdb.index;
+package com.crushdb.core.index;
 
-import com.crushdb.index.btree.PageOffsetReference;
-import com.crushdb.model.document.BsonValue;
-import com.crushdb.model.document.Document;
+import com.crushdb.core.index.btree.PageOffsetReference;
+import com.crushdb.core.model.document.BsonValue;
+import com.crushdb.core.model.document.Document;
 
 import java.util.Optional;
 

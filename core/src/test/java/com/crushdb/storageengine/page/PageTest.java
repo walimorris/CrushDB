@@ -1,13 +1,15 @@
 package com.crushdb.storageengine.page;
 
-import com.crushdb.model.document.BsonValue;
-import com.crushdb.model.document.Document;
+import com.crushdb.core.model.document.BsonValue;
+import com.crushdb.core.model.document.Document;
+import com.crushdb.core.storageengine.page.Page;
+import com.crushdb.core.storageengine.page.PageSplitResult;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Map;
 
-import static com.crushdb.storageengine.page.Page.DOCUMENT_METADATA_SIZE;
+import static com.crushdb.core.storageengine.page.Page.DOCUMENT_METADATA_SIZE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;

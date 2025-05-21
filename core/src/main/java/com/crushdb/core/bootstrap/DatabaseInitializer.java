@@ -1,11 +1,11 @@
-package com.crushdb.bootstrap;
+package com.crushdb.core.bootstrap;
 
-import com.crushdb.logger.CrushDBLogger;
+import com.crushdb.core.logger.CrushDBLogger;
 
 import java.io.File;
 import java.io.IOException;
 
-import static com.crushdb.bootstrap.ConfigManager.*;
+import static com.crushdb.core.bootstrap.ConfigManager.*;
 
 public class DatabaseInitializer {
 

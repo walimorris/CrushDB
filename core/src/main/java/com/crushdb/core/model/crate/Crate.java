@@ -1,12 +1,12 @@
-package com.crushdb.model.crate;
+package com.crushdb.core.model.crate;
 
-import com.crushdb.index.BPTreeIndex;
-import com.crushdb.index.btree.SortOrder;
-import com.crushdb.model.document.BsonType;
-import com.crushdb.model.document.BsonValue;
-import com.crushdb.model.document.Document;
-import com.crushdb.storageengine.StorageEngine;
-import com.crushdb.bootstrap.ConfigManager;
+import com.crushdb.core.index.BPTreeIndex;
+import com.crushdb.core.index.btree.SortOrder;
+import com.crushdb.core.model.document.BsonType;
+import com.crushdb.core.model.document.BsonValue;
+import com.crushdb.core.model.document.Document;
+import com.crushdb.core.storageengine.StorageEngine;
+import com.crushdb.core.bootstrap.ConfigManager;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;

@@ -1,4 +1,4 @@
-package com.crushdb.storageengine.journal;
+package com.crushdb.core.storageengine.journal;
 
 public class JournalEntry {
 

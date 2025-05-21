@@ -1,9 +1,9 @@
-package com.crushdb.model.document;
+package com.crushdb.core.model.document;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
-import static com.crushdb.storageengine.page.Page.INACTIVE;
+import static com.crushdb.core.storageengine.page.Page.INACTIVE;
 
 /**
  * Responsible for decoding a byte array into a {@link Document}

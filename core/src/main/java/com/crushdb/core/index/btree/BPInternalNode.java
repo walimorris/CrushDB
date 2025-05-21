@@ -1,6 +1,6 @@
-package com.crushdb.index.btree;
+package com.crushdb.core.index.btree;
 
-import com.crushdb.logger.CrushDBLogger;
+import com.crushdb.core.logger.CrushDBLogger;
 
 import java.util.Arrays;
 import java.util.Comparator;

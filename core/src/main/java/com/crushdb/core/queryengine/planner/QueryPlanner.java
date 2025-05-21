@@ -1,10 +1,10 @@
-package com.crushdb.queryengine.planner;
+package com.crushdb.core.queryengine.planner;
 
-import com.crushdb.index.BPTreeIndex;
-import com.crushdb.logger.CrushDBLogger;
-import com.crushdb.model.crate.Crate;
-import com.crushdb.model.crate.CrateManager;
-import com.crushdb.queryengine.parser.QueryExpression;
+import com.crushdb.core.index.BPTreeIndex;
+import com.crushdb.core.logger.CrushDBLogger;
+import com.crushdb.core.model.crate.Crate;
+import com.crushdb.core.model.crate.CrateManager;
+import com.crushdb.core.queryengine.parser.QueryExpression;
 
 import java.util.ArrayList;
 import java.util.List;

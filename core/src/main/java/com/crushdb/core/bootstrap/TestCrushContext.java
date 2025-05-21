@@ -1,4 +1,4 @@
-package com.crushdb.bootstrap;
+package com.crushdb.core.bootstrap;
 
 public class TestCrushContext extends CrushContext {
 

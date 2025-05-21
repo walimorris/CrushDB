@@ -1,6 +1,6 @@
-package com.crushdb.bootstrap;
+package com.crushdb.core.bootstrap;
 
-import com.crushdb.storageengine.page.PageManager;
+import com.crushdb.core.storageengine.page.PageManager;
 
 import java.io.IOException;
 import java.io.BufferedReader;

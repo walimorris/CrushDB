@@ -1,9 +1,9 @@
 package com.crushdb.index;
 
-import com.crushdb.bootstrap.CrushContext;
-import com.crushdb.bootstrap.DatabaseInitializer;
-import com.crushdb.index.btree.BPMapping;
-import com.crushdb.index.btree.PageOffsetReference;
+import com.crushdb.core.bootstrap.CrushContext;
+import com.crushdb.core.bootstrap.DatabaseInitializer;
+import com.crushdb.core.index.btree.BPMapping;
+import com.crushdb.core.index.btree.PageOffsetReference;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

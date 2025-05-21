@@ -1,7 +1,8 @@
 package com.crushdb.logger;
 
-import com.crushdb.bootstrap.CrushContext;
-import com.crushdb.bootstrap.DatabaseInitializer;
+import com.crushdb.core.bootstrap.CrushContext;
+import com.crushdb.core.bootstrap.DatabaseInitializer;
+import com.crushdb.core.logger.CrushDBLogger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

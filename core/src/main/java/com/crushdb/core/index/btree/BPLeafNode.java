@@ -1,10 +1,10 @@
-package com.crushdb.index.btree;
+package com.crushdb.core.index.btree;
 
 import java.util.Arrays;
 import java.util.Comparator;
 
-import com.crushdb.logger.CrushDBLogger;
-import com.crushdb.storageengine.page.Page;
+import com.crushdb.core.logger.CrushDBLogger;
+import com.crushdb.core.storageengine.page.Page;
 
 /**
  * Represents a leaf node in a B+ Tree structure.

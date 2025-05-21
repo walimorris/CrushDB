@@ -1,8 +1,8 @@
 package com.crushdb.index;
 
-import com.crushdb.bootstrap.CrushContext;
-import com.crushdb.bootstrap.DatabaseInitializer;
-import com.crushdb.index.btree.*;
+import com.crushdb.core.bootstrap.CrushContext;
+import com.crushdb.core.bootstrap.DatabaseInitializer;
+import com.crushdb.core.index.btree.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 

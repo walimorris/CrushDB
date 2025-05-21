@@ -1,7 +1,7 @@
-package com.crushdb.queryengine.parser;
+package com.crushdb.core.queryengine.parser;
 
-import com.crushdb.logger.CrushDBLogger;
-import com.crushdb.model.document.BsonValue;
+import com.crushdb.core.logger.CrushDBLogger;
+import com.crushdb.core.model.document.BsonValue;
 
 import java.util.ArrayList;
 import java.util.List;

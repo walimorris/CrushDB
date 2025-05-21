@@ -1,6 +1,6 @@
-package com.crushdb.index;
+package com.crushdb.core.index;
 
-import com.crushdb.index.btree.PageOffsetReference;
+import com.crushdb.core.index.btree.PageOffsetReference;
 
 /**
  * Represents a single entry in a database index, associating a key with the location in page.

@@ -1,7 +1,7 @@
-package com.crushdb.storageengine.page;
+package com.crushdb.core.storageengine.page;
 
-import com.crushdb.logger.CrushDBLogger;
-import com.crushdb.model.document.Document;
+import com.crushdb.core.logger.CrushDBLogger;
+import com.crushdb.core.model.document.Document;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;

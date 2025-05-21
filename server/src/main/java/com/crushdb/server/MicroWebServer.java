@@ -1,14 +1,16 @@
 package com.crushdb.server;
 
-import com.crushdb.bootstrap.CrushContext;
-import com.crushdb.bootstrap.DatabaseInitializer;
+import com.crushdb.core.bootstrap.CrushContext;
+import com.crushdb.core.bootstrap.DatabaseInitializer;
+import com.crushdb.core.providers.StaticResourceProvider;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.ServiceLoader;
 
-public class MicroServer {
+public class MicroWebServer {
     private static CrushContext cxt;
 
     public static void main(String[] args) throws IOException {
@@ -33,12 +35,15 @@ public class MicroServer {
                 String method = request[0];
                 String path = request[1];
                 if (path.equals("/")) {
-                    path = "/web/index.html";
+                    path = "web/index.html";
                 } else if (!path.startsWith("/web/")) {
-                    path = "/web" + path;
+                    path = "web" + path;
                 }
-                try (InputStream inputStream = MicroServer.class.getResourceAsStream(path)) {
-                    System.out.println(MicroServer.class.getResource(path));
+                ServiceLoader<StaticResourceProvider> loader = ServiceLoader.load(StaticResourceProvider.class);
+                StaticResourceProvider provider = loader.findFirst()
+                        .orElseThrow(() -> new IllegalStateException("No StaticResourceProvider found"));
+                try (InputStream inputStream = provider.getResource(path)) {
+                    System.out.println(provider.getResource(path));
                     if (inputStream == null) {
                         pageNotFound(outputStream);
                     } else {

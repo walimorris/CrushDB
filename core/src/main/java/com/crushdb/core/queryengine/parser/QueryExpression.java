@@ -1,6 +1,6 @@
-package com.crushdb.queryengine.parser;
+package com.crushdb.core.queryengine.parser;
 
-import com.crushdb.model.document.BsonValue;
+import com.crushdb.core.model.document.BsonValue;
 
 /**
  * Represents a query expression used to filter or match data based on specified criteria.

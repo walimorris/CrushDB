@@ -1,4 +1,4 @@
-package com.crushdb.model.document;
+package com.crushdb.core.model.document;
 
 /**
  * {@code BsonType} represents BSON data types in CrushDB. Each type contains its respective

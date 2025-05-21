@@ -1,4 +1,4 @@
-package com.crushdb.index.btree;
+package com.crushdb.core.index.btree;
 
 public class BPNode <T extends Comparable<T>> {
     BPInternalNode<T> parent;

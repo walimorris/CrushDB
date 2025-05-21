@@ -1,6 +1,6 @@
-package com.crushdb.model.document;
+package com.crushdb.core.model.document;
 
-import com.crushdb.storageengine.page.Page;
+import com.crushdb.core.storageengine.page.Page;
 
 import java.util.*;
 

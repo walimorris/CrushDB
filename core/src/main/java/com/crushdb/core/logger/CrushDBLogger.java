@@ -1,7 +1,7 @@
-package com.crushdb.logger;
+package com.crushdb.core.logger;
 
-import com.crushdb.bootstrap.ConfigManager;
-import com.crushdb.bootstrap.CrushContext;
+import com.crushdb.core.bootstrap.ConfigManager;
+import com.crushdb.core.bootstrap.CrushContext;
 
 import java.io.File;
 import java.io.IOException;
