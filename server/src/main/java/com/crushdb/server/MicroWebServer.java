@@ -10,6 +10,8 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ServiceLoader;
 
+import static com.crushdb.server.MimeType.fromPath;
+
 public class MicroWebServer {
     private static CrushContext cxt;
 
@@ -59,7 +61,7 @@ public class MicroWebServer {
                     if (inputStream == null) {
                         pageNotFound(outputStream);
                     } else {
-                        loadResource(inputStream, outputStream, getMimeType(path));
+                        loadResource(inputStream, outputStream, fromPath(path));
                     }
                 }
             }
@@ -85,21 +87,5 @@ public class MicroWebServer {
         out.write((HTTP_V1_404 + RN + CONTENT_TYPE + "text/html" + RN +
                 CONTENT_LENGTH + body.length() + RN + RN + body).getBytes()
         );
-    }
-
-    private static String getMimeType(String path) {
-        String[] pathSplit = path.split("\\.");
-        String mimeType = pathSplit[pathSplit.length - 1];
-
-        return switch (mimeType) {
-            case "html" -> "text/html";
-            case "js" -> "application/javascript";
-            case "css" -> "text/css";
-            case "json" -> "application/json";
-            case "png" -> "image/png";
-            case "ico" -> "image/x-icon";
-            case "svg" -> "image/svg+xml";
-            default -> "application/octet-stream";
-        };
     }
 }
