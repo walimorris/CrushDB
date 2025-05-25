@@ -59,7 +59,7 @@ public class BsonDecoder {
      *   <li>Populates a {@link Document} with the reconstructed fields and returns it.</li>
      * </ol>
      *
-     * <h2>Constraints & Assumptions:</h2>
+     * <h3>Constraints and Assumptions:</h3>
      * <ul>
      *   <li>Data must follow the binary structure defined by {@link BsonEncoder}.</li>
      *   <li>Documents are stored in big-endian byte order (Java default).</li>

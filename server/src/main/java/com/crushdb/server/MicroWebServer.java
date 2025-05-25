@@ -3,65 +3,91 @@ package com.crushdb.server;
 import com.crushdb.core.bootstrap.CrushContext;
 import com.crushdb.core.bootstrap.DatabaseInitializer;
 import com.crushdb.core.providers.StaticResourceProvider;
+import com.crushdb.server.config.RouterConfig;
+import com.crushdb.server.http.*;
+import com.crushdb.server.router.RouteHandler;
+import com.crushdb.server.router.Router;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 import java.util.ServiceLoader;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import static com.crushdb.server.MimeType.fromPath;
+import static com.crushdb.server.http.MimeType.fromPath;
 
 public class MicroWebServer {
     private static CrushContext cxt;
-
-    private static final String INDEX = "/";
-    private static final String INDEX_HTML = "index.html";
-    private static final String WEB_PREFIX = "/web";
     private static final String NO_FOUND_STATIC_RESOURCE_PROVIDER = "No StaticResourceProvider found";
 
     private static final String RN = "\r\n";
-    private static final String HTTP_V1_200 = "HTTP/1.1 200 OK";
     private static final String HTTP_V1_404 = "HTTP/1.1 404 Not Found";
     private static final String CONTENT_TYPE = "Content-Type: ";
     private static final String CONTENT_LENGTH = "Content-Length: ";
+    private static final String INDEX = "/";
+    private static final String INDEX_HTML = "index.html";
+    private static final String WEB_PREFIX = "/web";
 
     public static void main(String[] args) throws IOException {
         cxt = DatabaseInitializer.init();
         int port = cxt.getPort();
+        Router router = RouterConfig.init();
+        ExecutorService executor = Executors.newFixedThreadPool(5);
         try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("CrushDB Microserver running at http://localhost:" + port);
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                new Thread(() -> handleClient(clientSocket, cxt)).start();
+                executor.submit(() -> {
+                    System.out.print("Processed by thread: " + Thread.currentThread());
+                    handleClient(clientSocket, cxt, router);
+                });
             }
+        } finally {
+            executor.shutdown();
         }
     }
 
-    private static void handleClient(Socket socket, CrushContext cxt) {
+    private static void handleClient(Socket socket, CrushContext cxt, Router router) {
         try (BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             OutputStream outputStream = socket.getOutputStream()) {
             String line = in.readLine();
             if (line != null) {
                 System.out.println("Request=" + line);
-                String[] request = line.split(" ");
-                String method = request[0];
-                String path = request[1];
+                String[] browserRequest = line.split(" ");
+                String method = browserRequest[0];
+                String path = browserRequest[1];
+                HttpVersion requestVersion = HttpVersion.version(browserRequest[2]);
 
-                if (path.equals(INDEX)) {
-                    path = WEB_PREFIX + INDEX + INDEX_HTML;
-                } else if (!path.startsWith(WEB_PREFIX + INDEX)) {
-                    path = WEB_PREFIX + path;
-                }
+                // IoC usage to get the web resources for markup, js, css
+                path = resolve(path);
                 ServiceLoader<StaticResourceProvider> loader = ServiceLoader.load(StaticResourceProvider.class);
                 StaticResourceProvider provider = loader.findFirst()
                         .orElseThrow(() -> new IllegalStateException(NO_FOUND_STATIC_RESOURCE_PROVIDER));
-
                 try (InputStream inputStream = provider.getResource(path)) {
                     if (inputStream == null) {
                         pageNotFound(outputStream);
                     } else {
-                        loadResource(inputStream, outputStream, fromPath(path));
+                        MimeType mimeType = fromPath(path);
+                        RequestMethod requestMethod = RequestMethod.valueOf(method);
+                        // TODO: make resolve(request)
+                        // there are many resources in /web we can let the page handler
+                        // handle these they're all the same (write headers, write stream)
+                        RouteHandler routeHandler = router.resolveCommonRoute(requestMethod, path);
+                        if (routeHandler == null) {
+                            System.out.println("No route handler found for path: " + path);
+                            pageNotFound(outputStream);
+                            return;
+                        }
+                        HttpRequest httpRequest = HttpRequest.newBuilder(path)
+                                .method(requestMethod)
+                                .version(requestVersion)
+                                .mimetype(mimeType)
+                                .inputStream(inputStream)
+                                .build();
+                        HttpResponse response = new HttpResponse();
+                        routeHandler.handle(httpRequest, response);
+                        write(response, outputStream);
                     }
                 }
             }
@@ -70,13 +96,26 @@ public class MicroWebServer {
         }
     }
 
-    private static void loadResource(InputStream inputStream, OutputStream outputStream, String contentType) {
+    private static String resolve(String path) {
+        String resolvedPath = "";
+        if (path.startsWith("/api")) {
+            resolvedPath = path;
+        } else if (path.equals(INDEX)) {
+            resolvedPath = WEB_PREFIX + INDEX + INDEX_HTML;
+        } else {
+            if (!path.startsWith(WEB_PREFIX)) {
+                resolvedPath = WEB_PREFIX + path;
+            }
+        }
+        return resolvedPath;
+    }
+
+    private static void write(HttpResponse response, OutputStream outputStream) {
         try {
-            byte[] content = inputStream.readAllBytes();
-            String headers = HTTP_V1_200 + RN + CONTENT_TYPE + contentType + RN +
-                    CONTENT_LENGTH + content.length + RN + RN;
-            outputStream.write(headers.getBytes(StandardCharsets.UTF_8));
-            outputStream.write(content);
+            outputStream.write(response.byteHeaders());
+            System.out.println("Wrote headers");
+            outputStream.write(response.body());
+            System.out.println("Wrote body");
         } catch (IOException e) {
             System.out.println("Error: serving resource: " + e.getMessage());
         }

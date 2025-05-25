@@ -69,7 +69,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  *   <li><b>Document Content (variable):</b> Serialized document data (compressed if applicable).</li>
  * </ul>
  *
- * <h2>Deleted Documents & Space Reclamation:</h2>
+ * <h2>Deleted Documents and Space Reclamation:</h2>
  * - Documents are marked as deleted using the **Deleted Flag** instead of being immediately removed.
  * - Deleted documents still occupy space but are skipped during retrieval.
  * - The **Deleted Documents List** keeps track of deleted entries for later reclamation.
@@ -356,7 +356,7 @@ public class Page {
      *   <li>Mark the page as <b>dirty</b> (modified) for persistence tracking.</li>
      * </ol>
      *
-     * <h2>Document Storage Format:</h2>
+     * <h3>Document Storage Format:</h3>
      * Each document stored in a Page follows this structure:
      * <pre>
      * +------------+------------+--------------+--------------+--------------+--------------------+
@@ -925,7 +925,7 @@ public class Page {
      *   <li>Available space is recalculated.</li>
      * </ul>
      *
-     * <h2>Compaction Process:</h2>
+     * <h3>Compaction Process:</h3>
      * <ol>
      *   <li>Create a new page buffer of the same size.</li>
      *   <li>Copy the first {@code headerSize} bytes (header) from the old page.</li>
@@ -940,13 +940,13 @@ public class Page {
      *   <li>Delete Set storing deleted Document IDs</li>
      * </ol>
      *
-     * <h2>Error Handling:</h2>
+     * <h3>Error Handling:</h3>
      * <ul>
      *   <li>If an inconsistency is detected (e.g., offset mismatch), an exception is thrown.</li>
      *   <li>If an error occurs during compaction, an error message is logged.</li>
      * </ul>
      *
-     * <h2>Performance Considerations:</h2>
+     * <h3>Performance Considerations:</h3>
      * <ul>
      *   <li>Compaction is a CPU-intensive operation and should be triggered strategically.</li>
      *   <li>Running compaction too frequently may cause unnecessary performance overhead.</li>

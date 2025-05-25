@@ -1,13 +1,16 @@
-package com.crushdb.server;
+package com.crushdb.server.http;
 
 /**
  * If you're unfamiliar with MimeType usage in browsers, here's a great resource to quickly get
- * up to speed: <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types">MimeTypes</a>
- * <p>
- * {@code com.crushdb.server.MimeType} is a convenient ENUM class to assist with processing URLS.
+ * up to speed:
+ * <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types">MimeTypes</a>
+ *
+ * <p>{@code MimeType} is a convenient ENUM class to assist with processing URLS.
  * It's important that web servers send the correct MIME type in the response's <b>Content-Type</b>
  * header. Without proper configurations, browsers are likely to misinterpret the contents of files,
  * and sites will not work correctly.
+ *
+ * @author walimorris
  */
 public enum MimeType {
     HTML("html", "text/html"),
@@ -82,22 +85,22 @@ public enum MimeType {
      * Given a file path, pull the file extension value,
      * run an equality matcher against all other possible
      * {@code MimeType} extensions. Return the media type
-     * string or else return binary octet stream type.
+     * or else return binary octet stream type.
      *
      * @param path given file path to resource content
      *
-     * @return {@link String}
+     * @return {@link MimeType}
      */
-    public static String fromPath(String path) {
+    public static MimeType fromPath(String path) {
         if (path == null || !path.contains(".")) {
-            return BINARY.getType();
+            return BINARY;
         }
         String ext = path.substring(path.lastIndexOf(".") + 1).toLowerCase();
         for (MimeType type : values()) {
             if (type.ext.equals(ext)) {
-                return type.type;
+                return type;
             }
         }
-        return BINARY.type;
+        return BINARY;
     }
 }

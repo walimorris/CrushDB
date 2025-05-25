@@ -247,7 +247,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      * child nodes. This is the means of searching, these nodes make decisions about
      * which route to go.
      *
-     * <h2>Use Cases:</h2>
+     * <h3>Use Cases:</h3>
      * <ul>
      *   <li>When splitting an internal node, new child pointers need to be inserted.</li>
      *   <li>When constructing the tree, inserting the first child pointers.</li>
@@ -278,7 +278,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      *   <li>Locating a child pointer that needs to be adjusted or removed.</li>
      * </ul>
      *
-     * <h2>Use Cases:</h2>
+     * <h3>Use Cases:</h3>
      * <ul>
      *   <li>Searching, to determine which subtree to traverse.</li>
      *   <li>Splitting, to locate the child being split.</li>

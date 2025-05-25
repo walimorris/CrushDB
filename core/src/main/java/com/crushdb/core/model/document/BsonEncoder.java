@@ -63,7 +63,7 @@ public class BsonEncoder {
      *   <li>Trims the buffer to the exact number of bytes written and returns the result.</li>
      * </ol>
      *
-     * <h2>Constraints:</h2>
+     * <h3>Constraints:</h3>
      * <ul>
      *   <li>The total encoded document size must not exceed 4096 bytes (4KB).</li>
      *   <li>UTF-8 encoding is used for both keys and string values.</li>
