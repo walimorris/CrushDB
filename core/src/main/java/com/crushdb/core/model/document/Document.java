@@ -132,7 +132,20 @@ public class Document {
     public static final int DOCUMENT_METADATA_SIZE = 25;
 
     /**
-     * Constructs a new document with a unique identifier.
+     * Constructs a new Document. Utilizes {@linkplain #nextId() nextId}
+     * to associate this Document with a unique identifier.
+     */
+    public Document() {
+        this.documentId = nextId();
+        this.pageId = -1;
+        this.decompressedSize = -1;
+        this.compressedSize = -1;
+        this.fields = new LinkedHashMap<>();
+        this.fields.put("_id", BsonValue.ofLong(documentId));
+    }
+
+    /**
+     * Constructs a new document with the given unique identifier.
      *
      * @param documentId The unique identifier for this document.
      */
@@ -157,6 +170,7 @@ public class Document {
         this.decompressedSize = DOCUMENT_METADATA_SIZE + decompressedSize;
         this.compressedSize = DOCUMENT_METADATA_SIZE + compressedSize;
         this.fields = new LinkedHashMap<>();
+        this.fields.put("_id", BsonValue.ofLong(documentId));
     }
 
     /**
@@ -226,7 +240,8 @@ public class Document {
         return result.toString();
     }
 
-    public static Document fromJson(String json) {
+    //TODO: harden, throw errors or malformed state etc
+    public static Document fromSimpleJson(String json) {
         // json should look as such {_id:987654321, name: james, age: 17}
         // so we can strip the open and close brackets
         String content = json.substring(1);

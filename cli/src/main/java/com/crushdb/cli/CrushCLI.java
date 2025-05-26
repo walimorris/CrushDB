@@ -136,7 +136,7 @@ public class CrushCLI {
 
     private void handleInsertOne(String crateName, String json) {
         System.out.println(json);
-        Document document = Document.fromJson(json);
+        Document document = Document.fromSimpleJson(json);
         document.prettyPrint();
         Document resultDocument = cxt.getQueryEngine().getCrateManager().getCrate(crateName).insert(document);
         resultDocument.prettyPrint();

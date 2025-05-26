@@ -1,0 +1,9 @@
+{
+  "vehicleMake": "Tesla",
+  "vehicleModel": "Model3",
+  "vehicleType": "automatic",
+  "vehiclePrice": 30000.99,
+  "vehicleYear": 2017,
+  "vehicleBodyStyle": "Sudan",
+  "hasHeating": true
+}
