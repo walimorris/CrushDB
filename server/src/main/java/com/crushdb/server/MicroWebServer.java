@@ -7,13 +7,11 @@ import com.crushdb.server.config.RouterConfig;
 import com.crushdb.server.http.*;
 import com.crushdb.server.router.RouteHandler;
 import com.crushdb.server.router.Router;
-import com.crushdb.server.utils.StreamingUtil;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.Scanner;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
