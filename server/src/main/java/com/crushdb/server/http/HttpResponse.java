@@ -29,7 +29,7 @@ public class HttpResponse {
 
     public byte[] byteHeaders() {
         if (immutableHttpRequest.version().isEmpty()) {
-            throw new IllegalStateException("no reference to version. Cannot response.");
+            throw new IllegalStateException("no reference to version. Cannot respond.");
         }
         StringBuilder sb = new StringBuilder();
         for (HttpHeader header : headers.set()) {
@@ -53,7 +53,7 @@ public class HttpResponse {
         return null;
     }
 
-    public ImmutableHttpRequest request() {
+    public ImmutableHttpRequest immutableRequest() {
         return immutableHttpRequest;
     }
 

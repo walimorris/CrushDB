@@ -63,8 +63,11 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
     @Override
     public synchronized HttpRequest.Builder headers(HttpHeaders headers) {
         requireNonNull(headers);
-        if (headers.size() == 0 || headers.size() % 2 != 0) {
-            throw new IllegalArgumentException();
+
+        // in the future the least required headers should be forced
+        // nosniff being one of them.
+        if (headers.size() == 0 || headers.size() < 2) {
+            throw new IllegalArgumentException("At least two headers are required.");
         }
         for (HttpHeader header : headers.set()) {
             if (checkHeader(header)) {
@@ -102,8 +105,13 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
     @Override
     public HttpRequest build() {
+        // cannot build a response when no resource is requested
         if (path == null) {
             throw new IllegalStateException("path is null");
+        }
+        // cannot build headers if none exist and there's no input stream
+        if (headers == null && inputStream == null) {
+            throw new IllegalStateException("headers and request input stream is null");
         }
         assert method != null;
         return  new ImmutableHttpRequest(this);

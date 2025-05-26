@@ -1,5 +1,6 @@
 package com.crushdb.server.handler;
 
+import com.crushdb.server.http.HttpHeader;
 import com.crushdb.server.http.HttpRequest;
 import com.crushdb.server.http.HttpResponse;
 import com.crushdb.server.http.ImmutableHttpRequest;
@@ -17,6 +18,8 @@ public class PageHandler implements RouteHandler {
 
     @Override
     public void handle(HttpRequest request, HttpResponse httpResponse) {
+        // always add nosniff
+        request.headers().addHeader(new HttpHeader("X-Content-Type-Options", "nosniff"));
         httpResponse.setImmutableHttpRequest((ImmutableHttpRequest) request);
         httpResponse.setHeaders(request.headers());
         httpResponse.setVersion(request.version());
