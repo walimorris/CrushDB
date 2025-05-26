@@ -1,7 +1,9 @@
 package com.crushdb.core;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
@@ -44,10 +46,12 @@ public class TestUtil {
         StringBuilder builder = new StringBuilder();
         try (InputStream resource = loader.getResourceAsStream(name)) {
             assert resource != null;
-            try (Scanner scanner = new Scanner(resource, StandardCharsets.UTF_8)) {
+            try (InputStreamReader inputStreamReader = new InputStreamReader(resource, StandardCharsets.UTF_8);
+                 BufferedReader reader = new BufferedReader(inputStreamReader)) {
                 if (resource.available() > 0) {
-                    while (scanner.hasNextLine()) {
-                        builder.append(scanner.nextLine());
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        builder.append(line);
                     }
                 } else {
                     throw new IllegalStateException("Resource may not exist or may be empty.");

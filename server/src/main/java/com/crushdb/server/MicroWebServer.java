@@ -132,10 +132,12 @@ public class MicroWebServer {
     private static String captureHeaderResponse(HttpResponse response) {
         byte[] responseHeaderBytes = response.byteHeaders();
         try (InputStream stream = new ByteArrayInputStream(responseHeaderBytes);
-             Scanner scanner = new Scanner(stream, StandardCharsets.UTF_8)) {
+             InputStreamReader inputStreamReader = new InputStreamReader(stream, StandardCharsets.UTF_8);
+             BufferedReader reader = new BufferedReader(inputStreamReader)) {
             StringBuilder builder = new StringBuilder();
-            while (scanner.hasNextLine()) {
-                builder.append(scanner.nextLine()).append("\n");
+            String line;
+            while ((line = reader.readLine()) != null) {
+                builder.append(line).append("\n");
             }
             return builder.toString();
         } catch (IOException e) {
