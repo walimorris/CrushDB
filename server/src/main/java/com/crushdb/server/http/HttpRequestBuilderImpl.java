@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
 
+import static com.crushdb.server.http.HeaderName.CONTENT_LENGTH;
+import static com.crushdb.server.http.HeaderName.CONTENT_TYPE;
 import static java.util.Objects.requireNonNull;
 
 public class HttpRequestBuilderImpl implements HttpRequest.Builder {
@@ -143,8 +145,8 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
                     }
                     byte[] content = StreamingUtil.readMarkAndReset(this.inputStream);
                     HttpHeaders result = new HttpHeaders();
-                    result.addHeader(new HttpHeader("Content-Type", mimeType().getType()));
-                    result.addHeader(new HttpHeader("Content-Length", String.valueOf(content.length)));
+                    result.addHeader(new HttpHeader(CONTENT_TYPE.getHeaderName(), mimeType().getType()));
+                    result.addHeader(new HttpHeader(CONTENT_LENGTH.getHeaderName(), String.valueOf(content.length)));
                     this.headers = result;
                     return result;
                 } catch (IOException e) {

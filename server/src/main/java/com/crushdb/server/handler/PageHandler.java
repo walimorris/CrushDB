@@ -1,10 +1,9 @@
 package com.crushdb.server.handler;
 
-import com.crushdb.server.http.HttpHeader;
-import com.crushdb.server.http.HttpRequest;
-import com.crushdb.server.http.HttpResponse;
-import com.crushdb.server.http.ImmutableHttpRequest;
+import com.crushdb.server.http.*;
 import com.crushdb.server.router.RouteHandler;
+
+import static com.crushdb.server.http.HeaderName.X_CONTENT_TYPE_OPTIONS;
 
 /**
  * Contractor: handles general Page rendering requests to {@code MicroServer}.
@@ -19,7 +18,7 @@ public class PageHandler implements RouteHandler {
     @Override
     public void handle(HttpRequest request, HttpResponse httpResponse) {
         // always add nosniff
-        request.headers().addHeader(new HttpHeader("X-Content-Type-Options", "nosniff"));
+        request.headers().addHeader(new HttpHeader(X_CONTENT_TYPE_OPTIONS.getHeaderName(), "nosniff"));
         httpResponse.setImmutableHttpRequest((ImmutableHttpRequest) request);
         httpResponse.setHeaders(request.headers());
         httpResponse.setVersion(request.version());

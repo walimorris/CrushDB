@@ -33,7 +33,7 @@ public class HttpResponse {
         }
         StringBuilder sb = new StringBuilder();
         for (HttpHeader header : headers.set()) {
-            sb.append(header.getKey())
+            sb.append(header.getHeaderName())
                     .append(": ")
                     .append(header.getValue())
                     .append(RN);
