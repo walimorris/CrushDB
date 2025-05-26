@@ -10,16 +10,64 @@ package com.crushdb.server.http;
  * header. Without proper configurations, browsers are likely to misinterpret the contents of files,
  * and sites will not work correctly.
  *
+ * <p>Disclaimer: in the absense of a MIME type, or when browsers believe they are incorrect,
+ * browsers may perform {@code MIME sniffing} -- guessing the correct MIME type by looking at
+ * the bytes of the resource. There are security concerns as some MIME types represent
+ * executable content. Servers can prevent MIME sniffing by sending the {@code X-Content-Type-Options}
+ * header. This header will be present in all {@code MicroServer} {@linkplain HttpResponse responses}.
+ *
+ * <p><a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Content-Type-Options>
+ *     nosniff</a></p>
+ *
  * @author walimorris
  */
 public enum MimeType {
+
+    /**
+     * All HTML content should be served with this type.
+     * {@code NOTE: XHTML is mostly useless these days}.
+     */
     HTML("html", "text/html"),
+
+    /**
+     * JavaScript content should always be served using this MIME Type. No other
+     * MIME types are considered valid for JavaScript. This is according to:
+     * <a href="https://www.iana.org/assignments/media-types/media-types.xhtml#text">
+     *     MediaTypes</a>
+     */
     JS("js", "application/javascript"),
+
+    /**
+     * CSS files used to style a Web page.
+     */
     CSS("css", "text/css"),
+
+    /**
+     * A standard text-based format for representing structured data based on
+     * JavaScript object syntax. Commonly used for transmitting data in web
+     * applications.
+     */
     JSON("json", "application/json"),
+
+    /**
+     * PNG images.
+     */
     PNG("png", "image/png"),
+
+    /**
+     * Icon images.
+     */
     ICO("ico", "image/x-icon"),
+
+    /**
+     * SVG images.
+     */
     SVG("svg", "image/svg+xml"),
+
+    /**
+     * This is the default for binary files. As it means unknown binary file,
+     * browsers usually don't execute it, or even as if it should be executed.
+     */
     BINARY("bin", "application/octet-stream");
 
     /**
