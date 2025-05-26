@@ -2,6 +2,7 @@ package com.crushdb.core;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 /**
@@ -40,23 +41,20 @@ public class TestUtil {
      */
     public static String loadResourceAsString(String name) throws IllegalStateException {
         ClassLoader loader = TestUtil.class.getClassLoader();
-        Scanner scanner = null;
         StringBuilder builder = new StringBuilder();
         try (InputStream resource = loader.getResourceAsStream(name)) {
-            if (resource != null && resource.available() > 0) {
-                scanner = new Scanner(resource);
-                while (scanner.hasNextLine()) {
-                    builder.append(scanner.nextLine());
+            assert resource != null;
+            try (Scanner scanner = new Scanner(resource, StandardCharsets.UTF_8)) {
+                if (resource.available() > 0) {
+                    while (scanner.hasNextLine()) {
+                        builder.append(scanner.nextLine());
+                    }
+                } else {
+                    throw new IllegalStateException("Resource may not exist or may be empty.");
                 }
-            } else {
-                throw new IllegalStateException("Resource may not exist or may be empty.");
             }
         } catch (IOException e) {
             System.out.printf("Error on resource %s: %s%n", name, e.getMessage());
-        } finally {
-            if (scanner != null) {
-                scanner.close();
-            }
         }
         return builder.toString();
     }

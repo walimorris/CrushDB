@@ -7,10 +7,13 @@ import com.crushdb.server.config.RouterConfig;
 import com.crushdb.server.http.*;
 import com.crushdb.server.router.RouteHandler;
 import com.crushdb.server.router.Router;
+import com.crushdb.server.utils.StreamingUtil;
 
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
 import java.util.ServiceLoader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -112,6 +115,11 @@ public class MicroWebServer {
 
     private static void write(HttpResponse response, OutputStream outputStream) {
         try {
+            String responseCapture = captureHeaderResponse(response);
+            if (responseCapture != null) {
+                System.out.println("headers:");
+                System.out.println(responseCapture);
+            }
             outputStream.write(response.byteHeaders());
             System.out.println("Wrote headers");
             outputStream.write(response.body());
@@ -119,6 +127,21 @@ public class MicroWebServer {
         } catch (IOException e) {
             System.out.println("Error: serving resource: " + e.getMessage());
         }
+    }
+
+    private static String captureHeaderResponse(HttpResponse response) {
+        byte[] responseHeaderBytes = response.byteHeaders();
+        try (InputStream stream = new ByteArrayInputStream(responseHeaderBytes);
+             Scanner scanner = new Scanner(stream, StandardCharsets.UTF_8)) {
+            StringBuilder builder = new StringBuilder();
+            while (scanner.hasNextLine()) {
+                builder.append(scanner.nextLine()).append("\n");
+            }
+            return builder.toString();
+        } catch (IOException e) {
+            System.out.println("Can't read responseHeaderBytes input stream");
+        }
+        return null;
     }
 
     private static void pageNotFound(OutputStream out) throws IOException {
