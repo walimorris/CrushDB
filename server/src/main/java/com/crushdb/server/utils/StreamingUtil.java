@@ -22,7 +22,9 @@ public class StreamingUtil {
     /**
      * static - no constructor
      */
-    private StreamingUtil() {}
+    private StreamingUtil() {
+        throw new AssertionError("Illegal instantiation request for a StreamingUtil!");
+    }
 
     /**
      * Determines if the given {@code InputStream} supports {@link InputStream#mark(int)}.

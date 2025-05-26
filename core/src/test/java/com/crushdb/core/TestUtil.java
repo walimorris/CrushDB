@@ -15,7 +15,7 @@ public class TestUtil {
      * Private constructor: prevents instantiation and enforces utility class usage.
      */
     private TestUtil() {
-        throw new AssertionError("Cannot instantiate TestUtil!");
+        throw new AssertionError("Illegal instantiation request for a TestUtil!");
     }
 
     /**
