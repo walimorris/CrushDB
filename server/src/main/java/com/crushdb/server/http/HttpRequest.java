@@ -4,7 +4,7 @@ import java.io.InputStream;
 import java.util.Optional;
 
 import com.crushdb.server.MicroWebServer;
-import com.crushdb.server.router.RouteHandler;
+import com.crushdb.server.handler.RouteHandler;
 
 /**
  * An HTTP request.

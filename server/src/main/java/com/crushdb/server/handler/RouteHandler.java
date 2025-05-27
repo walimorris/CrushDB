@@ -1,4 +1,4 @@
-package com.crushdb.server.router;
+package com.crushdb.server.handler;
 
 
 import com.crushdb.server.http.HttpRequest;

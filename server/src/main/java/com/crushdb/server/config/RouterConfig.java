@@ -3,7 +3,7 @@ package com.crushdb.server.config;
 import com.crushdb.server.handler.PageHandler;
 import com.crushdb.server.router.Router;
 import com.crushdb.server.http.RequestMethod;
-import com.crushdb.server.router.RouteHandler;
+import com.crushdb.server.handler.RouteHandler;
 
 import static com.crushdb.server.http.RequestMethod.GET;
 

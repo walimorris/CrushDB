@@ -5,7 +5,7 @@ import com.crushdb.core.bootstrap.DatabaseInitializer;
 import com.crushdb.core.providers.StaticResourceProvider;
 import com.crushdb.server.config.RouterConfig;
 import com.crushdb.server.http.*;
-import com.crushdb.server.router.RouteHandler;
+import com.crushdb.server.handler.RouteHandler;
 import com.crushdb.server.router.Router;
 
 import java.io.*;

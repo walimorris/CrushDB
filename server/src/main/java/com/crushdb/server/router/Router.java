@@ -1,5 +1,6 @@
 package com.crushdb.server.router;
 
+import com.crushdb.server.handler.RouteHandler;
 import com.crushdb.server.http.RequestMethod;
 
 import java.util.concurrent.ConcurrentHashMap;

@@ -1,7 +1,6 @@
 package com.crushdb.server.handler;
 
 import com.crushdb.server.http.*;
-import com.crushdb.server.router.RouteHandler;
 
 /**
  * Contractor: handles general Page rendering requests to {@code MicroServer}.

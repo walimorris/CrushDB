@@ -2,7 +2,7 @@ package com.crushdb.server.http;
 
 import java.io.InputStream;
 import java.util.Optional;
-import com.crushdb.server.router.RouteHandler;
+import com.crushdb.server.handler.RouteHandler;
 
 import static java.util.Objects.requireNonNull;
 
