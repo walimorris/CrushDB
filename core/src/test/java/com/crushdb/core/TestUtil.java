@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Scanner;
 
 /**
@@ -45,7 +46,7 @@ public class TestUtil {
         ClassLoader loader = TestUtil.class.getClassLoader();
         StringBuilder builder = new StringBuilder();
         try (InputStream resource = loader.getResourceAsStream(name)) {
-            assert resource != null;
+            Objects.requireNonNull(resource, "resource cannot be null.");
             try (InputStreamReader inputStreamReader = new InputStreamReader(resource, StandardCharsets.UTF_8);
                  BufferedReader reader = new BufferedReader(inputStreamReader)) {
                 if (resource.available() > 0) {
@@ -54,11 +55,11 @@ public class TestUtil {
                         builder.append(line);
                     }
                 } else {
-                    throw new IllegalStateException("Resource may not exist or may be empty.");
+                    throw new IllegalStateException("resource may be empty.");
                 }
             }
         } catch (IOException e) {
-            System.out.printf("Error on resource %s: %s%n", name, e.getMessage());
+            System.out.printf("error on resource %s: %s%n", name, e.getMessage());
         }
         return builder.toString();
     }
