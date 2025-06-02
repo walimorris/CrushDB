@@ -100,10 +100,15 @@ public class CrushContext extends Properties {
         queryExecutor = new QueryExecutor();
         queryEngine = new QueryEngine(queryParser, queryPlanner, queryExecutor);
 
-        // load
-        System.out.println(getIndexesPath());
-        indexManager.loadIndexesFromDisk();
+        // load data dependencies
+        loadDataDependencies();
         return this;
+    }
+
+    private void loadDataDependencies() {
+        indexManager.loadIndexesFromDisk();
+        pageManager.loadAllPagesOnStartup();
+        crateManager.loadCratesFromDisk();
     }
 
     private void normalizePaths() {

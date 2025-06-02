@@ -241,7 +241,7 @@ public class PageManager {
      * @return the loaded {@code Page} object if successful; otherwise, {@code null}.
      */
     private Page loadPageFromDisk(long pageId) {
-        Path dataFile = Paths.get(cxt.getStoragePath());
+        Path dataFile = Paths.get(cxt.getDataPath());
         int pageSize = cxt.getPageSize();
 
         try (RandomAccessFile raf = new RandomAccessFile(dataFile.toFile(), "r");
