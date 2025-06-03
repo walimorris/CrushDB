@@ -1,5 +1,7 @@
 package com.crushdb.core.bootstrap;
 
+import com.crushdb.core.authentication.Authenticator;
+import com.crushdb.core.authentication.User;
 import com.crushdb.core.index.BPTreeIndexManager;
 import com.crushdb.core.logger.CrushDBLogger;
 import com.crushdb.core.model.crate.CrateManager;
@@ -43,6 +45,7 @@ public class CrushContext extends Properties {
     private int logMaxSizeMb;
     private int port;
 
+    private Authenticator authenticator;
     private PageManager pageManager;
     private BPTreeIndexManager indexManager;
     private JournalManager journalManager;
@@ -192,6 +195,8 @@ public class CrushContext extends Properties {
         Properties defaults = this.defaults;
         return ((strValue == null) && ((defaults) != null)) ? defaults.getProperty(key) : strValue;
     }
+
+    public Authenticator getAuthenticator() { return authenticator; }
 
     public PageManager getPageManager() {
         return pageManager;

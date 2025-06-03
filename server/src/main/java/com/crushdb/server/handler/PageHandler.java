@@ -1,5 +1,6 @@
 package com.crushdb.server.handler;
 
+import com.crushdb.core.bootstrap.CrushContext;
 import com.crushdb.server.http.*;
 
 /**
@@ -13,7 +14,7 @@ import com.crushdb.server.http.*;
 public class PageHandler implements RouteHandler {
 
     @Override
-    public void handle(HttpRequest request, HttpResponse httpResponse) {
+    public void handle(HttpRequest request, HttpResponse httpResponse, CrushContext cxt) {
         httpResponse.setImmutableHttpRequest((ImmutableHttpRequest) request);
         httpResponse.setHeaders(request.headers());
         httpResponse.setVersion(request.version());

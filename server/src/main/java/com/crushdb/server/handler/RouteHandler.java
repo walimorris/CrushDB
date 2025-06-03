@@ -1,6 +1,7 @@
 package com.crushdb.server.handler;
 
 
+import com.crushdb.core.bootstrap.CrushContext;
 import com.crushdb.server.http.HttpRequest;
 import com.crushdb.server.http.HttpResponse;
 
@@ -51,5 +52,5 @@ public interface RouteHandler {
      * @param request {@link HttpRequest}
      * @param response {@link HttpResponse}
      */
-    void handle(HttpRequest request, HttpResponse response);
+    void handle(HttpRequest request, HttpResponse response, CrushContext cxt);
 }

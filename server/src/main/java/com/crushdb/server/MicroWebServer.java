@@ -24,6 +24,7 @@ public class MicroWebServer {
 
     private static final String RN = "\r\n";
     private static final String HTTP_V1_404 = "HTTP/1.1 404 Not Found";
+    private static final String HTTP_V1_302 = "Http/1.1 302 Found";
     private static final String CONTENT_TYPE = "Content-Type: ";
     private static final String CONTENT_LENGTH = "Content-Length: ";
     private static final String INDEX = "/";
@@ -62,9 +63,11 @@ public class MicroWebServer {
 
                 // IoC usage to get the web resources for markup, js, css
                 path = resolve(path);
+                System.out.println("resolved path: " + path);
                 ServiceLoader<StaticResourceProvider> loader = ServiceLoader.load(StaticResourceProvider.class);
                 StaticResourceProvider provider = loader.findFirst()
                         .orElseThrow(() -> new IllegalStateException(NO_FOUND_STATIC_RESOURCE_PROVIDER));
+                System.out.println("resource provider = " + provider.getClass().getName());
                 try (InputStream inputStream = provider.getResource(path)) {
                     if (inputStream == null) {
                         pageNotFound(outputStream);
@@ -80,6 +83,17 @@ public class MicroWebServer {
                             pageNotFound(outputStream);
                             return;
                         }
+                        if (cxt.getAuthenticator() == null) {
+                            System.out.println("Authenticator is null.");
+                            redirectToSignIn(outputStream);
+                            return;
+                        } else {
+                            boolean isAuthenticated = cxt.getAuthenticator().isAuthenticated();
+                            if (!isAuthenticated) {
+                                redirectToSignIn(outputStream);
+                                return;
+                            }
+                        }
                         HttpRequest httpRequest = HttpRequest.newBuilder(path)
                                 .method(requestMethod)
                                 .version(requestVersion)
@@ -87,7 +101,7 @@ public class MicroWebServer {
                                 .inputStream(inputStream)
                                 .build();
                         HttpResponse response = new HttpResponse();
-                        routeHandler.handle(httpRequest, response);
+                        routeHandler.handle(httpRequest, response, cxt);
                         write(response, outputStream);
                     }
                 }
@@ -149,5 +163,18 @@ public class MicroWebServer {
         out.write((HTTP_V1_404 + RN + CONTENT_TYPE + "text/html" + RN +
                 CONTENT_LENGTH + body.length() + RN + RN + body).getBytes()
         );
+    }
+
+    private static void redirectToSignIn(OutputStream out) throws IOException {
+        String body = "<html><body>Redirecting to <a href=\"/signin.html\">signin</a>...</body></html>";
+        String headers = "HTTP/1.1 302 Found\r\n" +
+                "Location: /signin.html\r\n" +
+                "Content-Type: text/html\r\n" +
+                "Content-Length: " + body.getBytes(StandardCharsets.UTF_8).length + "\r\n" +
+                "\r\n";
+
+        out.write(headers.getBytes(StandardCharsets.UTF_8));
+        out.write(body.getBytes(StandardCharsets.UTF_8));
+        out.flush();
     }
 }

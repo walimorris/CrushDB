@@ -68,7 +68,9 @@ public enum MimeType {
      * This is the default for binary files. As it means unknown binary file,
      * browsers usually don't execute it, or even as if it should be executed.
      */
-    BINARY("bin", "application/octet-stream");
+    BINARY("bin", "application/octet-stream"),
+
+    FORM("form", "application/x-www-form-urlencoded");
 
     /**
      * The {@code MimeType} file extension.
