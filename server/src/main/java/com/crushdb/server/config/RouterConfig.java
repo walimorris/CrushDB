@@ -6,8 +6,6 @@ import com.crushdb.server.router.Router;
 import com.crushdb.server.http.RequestMethod;
 import com.crushdb.server.handler.RouteHandler;
 
-import java.net.Authenticator;
-
 import static com.crushdb.server.http.RequestMethod.GET;
 
 /**
@@ -27,7 +25,7 @@ public class RouterConfig {
         Router router = new Router();
         router.register(GET, "/web/signin.html", new AuthenticationHandler());
         router.register(GET, "/web/index.html", new PageHandler());
-//        router.register(GET, "/web/*", new PageHandler());
+        router.register(GET, "/web/*", new PageHandler());
         return router;
     }
 }
