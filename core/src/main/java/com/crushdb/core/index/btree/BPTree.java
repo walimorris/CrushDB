@@ -3,11 +3,7 @@ package com.crushdb.core.index.btree;
 import com.crushdb.core.index.DuplicateKeyException;
 import com.crushdb.core.logger.CrushDBLogger;
 
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.*;
 
 /**
  * Represents a B+Tree, an ordered tree structure optimized for fast searches, inserts, and deletions.
@@ -19,7 +15,7 @@ import java.util.Comparator;
  * @version 1.0
  */
 public class BPTree<T extends Comparable<T>> {
-    private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(BPTree.class);
+    private static final String DUPLICATE_KEY_ERROR_MESSAGE = "Key already exists on unique index: ";
 
     /**
      * The order of the Tree, determining the maximum number of children per internal node.
@@ -84,11 +80,8 @@ public class BPTree<T extends Comparable<T>> {
         BPLeafNode<T> leafNode = (this.root == null) ? this.initialLeafNode : findLeafNode(key);
 
         // check if the key already exists, if so throw duplicate error - handle in caller
-        if (unique) {
-            if (leafNode.containsKey(key)) {
-                // TODO: pass the index name
-                throw new DuplicateKeyException("Key already exists on unique index: " + key);
-            }
+        if (unique && leafNode.containsKey(key)) {
+            throw new DuplicateKeyException(DUPLICATE_KEY_ERROR_MESSAGE + key);
         }
 
         // for indexes that aren't unique, check if key exist and append reference
@@ -169,14 +162,14 @@ public class BPTree<T extends Comparable<T>> {
      */
     public List<PageOffsetReference> search(T key) {
         if (isEmpty()) {
-            return null;
+            return new ArrayList<>();
         }
         BPLeafNode<T> leafNode = this.root == null ? this.initialLeafNode : findLeafNode(key);
         BPMapping<T>[] mappings = leafNode.getBpMappings();
         int index = binarySearch(mappings, leafNode.getNumPairs(), key);
         // binary search will return neg int if not found
         if (index < 0) {
-            return null;
+            return new ArrayList<>();
         } else {
             return mappings[index].getReferences();
         }
@@ -193,7 +186,7 @@ public class BPTree<T extends Comparable<T>> {
      */
     public Map<T, List<PageOffsetReference>> rangeSearch(T lowerBound, T upperBound) {
         if (isEmpty()) {
-            return null;
+            return new HashMap<>();
         }
         Map<T, List<PageOffsetReference>> referenceMap = new HashMap<>();
         BPLeafNode<T> currentLeafNode = this.initialLeafNode;
@@ -223,7 +216,7 @@ public class BPTree<T extends Comparable<T>> {
         T promotedKey = internalNode.getKeys()[midIndex];
 
         T[] rightKeys = (T[]) new Comparable[this.m];
-        BPNode<T>[] rightPointers = (BPNode<T>[]) new BPNode[this.m + 1];
+        BPNode<T>[] rightPointers = new BPNode[this.m + 1];
 
         int rightKeyCount = this.m - midIndex - 1;
         int rightPointerCount = this.m - midIndex;
@@ -284,7 +277,7 @@ public class BPTree<T extends Comparable<T>> {
         BPMapping<T>[] currentMappings = node.getBpMappings();
         int totalPairs = node.getNumPairs();
 
-        BPMapping<T>[] splitMappings = (BPMapping<T>[]) new BPMapping[this.m];
+        BPMapping<T>[] splitMappings = new BPMapping[this.m];
 
         int j = 0;
         for (int i = midpoint; i < totalPairs; i++) {

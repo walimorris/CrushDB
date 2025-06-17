@@ -130,7 +130,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         this.keys = keys;
         this.maxKeys = m - 1;
         this.numKeys = initKeys();
-        this.childPointers = (BPNode<T>[]) new BPNode[this.maxChildNodes + 1];
+        this.childPointers = new BPNode[this.maxChildNodes + 1];
         this.sortOrder = SortOrder.ASC;
     }
 
@@ -148,7 +148,7 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
         this.keys = keys;
         this.maxKeys = m - 1;
         this.numKeys = initKeys();
-        this.childPointers = (BPNode<T>[]) new BPNode[this.maxChildNodes + 1];
+        this.childPointers = new BPNode[this.maxChildNodes + 1];
         this.sortOrder = sortOrder;
     }
 
@@ -345,8 +345,6 @@ public class BPInternalNode<T extends Comparable<T>> extends BPNode<T> {
      * This method ensures that both the key and its corresponding pointer
      * are removed while maintaining the correct tree structure. The child node count
      * is decremented only if both key and pointer removals are valid.
-     *
-     * TODO: Possibly throw a informational message here in an unlikely turn of events.
      *
      * @param index The index of the key to be removed.
      */

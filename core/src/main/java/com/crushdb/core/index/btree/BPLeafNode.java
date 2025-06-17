@@ -98,7 +98,7 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         this.maxPairs = m - 1;
         this.minPairs = (int) (Math.ceil(m / 2.0 ) - 1);
         this.numPairs = 0;
-        this.bpMappings = (BPMapping<T>[]) new BPMapping[m];
+        this.bpMappings = new BPMapping[m];
         this.insert(mapping);
         this.sortOrder = SortOrder.ASC;
     }
@@ -115,7 +115,7 @@ public class BPLeafNode<T extends Comparable<T>> extends BPNode<T> {
         this.maxPairs = m - 1;
         this.minPairs = (int) (Math.ceil(m / 2.0 ) - 1);
         this.numPairs = 0;
-        this.bpMappings = (BPMapping<T>[]) new BPMapping[m];
+        this.bpMappings = new BPMapping[m];
         this.insert(mapping);
         this.sortOrder = sortOrder;
     }

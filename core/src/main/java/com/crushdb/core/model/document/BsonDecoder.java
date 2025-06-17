@@ -1,5 +1,7 @@
 package com.crushdb.core.model.document;
 
+import com.crushdb.core.logger.CrushDBLogger;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
@@ -30,6 +32,7 @@ import static com.crushdb.core.storageengine.page.Page.INACTIVE;
  * @see BsonEncoder
  */
 public class BsonDecoder {
+    private static final CrushDBLogger LOGGER = CrushDBLogger.getLogger(BsonDecoder.class);
 
     /**
      * Decodes a BSON-style binary byte array into a {@link Document} instance.
@@ -84,7 +87,7 @@ public class BsonDecoder {
         byte df = buffer.get();
 
         if (df == INACTIVE) {
-            System.err.println("ERROR: Document ID " + documentId + " is a tombstone marked for deletion.");
+            LOGGER.error("Document ID" + documentId + "is a tombstone marked for deletion", null);
             return null;
         }
 
