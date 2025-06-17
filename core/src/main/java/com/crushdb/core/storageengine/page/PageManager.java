@@ -115,7 +115,7 @@ public class PageManager {
      *
      * This cache enables efficient management of in-memory pages.
      */
-    private final Map<Long, Page> cache = new LinkedHashMap<>(this.initialCapacity, .75f, true) {
+    private final Map<Long, Page> cache = Collections.synchronizedMap(new LinkedHashMap<>(this.initialCapacity, .75f, true) {
         @Override
         protected boolean removeEldestEntry(Map.Entry<Long, Page> eldest) {
             // using lru we can get the eldest value and persist the record if
@@ -130,7 +130,7 @@ public class PageManager {
             }
             return false;
         }
-    };
+    });
 
     private PageManager(CrushContext crushContext) {
         cxt = crushContext;

@@ -22,6 +22,8 @@ public class UiStaticResourceProvider implements StaticResourceProvider {
             System.out.println("searching path: " + path);
             if (stream == null) {
                 System.out.println("Resource not found: " + path);
+            } else {
+                System.out.println("Resource found: " + stream.getClass().getName());
             }
             return stream;
         } catch (IOException e) {

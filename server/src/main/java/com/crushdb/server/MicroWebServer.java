@@ -20,7 +20,7 @@ import static com.crushdb.server.http.MimeType.fromPath;
 
 public class MicroWebServer {
     private static CrushContext cxt;
-    private static final String NO_FOUND_STATIC_RESOURCE_PROVIDER = "No StaticResourceProvider found";
+    public static final String NO_FOUND_STATIC_RESOURCE_PROVIDER = "No StaticResourceProvider found";
 
     private static final String RN = "\r\n";
     private static final String HTTP_V1_404 = "HTTP/1.1 404 Not Found";
@@ -68,10 +68,11 @@ public class MicroWebServer {
                 StaticResourceProvider provider = loader.findFirst()
                         .orElseThrow(() -> new IllegalStateException(NO_FOUND_STATIC_RESOURCE_PROVIDER));
                 System.out.println("resource provider = " + provider.getClass().getName());
-                try (InputStream inputStream = provider.getResource(path)) {
-                    if (inputStream == null) {
-                        pageNotFound(outputStream);
-                    } else {
+                InputStream inputStream = provider.getResource(path);
+                if (inputStream == null) {
+                    pageNotFound(outputStream);
+                } else {
+                    try (InputStream stream = inputStream) {
                         MimeType mimeType = fromPath(path);
                         RequestMethod requestMethod = RequestMethod.valueOf(method);
                         // TODO: make resolve(request)
@@ -83,22 +84,17 @@ public class MicroWebServer {
                             pageNotFound(outputStream);
                             return;
                         }
-                        if (cxt.getAuthenticator() == null) {
-                            System.out.println("Authenticator is null.");
-                            redirectToSignIn(outputStream);
-                            return;
-                        } else {
-                            boolean isAuthenticated = cxt.getAuthenticator().isAuthenticated();
-                            if (!isAuthenticated) {
-                                redirectToSignIn(outputStream);
-                                return;
-                            }
-                        }
+//                        if (cxt.getAuthenticator() != null || !cxt.getAuthenticator().isAuthenticated()) {
+//                            System.out.println("Authenticator is null.");
+//                            redirectToSignIn(outputStream);
+//                            return;
+//                        }
+                        byte[] content = stream.readAllBytes();
                         HttpRequest httpRequest = HttpRequest.newBuilder(path)
                                 .method(requestMethod)
                                 .version(requestVersion)
                                 .mimetype(mimeType)
-                                .inputStream(inputStream)
+                                .inputStream(new ByteArrayInputStream(content))
                                 .build();
                         HttpResponse response = new HttpResponse();
                         routeHandler.handle(httpRequest, response, cxt);
@@ -163,12 +159,12 @@ public class MicroWebServer {
         out.write((HTTP_V1_404 + RN + CONTENT_TYPE + "text/html" + RN +
                 CONTENT_LENGTH + body.length() + RN + RN + body).getBytes()
         );
+        out.flush();
     }
 
     private static void redirectToSignIn(OutputStream out) throws IOException {
         String body = "<html><body>Redirecting to <a href=\"/signin.html\">signin</a>...</body></html>";
         String headers = "HTTP/1.1 302 Found\r\n" +
-                "Location: /signin.html\r\n" +
                 "Content-Type: text/html\r\n" +
                 "Content-Length: " + body.getBytes(StandardCharsets.UTF_8).length + "\r\n" +
                 "\r\n";

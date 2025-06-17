@@ -23,6 +23,7 @@
     </modules>
 
     <dependencies>
+        <!-- Common dependencies -->
         <dependency>
             <groupId>org.mindrot</groupId>
             <artifactId>jbcrypt</artifactId>
@@ -32,6 +33,12 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>5.14.2</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -45,15 +52,12 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!-- Prevent frontend plugin from running in submodules -->
                 <plugin>
                     <groupId>com.github.eirslett</groupId>
                     <artifactId>frontend-maven-plugin</artifactId>
                     <version>1.12.1</version>
-                    <executions/>
+                    <executions />
                 </plugin>
-
-                <!-- Always active plugins -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
@@ -62,83 +66,5 @@
             </plugins>
         </pluginManagement>
     </build>
-
-    <profiles>
-        <profile>
-            <id>build-ui</id>
-            <activation>
-                <file>
-                    <exists>ui/frontend/crushui/package.json</exists>
-                </file>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>com.github.eirslett</groupId>
-                        <artifactId>frontend-maven-plugin</artifactId>
-                        <version>1.12.1</version>
-
-                        <inherited>false</inherited>
-
-                        <configuration>
-                            <workingDirectory>${basedir}/ui/frontend/crushui</workingDirectory>
-                            <installDirectory>${project.build.directory}/node</installDirectory>
-                        </configuration>
-
-                        <executions>
-                            <execution>
-                                <id>install-node-and-npm</id>
-                                <goals>
-                                    <goal>install-node-and-npm</goal>
-                                </goals>
-                                <configuration>
-                                    <nodeVersion>v18.17.1</nodeVersion>
-                                    <npmVersion>9.8.1</npmVersion>
-                                </configuration>
-                            </execution>
-
-                            <execution>
-                                <id>npm-install</id>
-                                <goals><goal>npm</goal></goals>
-                                <configuration>
-                                    <arguments>install</arguments>
-                                </configuration>
-                            </execution>
-
-                            <execution>
-                                <id>npm-build</id>
-                                <goals><goal>npm</goal></goals>
-                                <phase>generate-resources</phase>
-                                <configuration>
-                                    <arguments>run build</arguments>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <artifactId>maven-resources-plugin</artifactId>
-                        <version>3.3.1</version>
-                        <executions>
-                            <execution>
-                                <id>copy-react-build</id>
-                                <phase>process-resources</phase>
-                                <goals><goal>copy-resources</goal></goals>
-                                <configuration>
-                                    <outputDirectory>${basedir}/ui/src/main/resources/web</outputDirectory>
-                                    <resources>
-                                        <resource>
-                                            <directory>${basedir}/ui/frontend/crushui/build</directory>
-                                            <filtering>false</filtering>
-                                        </resource>
-                                    </resources>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
 </project>
+

@@ -11,9 +11,12 @@
           </option>
           <option name="goals">
             <list>
+              <option value="mvn" />
               <option value="clean" />
               <option value="install" />
-              <option value="-Pbuild-ui" />
+              <option value="-pl" />
+              <option value="ui" />
+              <option value="-am" />
             </list>
           </option>
           <option name="multimoduleDir" />

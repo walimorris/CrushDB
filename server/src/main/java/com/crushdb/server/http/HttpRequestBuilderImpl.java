@@ -1,7 +1,6 @@
 package com.crushdb.server.http;
 
-import com.crushdb.server.utils.StreamingUtil;
-
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
@@ -142,7 +141,8 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
                     if (this.mimeType == null) {
                         throw new IllegalStateException("mimetype cannot be null");
                     }
-                    byte[] content = StreamingUtil.readMarkAndReset(this.inputStream);
+                    byte[] content = inputStream.readAllBytes();
+                    this.inputStream = new ByteArrayInputStream(content);
                     HttpHeaders result = new HttpHeaders();
                     result.addHeader(new HttpHeader(X_CONTENT_TYPE_OPTIONS.getHeaderName(), "nosniff"));
                     result.addHeader(new HttpHeader(CONTENT_TYPE.getHeaderName(), mimeType().getType()));

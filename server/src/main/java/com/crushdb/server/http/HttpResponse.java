@@ -1,7 +1,5 @@
 package com.crushdb.server.http;
 
-import com.crushdb.server.utils.StreamingUtil;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -46,7 +44,7 @@ public class HttpResponse {
 
     public byte[] body() {
         try (InputStream inputStream = immutableHttpRequest.inputStream()) {
-            return StreamingUtil.readMarkAndReset(inputStream);
+            return inputStream.readAllBytes();
         } catch (IOException e) {
             System.out.println("Error reading response body.");
         }

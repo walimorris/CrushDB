@@ -7,6 +7,7 @@ import com.crushdb.server.http.RequestMethod;
 import com.crushdb.server.handler.RouteHandler;
 
 import static com.crushdb.server.http.RequestMethod.GET;
+import static com.crushdb.server.http.RequestMethod.POST;
 
 /**
  * {@code com.crushdb.server.config.RouterConfig} is used to register
@@ -23,7 +24,8 @@ public class RouterConfig {
      */
     public static Router init() {
         Router router = new Router();
-        router.register(GET, "/web/signin.html", new AuthenticationHandler());
+        router.register(POST, "/api/signin", new AuthenticationHandler());
+        router.register(GET, "/web/signin.html", new PageHandler());
         router.register(GET, "/web/index.html", new PageHandler());
         router.register(GET, "/web/*", new PageHandler());
         return router;

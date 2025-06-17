@@ -3,6 +3,7 @@ package com.crushdb.server.router;
 import com.crushdb.server.handler.RouteHandler;
 import com.crushdb.server.http.RequestMethod;
 
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import com.crushdb.server.config.RouterConfig;
 
@@ -63,7 +64,8 @@ public class Router {
      *
      * @return {@link RouteHandler} that executes based on the route key
      */
-    public RouteHandler resolve(RequestMethod requestMethod, String path) {
+    public RouteHandler resolve(RequestMethod requestMethod, String path) throws NullPointerException {
+        Objects.requireNonNull(path, "path should not be null");
         if (path.isEmpty()) {
             path = "/";
         }
@@ -97,6 +99,11 @@ public class Router {
                 // web/static/ -> web/static
                 path = path.substring(0, path.length() - 1);
             }
+        }
+        // find exact match first
+        RouteHandler handler = resolve(requestMethod, "/" + path);
+        if (handler != null) {
+            return handler;
         }
         // web/static/main.js -> [web, static, main.js], web/static -> [web, static]
         return resolve(requestMethod, "/" + path.split("/")[0] + "/*");
